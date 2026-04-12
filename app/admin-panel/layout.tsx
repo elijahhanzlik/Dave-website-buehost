@@ -3,5 +3,7 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <div className="flex min-h-screen">{children}</div>;
+  return (
+    <div className="flex min-h-screen bg-gray-50 text-gray-900">{children}</div>
+  );
 }

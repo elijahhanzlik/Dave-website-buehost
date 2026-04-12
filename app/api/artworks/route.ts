@@ -1,18 +1,44 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/supabase/admin";
+import { artworkSchema } from "@/lib/validations";
 
 export async function GET() {
-  try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("artworks")
-      .select("*")
-      .order("sort_order", { ascending: true });
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("artworks")
+    .select("*")
+    .order("sort_order", { ascending: true });
 
-    if (error) throw error;
-    return NextResponse.json(data ?? []);
-  } catch {
-    // Supabase not configured — return empty array
-    return NextResponse.json([]);
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
+  return NextResponse.json(data);
+}
+
+export async function POST(request: NextRequest) {
+  const auth = await requireAdmin();
+  if (!auth.authorized) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  const body = await request.json();
+  const parsed = artworkSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
+
+  const { data, error } = await auth.supabase
+    .from("artworks")
+    .insert(parsed.data)
+    .select()
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  return NextResponse.json(data, { status: 201 });
 }
