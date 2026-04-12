@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+/* ===== Design System Tokens ===== */
+:root {
+  /* Forest green palette */
+  --color-primary: #2D5016;
+  --color-primary-light: #3D6B1E;
+  --color-primary-dark: #1E3A0E;
+
+  /* Warm backgrounds */
+  --color-cream: #F5F0E8;
+  --color-sage: #E8EDE2;
+
+  /* Gold accent */
+  --color-gold: #C4A265;
+  --color-gold-light: #D4B87A;
+  --color-gold-dark: #A88B50;
+
+  /* Text */
+  --color-text-primary: #1A1A1A;
+  --color-text-secondary: #4A4A4A;
+  --color-text-muted: #7A7A7A;
+
+  /* Surfaces */
+  --background: var(--color-cream);
+  --foreground: var(--color-text-primary);
+}
+
+/* ===== Tailwind v4 Theme Extension ===== */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-primary: var(--color-primary);
+  --color-primary-light: var(--color-primary-light);
+  --color-primary-dark: var(--color-primary-dark);
+
+  --color-cream: var(--color-cream);
+  --color-sage: var(--color-sage);
+
+  --color-gold: var(--color-gold);
+  --color-gold-light: var(--color-gold-light);
+  --color-gold-dark: var(--color-gold-dark);
+
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+
+  --font-display: "Playfair Display", "Georgia", serif;
+  --font-body: "DM Sans", "Helvetica Neue", "Arial", sans-serif;
+}
+
+/* ===== Base styles ===== */
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+}
