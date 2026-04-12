@@ -160,6 +160,81 @@ create policy "Authenticated admin update on site_settings"
   using (true)
   with check (true);
 
+-- ----- subscriptions -----
+create table public.subscriptions (
+  id             uuid primary key default uuid_generate_v4(),
+  user_id        uuid not null references auth.users(id) on delete cascade,
+  service        text not null,
+  category       text,
+  monthly_cost   numeric(10,2) not null default 0,
+  annual_cost    numeric(10,2) not null default 0,
+  billing_cycle  text not null default 'monthly' check (billing_cycle in ('monthly', 'annual', 'weekly', 'quarterly')),
+  next_renewal   date,
+  status         text not null default 'active' check (status in ('active', 'paused', 'cancelled')),
+  notes          text,
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now()
+);
+
+alter table public.subscriptions enable row level security;
+
+create policy "Users read own subscriptions"
+  on public.subscriptions for select
+  to authenticated
+  using (auth.uid() = user_id);
+
+create policy "Users insert own subscriptions"
+  on public.subscriptions for insert
+  to authenticated
+  with check (auth.uid() = user_id);
+
+create policy "Users update own subscriptions"
+  on public.subscriptions for update
+  to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create policy "Users delete own subscriptions"
+  on public.subscriptions for delete
+  to authenticated
+  using (auth.uid() = user_id);
+
+-- ----- notion_settings -----
+create table public.notion_settings (
+  id                  uuid primary key default uuid_generate_v4(),
+  user_id             uuid not null unique references auth.users(id) on delete cascade,
+  access_token        text,
+  database_id         text,
+  workspace_name      text,
+  sync_enabled        boolean not null default false,
+  last_synced_at      timestamptz,
+  created_at          timestamptz not null default now(),
+  updated_at          timestamptz not null default now()
+);
+
+alter table public.notion_settings enable row level security;
+
+create policy "Users read own notion_settings"
+  on public.notion_settings for select
+  to authenticated
+  using (auth.uid() = user_id);
+
+create policy "Users insert own notion_settings"
+  on public.notion_settings for insert
+  to authenticated
+  with check (auth.uid() = user_id);
+
+create policy "Users update own notion_settings"
+  on public.notion_settings for update
+  to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create policy "Users delete own notion_settings"
+  on public.notion_settings for delete
+  to authenticated
+  using (auth.uid() = user_id);
+
 -- ----- Storage bucket -----
 insert into storage.buckets (id, name, public)
   values ('artwork-images', 'artwork-images', true)

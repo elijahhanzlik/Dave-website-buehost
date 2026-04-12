@@ -64,3 +64,44 @@ export const siteSettingSchema = z.object({
 });
 
 export type SiteSettingInput = z.infer<typeof siteSettingSchema>;
+
+// ----- Subscriptions -----
+export const subscriptionSchema = z.object({
+  service: z.string().min(1, "Service name is required").max(200),
+  category: z.string().optional(),
+  monthly_cost: z.number().min(0).default(0),
+  annual_cost: z.number().min(0).default(0),
+  billing_cycle: z.enum(["monthly", "annual", "weekly", "quarterly"]).default("monthly"),
+  next_renewal: z.string().optional().nullable(),
+  status: z.enum(["active", "paused", "cancelled"]).default("active"),
+  notes: z.string().optional(),
+});
+
+export type SubscriptionInput = z.infer<typeof subscriptionSchema>;
+
+export interface Subscription extends SubscriptionInput {
+  id: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// ----- Notion Settings -----
+export const notionSettingsSchema = z.object({
+  database_id: z.string().optional(),
+  sync_enabled: z.boolean().default(false),
+});
+
+export type NotionSettingsInput = z.infer<typeof notionSettingsSchema>;
+
+export interface NotionSettings {
+  id: string;
+  user_id: string;
+  access_token: string | null;
+  database_id: string | null;
+  workspace_name: string | null;
+  sync_enabled: boolean;
+  last_synced_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
