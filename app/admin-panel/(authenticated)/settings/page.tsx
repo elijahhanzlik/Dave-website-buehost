@@ -105,8 +105,14 @@ export default function SettingsPage() {
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error?.toString() ?? "Failed to save");
+        let msg = `Failed to save (${res.status})`;
+        try {
+          const data = await res.json();
+          msg = data.error?.toString() ?? msg;
+        } catch {
+          // response was not JSON
+        }
+        throw new Error(msg);
       }
 
       setSaved(true);
