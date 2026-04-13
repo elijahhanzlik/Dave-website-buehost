@@ -22,10 +22,46 @@ const PLACEHOLDER_BLOG_POSTS = [
   },
 ];
 
+interface HeroSettings {
+  imageUrl: string | null;
+  crop: { x: number; y: number; zoom: number } | null;
+}
+
+async function getHeroSettings(): Promise<HeroSettings> {
+  try {
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+    if (!supabase) return { imageUrl: null, crop: null };
+
+    const { data } = await supabase
+      .from("site_settings")
+      .select("key, value")
+      .in("key", ["hero_image", "hero_crop"]);
+
+    if (data) {
+      const imageUrl = data.find((s) => s.key === "hero_image")?.value ?? null;
+      const cropRaw = data.find((s) => s.key === "hero_crop")?.value;
+      let crop = null;
+      if (cropRaw) {
+        try {
+          crop = JSON.parse(cropRaw);
+        } catch {
+          // ignore
+        }
+      }
+      return { imageUrl, crop };
+    }
+  } catch {
+    // Supabase not configured
+  }
+  return { imageUrl: null, crop: null };
+}
+
 async function getLatestPosts() {
   try {
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();
+    if (!supabase) return PLACEHOLDER_BLOG_POSTS;
     const { data } = await supabase
       .from("blog_posts")
       .select("id, title, slug, content, cover_image, published_at")
@@ -48,7 +84,16 @@ async function getLatestPosts() {
 }
 
 export default async function HomePage() {
-  const latestPosts = await getLatestPosts();
+  const [latestPosts, hero] = await Promise.all([
+    getLatestPosts(),
+    getHeroSettings(),
+  ]);
 
-  return <HomeClient latestPosts={latestPosts} />;
+  return (
+    <HomeClient
+      latestPosts={latestPosts}
+      heroImageUrl={hero.imageUrl}
+      heroCrop={hero.crop}
+    />
+  );
 }

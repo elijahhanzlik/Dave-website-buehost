@@ -4,7 +4,12 @@ import { z } from "zod";
 export const artworkSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
-  images: z.array(z.string().url()).default([]),
+  images: z.array(z.string()).default([]),
+  image_crops: z.record(z.string(), z.object({
+    x: z.number(),
+    y: z.number(),
+    zoom: z.number(),
+  })).optional(),
   category: z.string().optional(),
   sort_order: z.number().int().default(0),
   is_featured: z.boolean().default(false),
