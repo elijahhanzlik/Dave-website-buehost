@@ -15,6 +15,8 @@ import {
   Save,
 } from "lucide-react";
 import ImageUploader from "@/components/ImageUploader";
+import ImagePositionPicker from "@/components/admin/ImagePositionPicker";
+import type { ImagePosition } from "@/components/admin/ImagePositionPicker";
 
 type BlockType = "text" | "image" | "gallery" | "hero";
 
@@ -42,7 +44,7 @@ function emptyBlockData(type: BlockType): Record<string, unknown> {
     case "text":
       return { content: "" };
     case "image":
-      return { url: "", caption: "" };
+      return { url: "", caption: "", position: { x: "center", y: "middle" } };
     case "gallery":
       return { images: [] };
     case "hero":
@@ -261,9 +263,7 @@ export default function EditPagePage() {
             {blocks.length === 0 ? (
               <p className="text-sm text-gray-400">No content blocks</p>
             ) : (
-              blocks.map((block, i) => (
-                <BlockPreview key={i} block={block} />
-              ))
+              <PreviewRenderer blocks={blocks} />
             )}
           </div>
         )}
@@ -290,7 +290,11 @@ function BlockEditor({
           className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
         />
       );
-    case "image":
+    case "image": {
+      const imgPosition: ImagePosition = (block.data.position as ImagePosition) ?? {
+        x: "center",
+        y: "middle",
+      };
       return (
         <div className="space-y-3">
           <ImageUploader
@@ -300,6 +304,13 @@ function BlockEditor({
             }
             multiple={false}
           />
+          {typeof block.data.url === "string" && block.data.url !== "" && (
+            <ImagePositionPicker
+              imageUrl={block.data.url as string}
+              position={imgPosition}
+              onChange={(pos) => onChange({ ...block.data, position: pos })}
+            />
+          )}
           <input
             type="text"
             value={(block.data.caption as string) ?? ""}
@@ -311,6 +322,7 @@ function BlockEditor({
           />
         </div>
       );
+    }
     case "gallery":
       return (
         <ImageUploader
@@ -345,6 +357,102 @@ function BlockEditor({
   }
 }
 
+/**
+ * Groups blocks so floated images share a container with adjacent text,
+ * enabling CSS float-based text wrapping. The y-position on image blocks
+ * controls insertion order: top = before text, middle = between paragraphs,
+ * bottom = after text.
+ */
+function PreviewRenderer({ blocks }: { blocks: ContentBlock[] }) {
+  type Group = { kind: "float"; image: ContentBlock; text: ContentBlock | null } | { kind: "standalone"; block: ContentBlock };
+
+  const groups: Group[] = [];
+  const used = new Set<number>();
+
+  for (let i = 0; i < blocks.length; i++) {
+    if (used.has(i)) continue;
+
+    const block = blocks[i];
+    const pos = block.type === "image"
+      ? ((block.data.position as ImagePosition) ?? { x: "center", y: "middle" })
+      : null;
+
+    const isFloated = pos && pos.x !== "center";
+
+    if (block.type === "image" && isFloated) {
+      // Find the nearest text block to pair with
+      let textIdx = -1;
+      if (pos.y === "top" || pos.y === "middle") {
+        // Look for the next text block
+        for (let j = i + 1; j < blocks.length; j++) {
+          if (!used.has(j) && blocks[j].type === "text") {
+            textIdx = j;
+            break;
+          }
+        }
+      } else {
+        // y === "bottom": look for the previous text block
+        for (let j = i - 1; j >= 0; j--) {
+          if (!used.has(j) && blocks[j].type === "text") {
+            textIdx = j;
+            break;
+          }
+        }
+      }
+
+      if (textIdx >= 0) {
+        used.add(i);
+        used.add(textIdx);
+        groups.push({ kind: "float", image: block, text: blocks[textIdx] });
+      } else {
+        used.add(i);
+        groups.push({ kind: "float", image: block, text: null });
+      }
+    } else {
+      used.add(i);
+      groups.push({ kind: "standalone", block });
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {groups.map((group, i) => {
+        if (group.kind === "standalone") {
+          return <BlockPreview key={i} block={group.block} />;
+        }
+
+        const pos = (group.image.data.position as ImagePosition) ?? {
+          x: "center",
+          y: "middle",
+        };
+
+        // For floated groups, render image + text in one clearfix container
+        // y=top/middle: image first, then text. y=bottom: text first, then image.
+        const imageEl = <BlockPreview key="img" block={group.image} />;
+        const textEl = group.text ? (
+          <BlockPreview key="txt" block={group.text} />
+        ) : null;
+
+        return (
+          <div key={i} style={{ overflow: "hidden" }}>
+            {pos.y === "bottom" ? (
+              <>
+                {textEl}
+                {imageEl}
+              </>
+            ) : (
+              <>
+                {imageEl}
+                {textEl}
+              </>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function BlockPreview({ block }: { block: ContentBlock }) {
   switch (block.type) {
     case "text":
@@ -355,9 +463,26 @@ function BlockPreview({ block }: { block: ContentBlock }) {
           )}
         </div>
       );
-    case "image":
+    case "image": {
+      const pos = (block.data.position as ImagePosition) ?? {
+        x: "center",
+        y: "middle",
+      };
+
+      let floatStyle: React.CSSProperties = {};
+      let figureClass = "rounded-lg max-w-[50%]";
+
+      if (pos.x === "left") {
+        floatStyle = { float: "left", marginRight: "1rem", marginBottom: "0.5rem" };
+      } else if (pos.x === "right") {
+        floatStyle = { float: "right", marginLeft: "1rem", marginBottom: "0.5rem" };
+      } else {
+        floatStyle = { display: "block", margin: "0 auto" };
+        figureClass = "rounded-lg max-w-[70%]";
+      }
+
       return (
-        <figure>
+        <figure style={floatStyle} className={figureClass}>
           {block.data.url ? (
             <img
               src={block.data.url as string}
@@ -376,6 +501,7 @@ function BlockPreview({ block }: { block: ContentBlock }) {
           )}
         </figure>
       );
+    }
     case "gallery": {
       const images = (block.data.images as string[]) ?? [];
       return images.length > 0 ? (
