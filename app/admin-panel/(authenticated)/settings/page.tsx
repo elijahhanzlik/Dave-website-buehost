@@ -107,10 +107,16 @@ export default function SettingsPage() {
       if (!res.ok) {
         let msg = `Failed to save (${res.status})`;
         try {
-          const data = await res.json();
-          msg = data.error?.toString() ?? msg;
+          const text = await res.text();
+          try {
+            const data = JSON.parse(text);
+            msg = data.error?.toString() ?? msg;
+          } catch {
+            // Show first 200 chars of non-JSON response for debugging
+            msg = `Server error (${res.status}): ${text.slice(0, 200)}`;
+          }
         } catch {
-          // response was not JSON
+          // couldn't read response
         }
         throw new Error(msg);
       }
