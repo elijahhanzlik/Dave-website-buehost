@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { formatDate } from "@/lib/formatters";
 import type { Metadata } from "next";
 
 interface ContentBlock {
@@ -8,91 +7,29 @@ interface ContentBlock {
   data: Record<string, unknown>;
 }
 
-interface BlogPost {
+interface PageData {
   id: string;
-  title: string;
   slug: string;
-  content: string | null;
-  content_blocks: ContentBlock[] | null;
-  cover_image: string | null;
-  status: string;
-  published_at: string | null;
-  created_at: string;
+  title: string;
+  content_blocks: ContentBlock[];
 }
 
-const PLACEHOLDER_POSTS: BlogPost[] = [
-  {
-    id: "1",
-    title: "Finding Beauty in the Canopy",
-    slug: "finding-beauty-in-the-canopy",
-    content: `For years I climbed trees professionally — diagnosing disease, pruning limbs, assessing risk. But somewhere along the way, the clinical eye became an artistic one.
-
-## The View From Above
-
-There's something profound about seeing the world from a tree's perspective. The ground below becomes abstract — patches of color and texture.
-
-## Where Science Meets Art
-
-Understanding how a tree grows gives you an appreciation for its form that goes beyond aesthetics.`,
-    content_blocks: null,
-    cover_image: null,
-    status: "published",
-    published_at: "2026-03-15T00:00:00Z",
-    created_at: "2026-03-15T00:00:00Z",
-  },
-  {
-    id: "2",
-    title: "Boulder in Bloom",
-    slug: "boulder-in-bloom",
-    content: `Spring in Boulder is an event. The Flatirons provide a dramatic backdrop as wildflowers carpet the meadows.
-
-## Chasing the Bloom
-
-The front range creates a fascinating gradient. Down in Boulder proper, the ornamental cherries bloom in early April.`,
-    content_blocks: null,
-    cover_image: null,
-    status: "published",
-    published_at: "2026-02-28T00:00:00Z",
-    created_at: "2026-02-28T00:00:00Z",
-  },
-  {
-    id: "3",
-    title: "The Art of Seeing Slowly",
-    slug: "the-art-of-seeing-slowly",
-    content: `In a world of fast scrolling and instant images, I've found that my best work comes from slowing down.
-
-## The Patience Principle
-
-Photography rewards patience in a way few other art forms do.
-
-## Lessons From the Trees
-
-Trees have taught me more about art than any classroom or workshop.`,
-    content_blocks: null,
-    cover_image: null,
-    status: "published",
-    published_at: "2026-01-20T00:00:00Z",
-    created_at: "2026-01-20T00:00:00Z",
-  },
-];
-
-async function getPost(slug: string): Promise<BlogPost | null> {
+async function getPage(slug: string): Promise<PageData | null> {
   try {
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();
-    if (!supabase) return PLACEHOLDER_POSTS.find((p) => p.slug === slug) ?? null;
+    if (!supabase) return null;
+
     const { data } = await supabase
-      .from("blog_posts")
+      .from("pages")
       .select("*")
       .eq("slug", slug)
-      .eq("status", "published")
       .single();
 
-    if (data) return data;
+    return data;
   } catch {
-    // Supabase not configured
+    return null;
   }
-  return PLACEHOLDER_POSTS.find((p) => p.slug === slug) ?? null;
 }
 
 export async function generateMetadata({
@@ -101,19 +38,16 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const post = await getPost(slug);
+  const page = await getPage(slug);
 
   return {
-    title: post
-      ? `${post.title} — David Schaldach`
-      : "Blog — David Schaldach",
-    description: post?.content?.slice(0, 160) ?? undefined,
+    title: page
+      ? `${page.title} — David Schaldach`
+      : "Page Not Found — David Schaldach",
   };
 }
 
-type ImagePosition = { x: "left" | "center" | "right"; y: "top" | "middle" | "bottom" };
-
-function renderMarkdownContent(content: string) {
+function renderTextBlock(content: string) {
   const lines = content.split("\n");
   const elements: React.ReactNode[] = [];
   let currentParagraph: string[] = [];
@@ -160,12 +94,14 @@ function renderMarkdownContent(content: string) {
   return elements;
 }
 
+type ImagePosition = { x: "left" | "center" | "right"; y: "top" | "middle" | "bottom" };
+
 function BlockRenderer({ block }: { block: ContentBlock }) {
   switch (block.type) {
     case "text": {
       const content = (block.data.content as string) ?? "";
       if (!content.trim()) return null;
-      return <div>{renderMarkdownContent(content)}</div>;
+      return <div>{renderTextBlock(content)}</div>;
     }
     case "image": {
       const url = block.data.url as string;
@@ -178,7 +114,7 @@ function BlockRenderer({ block }: { block: ContentBlock }) {
       if (!url) return null;
 
       let figureClass = "my-8";
-      const imgClass = "rounded-2xl";
+      let imgClass = "rounded-2xl";
 
       if (pos.x === "left") {
         figureClass = "float-left mr-8 mb-4 max-w-[50%]";
@@ -240,98 +176,49 @@ function BlockRenderer({ block }: { block: ContentBlock }) {
   }
 }
 
-export default async function BlogPostPage({
+export default async function DynamicPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const post = await getPost(slug);
+  const page = await getPage(slug);
 
-  if (!post) {
+  if (!page) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center pt-24">
         <div className="text-center">
           <h1 className="font-display text-3xl font-bold text-primary-dark">
-            Post Not Found
+            Page Not Found
           </h1>
           <p className="mt-4 text-text-secondary">
-            The blog post you&apos;re looking for doesn&apos;t exist.
+            The page you&apos;re looking for doesn&apos;t exist.
           </p>
           <Link
-            href="/blog"
+            href="/"
             className="mt-6 inline-flex items-center gap-2 text-gold-dark hover:text-gold"
           >
             <ArrowLeft size={16} />
-            Back to Blog
+            Back to Home
           </Link>
         </div>
       </div>
     );
   }
 
-  const hasBlocks = post.content_blocks && post.content_blocks.length > 0;
-
   return (
     <div className="pt-24 pb-20">
       <article className="mx-auto max-w-3xl px-6 lg:px-8">
-        {/* Back link */}
-        <Link
-          href="/blog"
-          className="inline-flex items-center gap-2 text-sm text-text-muted transition-colors hover:text-primary"
-        >
-          <ArrowLeft size={16} />
-          Back to Blog
-        </Link>
+        <h1 className="font-display text-4xl font-bold text-primary-dark sm:text-5xl">
+          {page.title}
+        </h1>
 
-        {/* Cover image */}
-        {post.cover_image && (
-          <div className="mt-8 overflow-hidden rounded-2xl">
-            <img
-              src={post.cover_image}
-              alt={post.title}
-              className="w-full object-cover"
-            />
-          </div>
-        )}
-
-        {/* Header */}
-        <header className="mt-8">
-          {post.published_at && (
-            <p className="text-sm font-medium uppercase tracking-[0.1em] text-text-muted">
-              {formatDate(post.published_at)}
-            </p>
-          )}
-          <h1 className="mt-3 font-display text-3xl font-bold text-primary-dark sm:text-4xl md:text-5xl">
-            {post.title}
-          </h1>
-        </header>
-
-        {/* Content */}
-        <div className="mt-10 border-t border-sage pt-10">
-          {hasBlocks ? (
-            <>
-              {post.content_blocks!.map((block, i) => (
-                <BlockRenderer key={i} block={block} />
-              ))}
-              <div style={{ clear: "both" }} />
-            </>
-          ) : post.content ? (
-            renderMarkdownContent(post.content)
-          ) : (
-            <p className="text-text-muted">No content available.</p>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="mt-16 border-t border-sage pt-8">
-          <Link
-            href="/blog"
-            className="inline-flex items-center gap-2 text-sm font-medium text-gold-dark transition-colors hover:text-gold"
-          >
-            <ArrowLeft size={16} />
-            Back to all posts
-          </Link>
+        <div className="mt-10">
+          {page.content_blocks.map((block, i) => (
+            <BlockRenderer key={i} block={block} />
+          ))}
+          {/* Clear floats */}
+          <div style={{ clear: "both" }} />
         </div>
       </article>
     </div>

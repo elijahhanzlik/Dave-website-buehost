@@ -7,6 +7,9 @@ export type AuthResult = AuthSuccess | AuthFailure;
 
 export async function requireAdmin(): Promise<AuthResult> {
   const supabase = await createClient();
+  if (!supabase) {
+    return { authorized: false, status: 503, error: "Supabase not configured" };
+  }
   const {
     data: { user },
     error,

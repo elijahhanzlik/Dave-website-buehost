@@ -6,6 +6,9 @@ import { z } from "zod";
 
 export async function GET() {
   const supabase = await createClient();
+  if (!supabase) {
+    return NextResponse.json([], { status: 200 });
+  }
   const { data, error } = await supabase
     .from("site_settings")
     .select("*")

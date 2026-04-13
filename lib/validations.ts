@@ -4,7 +4,12 @@ import { z } from "zod";
 export const artworkSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
-  images: z.array(z.string().url()).default([]),
+  images: z.array(z.string()).default([]),
+  image_crops: z.record(z.string(), z.object({
+    x: z.number(),
+    y: z.number(),
+    zoom: z.number(),
+  })).optional(),
   category: z.string().optional(),
   sort_order: z.number().int().default(0),
   is_featured: z.boolean().default(false),
@@ -20,7 +25,8 @@ export const blogPostSchema = z.object({
     .min(1, "Slug is required")
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Invalid slug format"),
   content: z.string().optional(),
-  cover_image: z.string().url().optional().or(z.literal("")),
+  content_blocks: z.array(contentBlockSchema).default([]),
+  cover_image: z.string().optional().or(z.literal("")),
   status: z.enum(["draft", "published"]).default("draft"),
   published_at: z.string().datetime().optional().nullable(),
 });

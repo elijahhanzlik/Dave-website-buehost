@@ -46,7 +46,7 @@ export default function BlogListPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-bold text-gray-900">Blog</h1>
+        <h1 className="text-2xl font-display font-bold text-gray-900">Blogs</h1>
         <Link
           href="/admin-panel/blog/new"
           className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-primary-dark transition-colors"

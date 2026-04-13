@@ -24,8 +24,7 @@ const ADMIN_BASE = "/admin-panel";
 const navItems = [
   { href: `${ADMIN_BASE}/dashboard`, label: "Dashboard", icon: LayoutDashboard },
   { href: `${ADMIN_BASE}/works`, label: "Works", icon: Image },
-  { href: `${ADMIN_BASE}/pages`, label: "Pages", icon: FileText },
-  { href: `${ADMIN_BASE}/blog`, label: "Blog", icon: BookOpen },
+  { href: `${ADMIN_BASE}/blog`, label: "Blogs", icon: BookOpen },
   { href: `${ADMIN_BASE}/inquiries`, label: "Inquiries", icon: MessageSquare },
   { href: `${ADMIN_BASE}/settings`, label: "Settings", icon: Settings },
 ];
@@ -42,7 +41,7 @@ export default function AdminNav({ unreadCount }: AdminNavProps) {
   const supabase = createClient();
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await supabase?.auth.signOut();
     router.push(`${ADMIN_BASE}/login`);
   };
 

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import ImageUploader from "@/components/ImageUploader";
+import ImageCropEditor, { DEFAULT_CROP } from "@/components/admin/ImageCropEditor";
+import type { CropSettings } from "@/components/admin/ImageCropEditor";
 
 interface WorkFormProps {
   initialData?: {
@@ -11,6 +13,7 @@ interface WorkFormProps {
     title: string;
     description: string | null;
     images: string[];
+    image_crops?: Record<string, CropSettings>;
     category: string | null;
     is_featured: boolean;
     sort_order: number;
@@ -27,11 +30,31 @@ export default function WorkForm({ initialData }: WorkFormProps) {
   );
   const [category, setCategory] = useState(initialData?.category ?? "");
   const [images, setImages] = useState<string[]>(initialData?.images ?? []);
+  const [imageCrops, setImageCrops] = useState<Record<string, CropSettings>>(
+    initialData?.image_crops ?? {},
+  );
   const [isFeatured, setIsFeatured] = useState(
     initialData?.is_featured ?? false,
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [editingCropIndex, setEditingCropIndex] = useState<number | null>(null);
+
+  const handleImagesChange = (newImages: string[]) => {
+    setImages(newImages);
+    // Initialize crop for new images
+    const updatedCrops = { ...imageCrops };
+    for (const img of newImages) {
+      if (!updatedCrops[img]) {
+        updatedCrops[img] = { ...DEFAULT_CROP };
+      }
+    }
+    setImageCrops(updatedCrops);
+  };
+
+  const updateCrop = (imageUrl: string, crop: CropSettings) => {
+    setImageCrops((prev) => ({ ...prev, [imageUrl]: crop }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +65,7 @@ export default function WorkForm({ initialData }: WorkFormProps) {
       title,
       description: description || undefined,
       images,
+      image_crops: imageCrops,
       category: category || undefined,
       is_featured: isFeatured,
     };
@@ -73,7 +97,7 @@ export default function WorkForm({ initialData }: WorkFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
+    <form onSubmit={handleSubmit} className="max-w-3xl space-y-6">
       {error && (
         <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm">
           {error}
@@ -122,8 +146,59 @@ export default function WorkForm({ initialData }: WorkFormProps) {
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Images
         </label>
-        <ImageUploader images={images} onChange={setImages} multiple />
+        <ImageUploader images={images} onChange={handleImagesChange} multiple />
       </div>
+
+      {/* Crop editor for each image */}
+      {images.length > 0 && (
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-gray-700">
+            Photo Crop & Position
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {images.map((img, i) => (
+              <button
+                key={img}
+                type="button"
+                onClick={() =>
+                  setEditingCropIndex(editingCropIndex === i ? null : i)
+                }
+                className={`relative w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
+                  editingCropIndex === i
+                    ? "border-primary ring-2 ring-primary/30"
+                    : "border-gray-200 hover:border-gray-400"
+                }`}
+              >
+                <img
+                  src={img}
+                  alt={`Image ${i + 1}`}
+                  className="w-full h-full object-cover"
+                  style={{
+                    objectPosition: imageCrops[img]
+                      ? `${imageCrops[img].x}% ${imageCrops[img].y}%`
+                      : "center",
+                  }}
+                />
+                <span className="absolute bottom-0 inset-x-0 bg-black/50 text-white text-[10px] text-center py-0.5">
+                  {editingCropIndex === i ? "Editing" : `Photo ${i + 1}`}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {editingCropIndex !== null && images[editingCropIndex] && (
+            <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
+              <ImageCropEditor
+                imageUrl={images[editingCropIndex]}
+                crop={imageCrops[images[editingCropIndex]] ?? DEFAULT_CROP}
+                onChange={(crop) => updateCrop(images[editingCropIndex], crop)}
+                aspectRatio={4 / 3}
+                label={`Crop Photo ${editingCropIndex + 1}`}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex items-center gap-2">
         <input
@@ -149,6 +224,11 @@ export default function WorkForm({ initialData }: WorkFormProps) {
               src={images[0]}
               alt={title}
               className="w-full max-h-48 object-cover rounded-lg mb-3"
+              style={{
+                objectPosition: imageCrops[images[0]]
+                  ? `${imageCrops[images[0]].x}% ${imageCrops[images[0]].y}%`
+                  : "center",
+              }}
             />
           )}
           <h3 className="font-display font-semibold text-lg">{title}</h3>

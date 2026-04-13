@@ -18,8 +18,18 @@ export default function ImageUploader({
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
 
+  const fileToDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const uploadFile = async (file: File): Promise<string | null> => {
     try {
+      // Try Supabase Storage upload
       const res = await fetch("/api/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -29,7 +39,11 @@ export default function ImageUploader({
         }),
       });
 
-      if (!res.ok) return null;
+      if (!res.ok) {
+        // Supabase Storage not available — fall back to data URL
+        return await fileToDataUrl(file);
+      }
+
       const { signedUrl, publicUrl } = await res.json();
 
       const uploadRes = await fetch(signedUrl, {
@@ -38,10 +52,18 @@ export default function ImageUploader({
         body: file,
       });
 
-      if (!uploadRes.ok) return null;
+      if (!uploadRes.ok) {
+        return await fileToDataUrl(file);
+      }
+
       return publicUrl;
     } catch {
-      return null;
+      // Network error or Supabase not configured — fall back to data URL
+      try {
+        return await fileToDataUrl(file);
+      } catch {
+        return null;
+      }
     }
   };
 
