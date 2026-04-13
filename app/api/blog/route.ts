@@ -5,6 +5,9 @@ import { blogPostSchema } from "@/lib/validations";
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
+  if (!supabase) {
+    return NextResponse.json([], { status: 200 });
+  }
   const showAll = request.nextUrl.searchParams.get("all") === "true";
 
   let query = supabase

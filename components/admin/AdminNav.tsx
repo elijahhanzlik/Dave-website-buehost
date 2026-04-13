@@ -42,7 +42,7 @@ export default function AdminNav({ unreadCount }: AdminNavProps) {
   const supabase = createClient();
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await supabase?.auth.signOut();
     router.push(`${ADMIN_BASE}/login`);
   };
 
