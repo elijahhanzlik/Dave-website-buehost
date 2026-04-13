@@ -3,11 +3,17 @@ import { ArrowLeft } from "lucide-react";
 import { formatDate } from "@/lib/formatters";
 import type { Metadata } from "next";
 
+interface ContentBlock {
+  type: "text" | "image" | "gallery" | "hero";
+  data: Record<string, unknown>;
+}
+
 interface BlogPost {
   id: string;
   title: string;
   slug: string;
   content: string | null;
+  content_blocks: ContentBlock[] | null;
   cover_image: string | null;
   status: string;
   published_at: string | null;
@@ -19,21 +25,16 @@ const PLACEHOLDER_POSTS: BlogPost[] = [
     id: "1",
     title: "Finding Beauty in the Canopy",
     slug: "finding-beauty-in-the-canopy",
-    content: `For years I climbed trees professionally — diagnosing disease, pruning limbs, assessing risk. But somewhere along the way, the clinical eye became an artistic one. I started noticing how light played through leaves at different times of day, how the architecture of branches created natural frames, and how the view from 60 feet up offered a perspective most people never experience.
-
-This shift didn't happen overnight. It was gradual, like the growth of the trees themselves. One day I brought a camera up into the canopy, and everything changed.
+    content: `For years I climbed trees professionally — diagnosing disease, pruning limbs, assessing risk. But somewhere along the way, the clinical eye became an artistic one.
 
 ## The View From Above
 
-There's something profound about seeing the world from a tree's perspective. The ground below becomes abstract — patches of color and texture. The sky above becomes intimate, filtered through thousands of leaves that each catch the light differently.
-
-As an arborist, I was trained to read trees — their health, their structure, their history. Now I read them for their beauty. The two aren't as different as you might think.
+There's something profound about seeing the world from a tree's perspective. The ground below becomes abstract — patches of color and texture.
 
 ## Where Science Meets Art
 
-Understanding how a tree grows gives you an appreciation for its form that goes beyond aesthetics. When you know that a particular branch angle indicates a strong attachment, or that the spiral grain in bark follows a mathematical pattern, you start to see trees as living sculptures shaped by physics, biology, and time.
-
-This knowledge doesn't diminish the beauty — it amplifies it. Every photograph I take is informed by years of understanding how these organisms work, grow, and respond to their environment.`,
+Understanding how a tree grows gives you an appreciation for its form that goes beyond aesthetics.`,
+    content_blocks: null,
     cover_image: null,
     status: "published",
     published_at: "2026-03-15T00:00:00Z",
@@ -43,19 +44,12 @@ This knowledge doesn't diminish the beauty — it amplifies it. Every photograph
     id: "2",
     title: "Boulder in Bloom",
     slug: "boulder-in-bloom",
-    content: `Spring in Boulder is an event. The Flatirons provide a dramatic backdrop as wildflowers carpet the meadows and fruit trees explode into blossom along the creek paths. For a photographer with a background in arboriculture, it's paradise.
-
-This spring I've been documenting the progression of bloom across different elevations — from the warm valleys near town to the last patches of snow in the high country. The timing is everything, and some years you have just days to catch a particular species at peak bloom.
+    content: `Spring in Boulder is an event. The Flatirons provide a dramatic backdrop as wildflowers carpet the meadows.
 
 ## Chasing the Bloom
 
-The front range creates a fascinating gradient. Down in Boulder proper, the ornamental cherries and crabapples bloom in early April. Drive twenty minutes into the foothills and you'll find wild plums just starting to open. Another thousand feet of elevation and the aspens are still leafless, waiting for warmer days.
-
-## The Arborist's Advantage
-
-My training as an arborist gives me a unique advantage when photographing trees in bloom. I can identify species at a glance, predict when they'll flower based on growing degree days, and find specimens that others might overlook.
-
-I know which old cottonwoods along Boulder Creek will release their cotton first, which slope catches the most morning sun, and where the last wild crabapple grove hides in the foothills.`,
+The front range creates a fascinating gradient. Down in Boulder proper, the ornamental cherries bloom in early April.`,
+    content_blocks: null,
     cover_image: null,
     status: "published",
     published_at: "2026-02-28T00:00:00Z",
@@ -65,21 +59,16 @@ I know which old cottonwoods along Boulder Creek will release their cotton first
     id: "3",
     title: "The Art of Seeing Slowly",
     slug: "the-art-of-seeing-slowly",
-    content: `In a world of fast scrolling and instant images, I've found that my best work comes from slowing down. Way down. Sometimes I'll spend an hour with a single tree, watching how the light changes, how the wind reveals different angles, how the shadows tell their own story.
-
-This practice of patient observation is something I carried over from my arborist days. When you're diagnosing a tree, you can't rush. You have to look at the whole picture — roots, trunk, canopy, and everything in between.
+    content: `In a world of fast scrolling and instant images, I've found that my best work comes from slowing down.
 
 ## The Patience Principle
 
-Photography rewards patience in a way few other art forms do. The difference between a good photograph and a great one is often just a matter of waiting — for the right light, the right moment, the right alignment of elements.
-
-Trees are the perfect subject for this kind of work. They don't move (much), but they're constantly changing. The play of light across bark, the movement of leaves in the wind, the slow arc of shadows throughout the day — all of these create an infinite variety of images from a single subject.
+Photography rewards patience in a way few other art forms do.
 
 ## Lessons From the Trees
 
-Trees have taught me more about art than any classroom or workshop. They've taught me about composition through their branching patterns, about color through their seasonal changes, and about patience through their imperceptible growth.
-
-Most importantly, they've taught me that beauty is everywhere, if you're willing to slow down enough to see it.`,
+Trees have taught me more about art than any classroom or workshop.`,
+    content_blocks: null,
     cover_image: null,
     status: "published",
     published_at: "2026-01-20T00:00:00Z",
@@ -91,6 +80,7 @@ async function getPost(slug: string): Promise<BlogPost | null> {
   try {
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();
+    if (!supabase) return PLACEHOLDER_POSTS.find((p) => p.slug === slug) ?? null;
     const { data } = await supabase
       .from("blog_posts")
       .select("*")
@@ -121,8 +111,9 @@ export async function generateMetadata({
   };
 }
 
-function renderContent(content: string) {
-  // Simple markdown-like rendering for paragraphs and headings
+type ImagePosition = { x: "left" | "center" | "right"; y: "top" | "middle" | "bottom" };
+
+function renderMarkdownContent(content: string) {
   const lines = content.split("\n");
   const elements: React.ReactNode[] = [];
   let currentParagraph: string[] = [];
@@ -144,24 +135,17 @@ function renderContent(content: string) {
 
   for (const line of lines) {
     const trimmed = line.trim();
-
     if (trimmed.startsWith("## ")) {
       flushParagraph();
       elements.push(
-        <h2
-          key={key++}
-          className="mt-10 mb-4 font-display text-2xl font-semibold text-primary-dark"
-        >
+        <h2 key={key++} className="mt-10 mb-4 font-display text-2xl font-semibold text-primary-dark">
           {trimmed.slice(3)}
         </h2>
       );
     } else if (trimmed.startsWith("# ")) {
       flushParagraph();
       elements.push(
-        <h2
-          key={key++}
-          className="mt-10 mb-4 font-display text-3xl font-bold text-primary-dark"
-        >
+        <h2 key={key++} className="mt-10 mb-4 font-display text-3xl font-bold text-primary-dark">
           {trimmed.slice(2)}
         </h2>
       );
@@ -174,6 +158,86 @@ function renderContent(content: string) {
 
   flushParagraph();
   return elements;
+}
+
+function BlockRenderer({ block }: { block: ContentBlock }) {
+  switch (block.type) {
+    case "text": {
+      const content = (block.data.content as string) ?? "";
+      if (!content.trim()) return null;
+      return <div>{renderMarkdownContent(content)}</div>;
+    }
+    case "image": {
+      const url = block.data.url as string;
+      const caption = block.data.caption as string;
+      const pos: ImagePosition = (block.data.position as ImagePosition) ?? {
+        x: "center",
+        y: "middle",
+      };
+
+      if (!url) return null;
+
+      let figureClass = "my-8";
+      const imgClass = "rounded-2xl";
+
+      if (pos.x === "left") {
+        figureClass = "float-left mr-8 mb-4 max-w-[50%]";
+      } else if (pos.x === "right") {
+        figureClass = "float-right ml-8 mb-4 max-w-[50%]";
+      } else {
+        figureClass = "my-8 mx-auto max-w-[80%]";
+      }
+
+      return (
+        <figure className={figureClass}>
+          <img src={url} alt={caption ?? ""} className={`w-full ${imgClass}`} />
+          {caption && (
+            <figcaption className="mt-2 text-center text-sm text-text-muted">
+              {caption}
+            </figcaption>
+          )}
+        </figure>
+      );
+    }
+    case "gallery": {
+      const images = (block.data.images as string[]) ?? [];
+      if (images.length === 0) return null;
+      return (
+        <div className="my-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
+          {images.map((url, i) => (
+            <img
+              key={i}
+              src={url}
+              alt={`Gallery image ${i + 1}`}
+              className="aspect-square w-full rounded-xl object-cover"
+            />
+          ))}
+        </div>
+      );
+    }
+    case "hero": {
+      const url = block.data.url as string;
+      const overlayText = block.data.overlay_text as string;
+      return (
+        <div className="relative my-8 overflow-hidden rounded-2xl">
+          {url ? (
+            <img src={url} alt="" className="h-64 w-full object-cover sm:h-80 md:h-96" />
+          ) : (
+            <div className="h-64 w-full bg-gradient-to-br from-primary via-primary-light to-primary-dark sm:h-80 md:h-96" />
+          )}
+          {overlayText && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+              <h2 className="font-display text-3xl font-bold text-white sm:text-4xl md:text-5xl">
+                {overlayText}
+              </h2>
+            </div>
+          )}
+        </div>
+      );
+    }
+    default:
+      return null;
+  }
 }
 
 export default async function BlogPostPage({
@@ -205,6 +269,8 @@ export default async function BlogPostPage({
       </div>
     );
   }
+
+  const hasBlocks = post.content_blocks && post.content_blocks.length > 0;
 
   return (
     <div className="pt-24 pb-20">
@@ -243,8 +309,15 @@ export default async function BlogPostPage({
 
         {/* Content */}
         <div className="mt-10 border-t border-sage pt-10">
-          {post.content ? (
-            renderContent(post.content)
+          {hasBlocks ? (
+            <>
+              {post.content_blocks!.map((block, i) => (
+                <BlockRenderer key={i} block={block} />
+              ))}
+              <div style={{ clear: "both" }} />
+            </>
+          ) : post.content ? (
+            renderMarkdownContent(post.content)
           ) : (
             <p className="text-text-muted">No content available.</p>
           )}

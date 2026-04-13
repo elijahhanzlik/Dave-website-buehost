@@ -20,7 +20,8 @@ export const blogPostSchema = z.object({
     .min(1, "Slug is required")
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Invalid slug format"),
   content: z.string().optional(),
-  cover_image: z.string().url().optional().or(z.literal("")),
+  content_blocks: z.array(contentBlockSchema).default([]),
+  cover_image: z.string().optional().or(z.literal("")),
   status: z.enum(["draft", "published"]).default("draft"),
   published_at: z.string().datetime().optional().nullable(),
 });
