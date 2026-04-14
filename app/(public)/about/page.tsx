@@ -71,7 +71,7 @@ export default async function AboutPage() {
       {/* Hero banner */}
       <div className="relative mx-auto max-w-7xl overflow-hidden rounded-b-3xl px-6 lg:px-8">
         <div className="relative overflow-hidden rounded-2xl">
-          <div className="h-64 w-full sm:h-80 md:h-96">
+          <div className="h-44 w-full sm:h-52 md:h-64">
             {about.banner ? (
               <img
                 src={about.banner}
