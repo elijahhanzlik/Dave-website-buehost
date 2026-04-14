@@ -190,7 +190,7 @@ export default function HomeClient({
       <section className="bg-primary-dark py-20 sm:py-28">
         <div className="mx-auto max-w-6xl px-6">
           <h2 className="font-display text-center text-3xl font-semibold text-cream sm:text-4xl md:text-5xl">
-            Featured
+            Featured Works
           </h2>
 
           <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-3">

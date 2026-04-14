@@ -104,7 +104,6 @@ async function getFeaturedArtworks(): Promise<FeaturedArtwork[]> {
     const { data } = await supabase
       .from("artworks")
       .select("id, title, images, category")
-      .eq("is_featured", true)
       .order("sort_order", { ascending: true })
       .limit(3);
 
