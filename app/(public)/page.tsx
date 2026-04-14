@@ -30,9 +30,9 @@ interface FeaturedArtwork {
 }
 
 const PLACEHOLDER_FEATURED: FeaturedArtwork[] = [
-  { id: "1", title: "Roots & Light", images: [], category: "Nature" },
-  { id: "2", title: "Canopy Heart", images: [], category: "Nature" },
-  { id: "3", title: "Boulder Golden Hour", images: [], category: "Landscape" },
+  { id: "1", title: "Roots & Light", images: ["https://picsum.photos/seed/roots-light/800/1000"], category: "Nature" },
+  { id: "2", title: "Canopy Heart", images: ["https://picsum.photos/seed/canopy-heart/800/1000"], category: "Nature" },
+  { id: "3", title: "Boulder Golden Hour", images: ["https://picsum.photos/seed/boulder-golden/800/1000"], category: "Landscape" },
 ];
 
 interface HeroSettings {
