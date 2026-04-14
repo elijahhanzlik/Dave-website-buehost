@@ -4,6 +4,9 @@ import { requireAdmin } from "@/lib/supabase/admin";
 import { siteSettingSchema } from "@/lib/validations";
 import { z } from "zod";
 
+// Allow large bodies for data URL images
+export const maxDuration = 30;
+
 export async function GET() {
   const supabase = await createClient();
   if (!supabase) {
@@ -25,36 +28,45 @@ const bulkSettingsSchema = z.object({
 });
 
 export async function PUT(request: NextRequest) {
-  const auth = await requireAdmin();
-  if (!auth.authorized) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  try {
+    const auth = await requireAdmin();
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
+    const body = await request.json();
+    const parsed = bulkSettingsSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: JSON.stringify(parsed.error.format?.() ?? parsed.error) },
+        { status: 400 },
+      );
+    }
+
+    // Upsert each setting individually so we can identify which fails
+    for (const setting of parsed.data.settings) {
+      const { error: upsertError } = await auth.supabase
+        .from("site_settings")
+        .upsert(
+          {
+            key: setting.key,
+            value: setting.value,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "key" },
+        );
+
+      if (upsertError) {
+        return NextResponse.json(
+          { error: `Failed to save "${setting.key}": ${upsertError.message}` },
+          { status: 500 },
+        );
+      }
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  const body = await request.json();
-  const parsed = bulkSettingsSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.flatten() },
-      { status: 400 },
-    );
-  }
-
-  const upserts = parsed.data.settings.map((setting) =>
-    auth.supabase.from("site_settings").upsert(
-      {
-        key: setting.key,
-        value: setting.value,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "key" },
-    ),
-  );
-
-  const results = await Promise.all(upserts);
-  const failed = results.find((r) => r.error);
-  if (failed?.error) {
-    return NextResponse.json({ error: failed.error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ success: true });
 }

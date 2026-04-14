@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+// ----- Shared -----
+export const contentBlockSchema = z.object({
+  type: z.string(),
+  data: z.record(z.string(), z.unknown()),
+});
+
 // ----- Artworks -----
 export const artworkSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -17,12 +23,6 @@ export const artworkSchema = z.object({
 
 export type ArtworkInput = z.infer<typeof artworkSchema>;
 
-// ----- Content Blocks -----
-export const contentBlockSchema = z.object({
-  type: z.string(),
-  data: z.record(z.string(), z.unknown()),
-});
-
 // ----- Blog Posts -----
 export const blogPostSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -32,7 +32,7 @@ export const blogPostSchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Invalid slug format"),
   content: z.string().optional(),
   content_blocks: z.array(contentBlockSchema).default([]),
-  cover_image: z.string().optional().or(z.literal("")),
+  cover_image: z.string().optional(),
   status: z.enum(["draft", "published"]).default("draft"),
   published_at: z.string().datetime().optional().nullable(),
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
@@ -17,7 +17,7 @@ interface FeaturedArtwork {
   id: string;
   title: string;
   images: string[];
-  category?: string | null;
+  category: string | null;
 }
 
 interface HeroCrop {
@@ -37,34 +37,38 @@ export default function HomeClient({
   heroCrop?: HeroCrop | null;
   featuredArtworks: FeaturedArtwork[];
 }) {
-  const [scrollY, setScrollY] = useState(0);
-  const heroRef = useRef<HTMLDivElement>(null);
+  const parallaxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function handleScroll() {
-      if (heroRef.current) {
-        const rect = heroRef.current.getBoundingClientRect();
-        if (rect.bottom > 0) {
-          setScrollY(window.scrollY);
-        }
+    let ticking = false;
+
+    function onScroll() {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          if (parallaxRef.current) {
+            const y = window.scrollY * 0.15;
+            parallaxRef.current.style.transform = `translate3d(0, ${y}px, 0)`;
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
     }
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
     <>
       {/* ===== HERO SECTION ===== */}
       <section
-        ref={heroRef}
         className="relative h-screen w-full overflow-hidden"
       >
-        {/* Hero background — placeholder gradient until real image is set */}
+        {/* Hero background with smooth parallax */}
         <div
-          className="absolute inset-0"
-          style={{ transform: `translateY(${scrollY * 0.35}px)` }}
+          ref={parallaxRef}
+          className="absolute inset-0 will-change-transform"
         >
           {heroImageUrl ? (
             <img
@@ -144,7 +148,7 @@ export default function HomeClient({
             className="mt-4 max-w-xl text-lg text-white/80 sm:text-xl animate-fade-in-up"
             style={{ animationDelay: "0.2s", opacity: 0 }}
           >
-            Creative &amp; Photographer &middot; Boulder, CO
+            Ceramicist &amp; Painter &middot; Boulder, CO
           </p>
 
           {/* CTA Buttons */}
@@ -154,7 +158,7 @@ export default function HomeClient({
           >
             <Link
               href="/works"
-              className="group inline-flex items-center gap-2 rounded-full bg-white/15 px-8 py-3.5 text-sm font-medium uppercase tracking-[0.12em] text-white backdrop-blur-md border border-white/25 transition-all duration-300 hover:bg-white/25 hover:border-white/40"
+              className="group inline-flex items-center gap-2 rounded-full bg-white/10 px-8 py-3.5 text-sm font-medium uppercase tracking-[0.12em] text-white backdrop-blur-md border-2 border-white/60 transition-all duration-300 hover:bg-white/20 hover:border-white/80"
             >
               View Gallery
               <ArrowRight
@@ -164,7 +168,7 @@ export default function HomeClient({
             </Link>
             <Link
               href="/about"
-              className="group inline-flex items-center gap-2 rounded-full bg-white/15 px-8 py-3.5 text-sm font-medium uppercase tracking-[0.12em] text-white backdrop-blur-md border border-white/25 transition-all duration-300 hover:bg-white/25 hover:border-white/40"
+              className="group inline-flex items-center gap-2 rounded-full bg-white/10 px-8 py-3.5 text-sm font-medium uppercase tracking-[0.12em] text-white backdrop-blur-md border-2 border-white/60 transition-all duration-300 hover:bg-white/20 hover:border-white/80"
             >
               About David
               <ArrowRight
@@ -186,14 +190,13 @@ export default function HomeClient({
         </div>
       </section>
 
-      {/* ===== FEATURED SECTION ===== */}
+      {/* ===== FEATURED WORKS ===== */}
       <section className="bg-primary-dark py-20 sm:py-28">
-        <div className="mx-auto max-w-6xl px-6">
-          <h2 className="font-display text-center text-3xl font-semibold text-cream sm:text-4xl md:text-5xl">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <h2 className="font-display text-center text-3xl font-semibold text-cream sm:text-4xl md:text-5xl mb-12">
             Featured Works
           </h2>
-
-          <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
             {featuredArtworks.map((artwork) => {
               const hasImage = artwork.images.length > 0;
               return (
@@ -202,7 +205,7 @@ export default function HomeClient({
                   href={`/works/${artwork.id}`}
                   className="group relative block overflow-hidden rounded-xl"
                 >
-                  <div className="aspect-[4/5] w-full overflow-hidden">
+                  <div className="aspect-[4/5] w-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary-dark/30">
                     {hasImage ? (
                       <img
                         src={artwork.images[0]}
@@ -210,9 +213,9 @@ export default function HomeClient({
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sage/40 to-primary/20">
+                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sage to-primary/10">
                         <svg
-                          className="h-16 w-16 text-cream/20"
+                          className="h-16 w-16 text-primary/20"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -227,8 +230,6 @@ export default function HomeClient({
                       </div>
                     )}
                   </div>
-
-                  {/* Hover overlay */}
                   <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                     <div className="w-full p-5">
                       <h3 className="font-display text-lg font-semibold text-white">
@@ -239,29 +240,18 @@ export default function HomeClient({
                       )}
                     </div>
                   </div>
-
-                  {/* Always-visible title on mobile */}
-                  <div className="mt-3 sm:hidden">
-                    <h3 className="font-display text-base font-medium text-cream">
-                      {artwork.title}
-                    </h3>
-                    {artwork.category && (
-                      <p className="text-sm text-cream/60">{artwork.category}</p>
-                    )}
-                  </div>
                 </Link>
               );
             })}
           </div>
-
           <div className="mt-10 text-center">
             <Link
               href="/works"
-              className="group inline-flex items-center gap-2 rounded-full border border-gold/50 bg-gold/20 px-8 py-3 text-sm font-medium uppercase tracking-[0.12em] text-gold-light transition-all duration-300 hover:bg-gold/30 hover:border-gold"
+              className="group inline-flex items-center gap-2 rounded-full border-2 border-cream/40 bg-cream/10 px-8 py-3.5 text-sm font-medium uppercase tracking-[0.12em] text-cream transition-all duration-300 hover:bg-cream/20 hover:border-cream/60"
             >
               View Full Gallery
               <ArrowRight
-                size={14}
+                size={16}
                 className="transition-transform group-hover:translate-x-1"
               />
             </Link>
@@ -288,10 +278,11 @@ export default function HomeClient({
                   About David
                 </h3>
                 <p className="mt-4 leading-relaxed text-white/75">
-                  Former certified arborist turned creative, David brings a
-                  unique perspective shaped by years working intimately with
-                  nature. Based in Boulder, Colorado, his work celebrates the
-                  organic beauty found in the world around us.
+                  Former certified arborist turned ceramicist and painter,
+                  David brings a unique perspective shaped by years working
+                  intimately with nature. Based in Boulder, Colorado, his
+                  work celebrates the organic beauty found in the world
+                  around us.
                 </p>
                 <Link
                   href="/about"

@@ -26,7 +26,7 @@ interface FeaturedArtwork {
   id: string;
   title: string;
   images: string[];
-  category?: string | null;
+  category: string | null;
 }
 
 const PLACEHOLDER_FEATURED: FeaturedArtwork[] = [
@@ -70,6 +70,24 @@ async function getHeroSettings(): Promise<HeroSettings> {
   return { imageUrl: null, crop: null };
 }
 
+async function getFeaturedArtworks(): Promise<FeaturedArtwork[]> {
+  try {
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+    if (!supabase) return PLACEHOLDER_FEATURED;
+    const { data } = await supabase
+      .from("artworks")
+      .select("id, title, images, category")
+      .order("sort_order", { ascending: true })
+      .limit(3);
+
+    if (data && data.length > 0) return data;
+  } catch {
+    // Supabase not configured
+  }
+  return PLACEHOLDER_FEATURED;
+}
+
 async function getLatestPosts() {
   try {
     const { createClient } = await import("@/lib/supabase/server");
@@ -94,24 +112,6 @@ async function getLatestPosts() {
     // Supabase not configured — use placeholders
   }
   return PLACEHOLDER_BLOG_POSTS;
-}
-
-async function getFeaturedArtworks(): Promise<FeaturedArtwork[]> {
-  try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    if (!supabase) return PLACEHOLDER_FEATURED;
-    const { data } = await supabase
-      .from("artworks")
-      .select("id, title, images, category")
-      .order("sort_order", { ascending: true })
-      .limit(3);
-
-    if (data && data.length > 0) return data;
-  } catch {
-    // Supabase not configured
-  }
-  return PLACEHOLDER_FEATURED;
 }
 
 export default async function HomePage() {

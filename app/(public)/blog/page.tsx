@@ -4,7 +4,7 @@ import { formatDate } from "@/lib/formatters";
 
 export const metadata: Metadata = {
   title: "Blog — David Schaldach",
-  description: "Thoughts on nature, photography, and the creative process from David Schaldach.",
+  description: "Thoughts on nature, art, and the creative process from David Schaldach.",
 };
 
 interface BlogPost {
@@ -82,7 +82,7 @@ export default async function BlogPage() {
           Blog
         </h1>
         <p className="mt-4 max-w-2xl text-lg text-text-secondary">
-          Thoughts on nature, photography, and the creative process.
+          Thoughts on nature, art, and the creative process.
         </p>
 
         {/* Blog grid */}

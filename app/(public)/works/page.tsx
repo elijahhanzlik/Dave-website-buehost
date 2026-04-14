@@ -100,10 +100,6 @@ export default async function WorksPage() {
         <h1 className="font-display text-4xl font-bold text-primary-dark sm:text-5xl">
           Gallery
         </h1>
-        <p className="mt-4 max-w-2xl text-lg text-text-secondary">
-          A collection of work spanning nature, landscape, and the organic
-          patterns that connect us to the living world.
-        </p>
 
         {/* Category filters */}
         {categories.length > 0 && (
