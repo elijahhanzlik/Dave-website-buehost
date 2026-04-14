@@ -13,6 +13,8 @@ import {
   LayoutGrid,
   Maximize2,
   Save,
+  Bold,
+  Palette,
 } from "lucide-react";
 import { slugify } from "@/lib/formatters";
 import ImageUploader from "@/components/ImageUploader";
@@ -302,16 +304,100 @@ function BlockEditor({
   onChange: (data: Record<string, unknown>) => void;
 }) {
   switch (block.type) {
-    case "text":
+    case "text": {
+      const fontSize = (block.data.fontSize as string) ?? "body";
+      const fontWeight = (block.data.fontWeight as string) ?? "normal";
+      const color = (block.data.color as string) ?? "";
+      const showColorPicker = (block.data._showColorPicker as boolean) ?? false;
+
+      const FONT_SIZES = [
+        { value: "title", label: "Title" },
+        { value: "subtitle", label: "Subtitle" },
+        { value: "body", label: "Body" },
+        { value: "small", label: "Small" },
+      ];
+
+      const COLORS = [
+        { value: "", label: "Default" },
+        { value: "#2D5016", label: "Forest Green" },
+        { value: "#1E3A0E", label: "Dark Green" },
+        { value: "#C4A265", label: "Gold" },
+        { value: "#4a4a4a", label: "Dark Gray" },
+        { value: "#8B4513", label: "Brown" },
+        { value: "#1a1a1a", label: "Black" },
+        { value: "#ffffff", label: "White" },
+      ];
+
+      const textSizeClass =
+        fontSize === "title" ? "text-2xl font-display" :
+        fontSize === "subtitle" ? "text-lg" :
+        fontSize === "small" ? "text-xs" : "text-sm";
+
       return (
-        <textarea
-          value={(block.data.content as string) ?? ""}
-          onChange={(e) => onChange({ ...block.data, content: e.target.value })}
-          rows={4}
-          placeholder="Enter text or markdown..."
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-        />
+        <div className="space-y-2">
+          <div className="flex items-center gap-1 flex-wrap">
+            <select
+              value={fontSize}
+              onChange={(e) => onChange({ ...block.data, fontSize: e.target.value })}
+              className="border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+            >
+              {FONT_SIZES.map((s) => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => onChange({ ...block.data, fontWeight: fontWeight === "bold" ? "normal" : "bold" })}
+              className={`p-1.5 rounded border text-xs ${fontWeight === "bold" ? "bg-primary text-white border-primary" : "border-gray-300 hover:bg-gray-50"}`}
+            >
+              <Bold size={14} />
+            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => onChange({ ...block.data, _showColorPicker: !showColorPicker })}
+                className={`p-1.5 rounded border text-xs flex items-center gap-1 ${showColorPicker ? "bg-gray-100 border-gray-400" : "border-gray-300 hover:bg-gray-50"}`}
+              >
+                <Palette size={14} />
+                {color && (
+                  <span
+                    className="w-3 h-3 rounded-full border border-gray-300"
+                    style={{ backgroundColor: color }}
+                  />
+                )}
+              </button>
+              {showColorPicker && (
+                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-10 flex gap-1.5 flex-wrap w-48">
+                  {COLORS.map((c) => (
+                    <button
+                      key={c.value}
+                      type="button"
+                      title={c.label}
+                      onClick={() => onChange({ ...block.data, color: c.value, _showColorPicker: false })}
+                      className={`w-7 h-7 rounded-full border-2 transition-transform hover:scale-110 ${color === c.value ? "border-primary ring-2 ring-primary/30" : "border-gray-200"}`}
+                      style={{ backgroundColor: c.value || "#e5e7eb" }}
+                    >
+                      {c.value === "" && <span className="text-[10px] text-gray-500">A</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <textarea
+            value={(block.data.content as string) ?? ""}
+            onChange={(e) => onChange({ ...block.data, content: e.target.value })}
+            rows={fontSize === "title" ? 2 : fontSize === "subtitle" ? 3 : 4}
+            placeholder={fontSize === "title" ? "Enter title..." : fontSize === "subtitle" ? "Enter subtitle..." : "Enter text or markdown..."}
+            className={`w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 ${textSizeClass}`}
+            style={{
+              fontWeight: fontWeight === "bold" ? "bold" : "normal",
+              color: color || undefined,
+            }}
+          />
+        </div>
       );
+    }
     case "image": {
       const imgPosition: ImagePosition = (block.data.position as ImagePosition) ?? {
         x: "center",
