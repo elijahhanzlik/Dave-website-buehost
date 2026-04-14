@@ -307,7 +307,7 @@ export default async function BlogPostPage({
 
   return (
     <div className="pt-24 pb-20">
-      <article className="mx-auto max-w-3xl px-6 lg:px-8">
+      <article className="mx-auto max-w-6xl px-6 lg:px-8">
         {/* Back link */}
         <Link
           href="/blog"
