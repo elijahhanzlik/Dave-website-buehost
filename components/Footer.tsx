@@ -16,7 +16,7 @@ export default function Footer() {
             <p className="mt-3 text-sm leading-relaxed text-text-secondary">
               He was a certified arborist, now he&apos;s branching out.
               <br />
-              Creative &amp; photographer based in Boulder, CO.
+              Painter &amp; ceramicist based in Boulder, CO.
             </p>
           </div>
 
