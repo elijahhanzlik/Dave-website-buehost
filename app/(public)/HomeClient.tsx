@@ -55,7 +55,7 @@ export default function HomeClient({
         {/* Hero background — placeholder gradient until real image is set */}
         <div
           className="absolute inset-0"
-          style={{ transform: `translateY(${scrollY * 0.35}px)` }}
+          style={{ transform: `translateY(${scrollY * 0.15}px)` }}
         >
           {heroImageUrl ? (
             <img
@@ -145,7 +145,7 @@ export default function HomeClient({
           >
             <Link
               href="/works"
-              className="group inline-flex items-center gap-2 rounded-full bg-white/15 px-8 py-3.5 text-sm font-medium uppercase tracking-[0.12em] text-white backdrop-blur-md border border-white/25 transition-all duration-300 hover:bg-white/25 hover:border-white/40"
+              className="group inline-flex items-center gap-2 rounded-full bg-primary/30 px-8 py-3.5 text-sm font-medium uppercase tracking-[0.12em] text-white backdrop-blur-md border border-primary/40 transition-all duration-300 hover:bg-primary/45 hover:border-primary/60"
             >
               View Gallery
               <ArrowRight
@@ -155,7 +155,7 @@ export default function HomeClient({
             </Link>
             <Link
               href="/about"
-              className="group inline-flex items-center gap-2 rounded-full bg-white/15 px-8 py-3.5 text-sm font-medium uppercase tracking-[0.12em] text-white backdrop-blur-md border border-white/25 transition-all duration-300 hover:bg-white/25 hover:border-white/40"
+              className="group inline-flex items-center gap-2 rounded-full bg-primary/30 px-8 py-3.5 text-sm font-medium uppercase tracking-[0.12em] text-white backdrop-blur-md border border-primary/40 transition-all duration-300 hover:bg-primary/45 hover:border-primary/60"
             >
               About David
               <ArrowRight
