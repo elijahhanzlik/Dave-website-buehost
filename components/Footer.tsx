@@ -66,14 +66,6 @@ export default function Footer() {
           <p className="text-xs text-text-muted">
             &copy; {new Date().getFullYear()} Davidschaldach.com. All rights reserved.
           </p>
-          <div className="flex gap-6 text-xs text-text-muted">
-            <Link href="#" className="transition-colors hover:text-text-secondary">
-              Privacy Policy
-            </Link>
-            <Link href="#" className="transition-colors hover:text-text-secondary">
-              Terms
-            </Link>
-          </div>
         </div>
       </div>
     </footer>
