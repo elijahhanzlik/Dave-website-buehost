@@ -50,8 +50,8 @@ export default function ContactPage() {
             {/* Decorative card */}
             <div className="mt-12 rounded-2xl bg-gradient-to-br from-primary to-primary-dark p-8">
               <p className="font-display text-xl italic text-cream/90">
-                &ldquo;Every great image starts with a conversation — between
-                the photographer and the world.&rdquo;
+                &ldquo;Every great piece starts with a conversation — between
+                the artist and the world.&rdquo;
               </p>
               <p className="mt-4 text-sm text-cream/60">— David Schaldach</p>
             </div>

@@ -57,6 +57,37 @@ async function getHeroSettings(): Promise<HeroSettings> {
   return { imageUrl: null, crop: null };
 }
 
+interface FeaturedArtwork {
+  id: string;
+  title: string;
+  images: string[];
+  category: string | null;
+}
+
+const PLACEHOLDER_ARTWORKS: FeaturedArtwork[] = [
+  { id: "1", title: "Roots & Light", images: [], category: "Nature" },
+  { id: "2", title: "Canopy Heart", images: [], category: "Nature" },
+  { id: "3", title: "Boulder Golden Hour", images: [], category: "Landscape" },
+];
+
+async function getFeaturedArtworks(): Promise<FeaturedArtwork[]> {
+  try {
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+    if (!supabase) return PLACEHOLDER_ARTWORKS;
+    const { data } = await supabase
+      .from("artworks")
+      .select("id, title, images, category")
+      .order("sort_order", { ascending: true })
+      .limit(3);
+
+    if (data && data.length > 0) return data;
+  } catch {
+    // Supabase not configured
+  }
+  return PLACEHOLDER_ARTWORKS;
+}
+
 async function getLatestPosts() {
   try {
     const { createClient } = await import("@/lib/supabase/server");
@@ -84,9 +115,10 @@ async function getLatestPosts() {
 }
 
 export default async function HomePage() {
-  const [latestPosts, hero] = await Promise.all([
+  const [latestPosts, hero, featuredArtworks] = await Promise.all([
     getLatestPosts(),
     getHeroSettings(),
+    getFeaturedArtworks(),
   ]);
 
   return (
@@ -94,6 +126,7 @@ export default async function HomePage() {
       latestPosts={latestPosts}
       heroImageUrl={hero.imageUrl}
       heroCrop={hero.crop}
+      featuredArtworks={featuredArtworks}
     />
   );
 }
