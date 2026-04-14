@@ -13,6 +13,7 @@ interface AboutSettings {
   location: string;
   background: string;
   focus: string;
+  banner: string | null;
 }
 
 async function getAboutSettings(): Promise<AboutSettings> {
@@ -23,6 +24,7 @@ async function getAboutSettings(): Promise<AboutSettings> {
     location: "Boulder, CO",
     background: "Certified Arborist",
     focus: "Ceramics & Painting",
+    banner: null,
   };
 
   try {
@@ -40,6 +42,7 @@ async function getAboutSettings(): Promise<AboutSettings> {
         "about_location",
         "about_background",
         "about_focus",
+        "about_banner",
       ]);
 
     if (data && data.length > 0) {
@@ -51,6 +54,7 @@ async function getAboutSettings(): Promise<AboutSettings> {
         location: get("about_location") || defaults.location,
         background: get("about_background") || defaults.background,
         focus: get("about_focus") || defaults.focus,
+        banner: get("about_banner"),
       };
     }
   } catch {
@@ -67,10 +71,21 @@ export default async function AboutPage() {
       {/* Hero banner */}
       <div className="relative mx-auto max-w-7xl overflow-hidden rounded-b-3xl px-6 lg:px-8">
         <div className="relative overflow-hidden rounded-2xl">
-          <div className="h-64 w-full bg-gradient-to-br from-primary via-primary-light to-primary-dark sm:h-80 md:h-96">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(196,162,101,0.15),transparent_50%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(245,240,232,0.1),transparent_50%)]" />
+          <div className="h-64 w-full sm:h-80 md:h-96">
+            {about.banner ? (
+              <img
+                src={about.banner}
+                alt="About banner"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="h-full w-full bg-gradient-to-br from-primary via-primary-light to-primary-dark">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(196,162,101,0.15),transparent_50%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(245,240,232,0.1),transparent_50%)]" />
+              </div>
+            )}
           </div>
+          <div className="absolute inset-0 bg-black/30" />
           <div className="absolute inset-0 flex items-center justify-center">
             <h1 className="font-display text-4xl font-bold text-white sm:text-5xl md:text-6xl">
               About David
