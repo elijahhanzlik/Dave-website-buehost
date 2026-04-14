@@ -7,7 +7,7 @@ const PLACEHOLDER_BLOG_POSTS = [
     title: "Finding Beauty in the Canopy",
     slug: "finding-beauty-in-the-canopy",
     excerpt:
-      "Exploring the intersection of arboriculture and visual art — how years spent among the trees shaped a new creative perspective.",
+      "Exploring the intersection of arboriculture and visual art — how years spent among the trees shaped a new studio artist's perspective.",
     cover_image: null,
     published_at: "2026-03-15T00:00:00Z",
   },

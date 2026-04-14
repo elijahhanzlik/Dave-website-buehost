@@ -16,7 +16,7 @@ export default function Footer() {
             <p className="mt-3 text-sm leading-relaxed text-text-secondary">
               He was a certified arborist, now he&apos;s branching out.
               <br />
-              Creative &amp; photographer based in Boulder, CO.
+              Studio artist based in Boulder, CO.
             </p>
           </div>
 
@@ -29,6 +29,7 @@ export default function Footer() {
               {[
                 { href: "/works", label: "Gallery" },
                 { href: "/about", label: "About" },
+                { href: "/exhibits", label: "Exhibits" },
                 { href: "/blog", label: "Blog" },
                 { href: "/contact", label: "Contact" },
               ].map((link) => (

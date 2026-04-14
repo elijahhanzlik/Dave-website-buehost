@@ -135,7 +135,7 @@ export default function HomeClient({
             className="mt-4 max-w-xl text-lg text-white/80 sm:text-xl animate-fade-in-up"
             style={{ animationDelay: "0.2s", opacity: 0 }}
           >
-            Creative &amp; Photographer &middot; Boulder, CO
+            Studio Artist &middot; Boulder, CO
           </p>
 
           {/* CTA Buttons */}
@@ -188,8 +188,8 @@ export default function HomeClient({
           </p>
           <p className="mt-6 text-base leading-relaxed text-cream/60 sm:text-lg">
             From the canopy to the canvas — David Schaldach brings an
-            arborist&apos;s eye for natural beauty to his creative work.
-            Every image is rooted in the patterns, textures, and quiet
+            arborist&apos;s eye for natural beauty to his work as a studio artist.
+            Every piece is rooted in the patterns, textures, and quiet
             drama of the living world.
           </p>
         </div>
@@ -214,7 +214,7 @@ export default function HomeClient({
                   About David
                 </h3>
                 <p className="mt-4 leading-relaxed text-white/75">
-                  Former certified arborist turned creative, David brings a
+                  Former certified arborist turned studio artist, David brings a
                   unique perspective shaped by years working intimately with
                   nature. Based in Boulder, Colorado, his work celebrates the
                   organic beauty found in the world around us.

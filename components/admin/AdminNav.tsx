@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
+  Landmark,
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -25,6 +26,7 @@ const navItems = [
   { href: `${ADMIN_BASE}/dashboard`, label: "Dashboard", icon: LayoutDashboard },
   { href: `${ADMIN_BASE}/works`, label: "Works", icon: Image },
   { href: `${ADMIN_BASE}/blog`, label: "Blogs", icon: BookOpen },
+  { href: `${ADMIN_BASE}/exhibits`, label: "Exhibits", icon: Landmark },
   { href: `${ADMIN_BASE}/inquiries`, label: "Inquiries", icon: MessageSquare },
   { href: `${ADMIN_BASE}/settings`, label: "Settings", icon: Settings },
 ];
