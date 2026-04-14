@@ -403,6 +403,11 @@ function BlockEditor({
   block: ContentBlock;
   onChange: (data: Record<string, unknown>) => void;
 }) {
+  const imgPosition: ImagePosition = (block.data.position as ImagePosition) ?? {
+    x: "center",
+    y: "middle",
+  };
+
   switch (block.type) {
     case "text":
       return (
@@ -414,11 +419,7 @@ function BlockEditor({
           className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
         />
       );
-    case "image": {
-      const imgPosition: ImagePosition = (block.data.position as ImagePosition) ?? {
-        x: "center",
-        y: "middle",
-      };
+    case "image":
       return (
         <div className="space-y-3">
           <ImageUploader
@@ -446,7 +447,6 @@ function BlockEditor({
           />
         </div>
       );
-    }
     case "gallery":
       return (
         <ImageUploader
@@ -482,6 +482,25 @@ function BlockEditor({
 }
 
 function BlockPreview({ block }: { block: ContentBlock }) {
+  const pos = (block.data.position as ImagePosition) ?? {
+    x: "center",
+    y: "middle",
+  };
+
+  let floatStyle: React.CSSProperties = {};
+  let figureClass = "rounded-lg max-w-[50%]";
+
+  if (pos.x === "left") {
+    floatStyle = { float: "left", marginRight: "1rem", marginBottom: "0.5rem" };
+  } else if (pos.x === "right") {
+    floatStyle = { float: "right", marginLeft: "1rem", marginBottom: "0.5rem" };
+  } else {
+    floatStyle = { display: "block", margin: "0 auto" };
+    figureClass = "rounded-lg max-w-[70%]";
+  }
+
+  const galleryImages = (block.data.images as string[]) ?? [];
+
   switch (block.type) {
     case "text":
       return (
@@ -491,24 +510,7 @@ function BlockPreview({ block }: { block: ContentBlock }) {
           )}
         </div>
       );
-    case "image": {
-      const pos = (block.data.position as ImagePosition) ?? {
-        x: "center",
-        y: "middle",
-      };
-
-      let floatStyle: React.CSSProperties = {};
-      let figureClass = "rounded-lg max-w-[50%]";
-
-      if (pos.x === "left") {
-        floatStyle = { float: "left", marginRight: "1rem", marginBottom: "0.5rem" };
-      } else if (pos.x === "right") {
-        floatStyle = { float: "right", marginLeft: "1rem", marginBottom: "0.5rem" };
-      } else {
-        floatStyle = { display: "block", margin: "0 auto" };
-        figureClass = "rounded-lg max-w-[70%]";
-      }
-
+    case "image":
       return (
         <figure style={floatStyle} className={figureClass}>
           {block.data.url ? (
@@ -529,12 +531,10 @@ function BlockPreview({ block }: { block: ContentBlock }) {
           )}
         </figure>
       );
-    }
-    case "gallery": {
-      const images = (block.data.images as string[]) ?? [];
-      return images.length > 0 ? (
+    case "gallery":
+      return galleryImages.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {images.map((url, i) => (
+          {galleryImages.map((url, i) => (
             <img
               key={i}
               src={url}
@@ -546,7 +546,6 @@ function BlockPreview({ block }: { block: ContentBlock }) {
       ) : (
         <div className="text-sm text-gray-300 italic">Empty gallery</div>
       );
-    }
     case "hero":
       return (
         <div className="relative rounded-lg overflow-hidden">

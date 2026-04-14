@@ -301,6 +301,11 @@ function BlockEditor({
   block: ContentBlock;
   onChange: (data: Record<string, unknown>) => void;
 }) {
+  const imgPosition: ImagePosition = (block.data.position as ImagePosition) ?? {
+    x: "center",
+    y: "middle",
+  };
+
   switch (block.type) {
     case "text":
       return (
@@ -312,11 +317,7 @@ function BlockEditor({
           className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
         />
       );
-    case "image": {
-      const imgPosition: ImagePosition = (block.data.position as ImagePosition) ?? {
-        x: "center",
-        y: "middle",
-      };
+    case "image":
       return (
         <div className="space-y-3">
           <ImageUploader
@@ -344,7 +345,6 @@ function BlockEditor({
           />
         </div>
       );
-    }
     case "gallery":
       return (
         <ImageUploader
