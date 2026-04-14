@@ -7,7 +7,26 @@ export const metadata: Metadata = {
   description: "Get in touch with David Schaldach. Based in Boulder, CO.",
 };
 
-export default function ContactPage() {
+async function getContactPhoto(): Promise<string | null> {
+  try {
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+    if (!supabase) return null;
+
+    const { data } = await supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", "contact_photo")
+      .single();
+
+    return data?.value || null;
+  } catch {
+    return null;
+  }
+}
+
+export default async function ContactPage() {
+  const contactPhoto = await getContactPhoto();
   return (
     <div className="pt-24 pb-20">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -47,14 +66,24 @@ export default function ContactPage() {
               </div>
             </div>
 
-            {/* Decorative card */}
-            <div className="mt-12 rounded-2xl bg-gradient-to-br from-primary to-primary-dark p-8">
-              <p className="font-display text-xl italic text-cream/90">
-                &ldquo;Every great piece starts with a conversation — between
-                the artist and the world.&rdquo;
-              </p>
-              <p className="mt-4 text-sm text-cream/60">— David Schaldach</p>
-            </div>
+            {/* Photo or decorative card */}
+            {contactPhoto ? (
+              <div className="mt-12 overflow-hidden rounded-2xl">
+                <img
+                  src={contactPhoto}
+                  alt="David Schaldach"
+                  className="w-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="mt-12 rounded-2xl bg-gradient-to-br from-primary to-primary-dark p-8">
+                <p className="font-display text-xl italic text-cream/90">
+                  &ldquo;Every great piece starts with a conversation — between
+                  the artist and the world.&rdquo;
+                </p>
+                <p className="mt-4 text-sm text-cream/60">— David Schaldach</p>
+              </div>
+            )}
           </div>
 
           {/* Right column — form */}

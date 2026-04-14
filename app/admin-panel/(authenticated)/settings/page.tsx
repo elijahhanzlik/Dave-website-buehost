@@ -36,6 +36,9 @@ export default function SettingsPage() {
   // About banner state
   const [aboutBanner, setAboutBanner] = useState<string[]>([]);
 
+  // Contact photo state
+  const [contactPhoto, setContactPhoto] = useState<string[]>([]);
+
   useEffect(() => {
     fetch("/api/settings")
       .then((r) => r.json())
@@ -70,6 +73,12 @@ export default function SettingsPage() {
           if (aboutBannerSetting && aboutBannerSetting.value) {
             setAboutBanner([aboutBannerSetting.value]);
           }
+
+          // Load contact photo from settings
+          const contactPhotoSetting = existing.find((s) => s.key === "contact_photo");
+          if (contactPhotoSetting && contactPhotoSetting.value) {
+            setContactPhoto([contactPhotoSetting.value]);
+          }
         }
       })
       .finally(() => setLoading(false));
@@ -92,7 +101,7 @@ export default function SettingsPage() {
   const handleSave = async () => {
     // Merge hero settings into the settings list
     const allSettings = settings.filter(
-      (s) => s.key.trim() !== "" && s.key !== "hero_image" && s.key !== "hero_crop" && s.key !== "about_banner",
+      (s) => s.key.trim() !== "" && s.key !== "hero_image" && s.key !== "hero_crop" && s.key !== "about_banner" && s.key !== "contact_photo",
     );
     if (heroImage[0]) {
       allSettings.push({ key: "hero_image", value: heroImage[0] });
@@ -103,6 +112,9 @@ export default function SettingsPage() {
     });
     if (aboutBanner[0]) {
       allSettings.push({ key: "about_banner", value: aboutBanner[0] });
+    }
+    if (contactPhoto[0]) {
+      allSettings.push({ key: "contact_photo", value: contactPhoto[0] });
     }
 
     setSaving(true);
@@ -152,7 +164,7 @@ export default function SettingsPage() {
 
   // Filter out hero keys from the general settings display
   const generalSettings = settings.filter(
-    (s) => s.key !== "hero_image" && s.key !== "hero_crop" && s.key !== "about_banner",
+    (s) => s.key !== "hero_image" && s.key !== "hero_crop" && s.key !== "about_banner" && s.key !== "contact_photo",
   );
 
   return (
@@ -219,6 +231,22 @@ export default function SettingsPage() {
         <ImageUploader
           images={aboutBanner}
           onChange={setAboutBanner}
+          multiple={false}
+        />
+      </div>
+
+      {/* ===== CONTACT PHOTO SECTION ===== */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+        <h2 className="text-lg font-display font-semibold text-gray-900">
+          Contact Page Photo
+        </h2>
+        <p className="text-sm text-gray-500">
+          Photo displayed on the Contact page. Replaces the default quote card.
+        </p>
+
+        <ImageUploader
+          images={contactPhoto}
+          onChange={setContactPhoto}
           multiple={false}
         />
       </div>
