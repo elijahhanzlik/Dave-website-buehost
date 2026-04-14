@@ -513,50 +513,101 @@ function BlockEditor({
         x: "center",
         y: "middle",
       };
-      const imgSize = (block.data.size as string) ?? "large";
-      const IMG_SIZES = [
-        { value: "small", label: "Small (33%)" },
-        { value: "medium", label: "Medium (50%)" },
-        { value: "large", label: "Large (80%)" },
-        { value: "full", label: "Full width" },
-      ];
+      const widthPct = (block.data.widthPct as number) ?? 50;
+      const hasUrl = typeof block.data.url === "string" && block.data.url !== "";
+
       return (
         <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <label className="text-xs font-medium text-gray-500">Size</label>
-            <select
-              value={imgSize}
-              onChange={(e) => onChange({ ...block.data, size: e.target.value })}
-              className="border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
-            >
-              {IMG_SIZES.map((s) => (
-                <option key={s.value} value={s.value}>{s.label}</option>
-              ))}
-            </select>
-          </div>
-          <ImageUploader
-            images={block.data.url ? [block.data.url as string] : []}
-            onChange={(imgs) =>
-              onChange({ ...block.data, url: imgs[0] ?? "" })
-            }
-            multiple={false}
-          />
-          {typeof block.data.url === "string" && block.data.url !== "" && (
-            <ImagePositionPicker
-              imageUrl={block.data.url as string}
-              position={imgPosition}
-              onChange={(pos) => onChange({ ...block.data, position: pos })}
+          {!hasUrl && (
+            <ImageUploader
+              images={[]}
+              onChange={(imgs) =>
+                onChange({ ...block.data, url: imgs[0] ?? "" })
+              }
+              multiple={false}
             />
           )}
-          <input
-            type="text"
-            value={(block.data.caption as string) ?? ""}
-            onChange={(e) =>
-              onChange({ ...block.data, caption: e.target.value })
-            }
-            placeholder="Caption (optional)"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-          />
+
+          {hasUrl && (
+            <>
+              {/* Live resize preview */}
+              <div className="relative border border-gray-200 rounded-lg p-3 bg-white overflow-hidden" style={{ minHeight: 120 }}>
+                <figure
+                  style={{
+                    float: imgPosition.x === "left" ? "left" : imgPosition.x === "right" ? "right" : undefined,
+                    display: imgPosition.x === "center" ? "block" : undefined,
+                    width: `${widthPct}%`,
+                    margin: imgPosition.x === "left" ? "0 1rem 0.5rem 0" : imgPosition.x === "right" ? "0 0 0.5rem 1rem" : "0 auto 1rem",
+                  }}
+                >
+                  <img
+                    src={block.data.url as string}
+                    alt={(block.data.caption as string) ?? ""}
+                    className="w-full rounded-lg"
+                  />
+                  {block.data.caption && (
+                    <figcaption className="text-[10px] text-gray-400 mt-1 text-center">
+                      {block.data.caption as string}
+                    </figcaption>
+                  )}
+                </figure>
+                {imgPosition.x !== "center" && (
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+                  </p>
+                )}
+                <div style={{ clear: "both" }} />
+              </div>
+
+              {/* Controls */}
+              <div className="flex items-center gap-3">
+                <label className="text-xs font-medium text-gray-500 shrink-0">Width</label>
+                <input
+                  type="range"
+                  min="20"
+                  max="100"
+                  step="5"
+                  value={widthPct}
+                  onChange={(e) => onChange({ ...block.data, widthPct: parseInt(e.target.value) })}
+                  className="flex-1 accent-primary"
+                />
+                <span className="text-xs text-gray-500 w-10 text-right">{widthPct}%</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-medium text-gray-500">Position</label>
+                {(["left", "center", "right"] as const).map((pos) => (
+                  <button
+                    key={pos}
+                    type="button"
+                    onClick={() => onChange({ ...block.data, position: { ...imgPosition, x: pos } })}
+                    className={`px-3 py-1 rounded border text-xs capitalize ${imgPosition.x === pos ? "bg-primary text-white border-primary" : "border-gray-300 hover:bg-gray-50"}`}
+                  >
+                    {pos}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={(block.data.caption as string) ?? ""}
+                  onChange={(e) =>
+                    onChange({ ...block.data, caption: e.target.value })
+                  }
+                  placeholder="Caption (optional)"
+                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...block.data, url: "" })}
+                  className="text-xs text-red-500 hover:text-red-700 shrink-0"
+                >
+                  Remove
+                </button>
+              </div>
+            </>
+          )}
         </div>
       );
     }
@@ -707,18 +758,17 @@ function BlockPreview({ block }: { block: ContentBlock }) {
         x: "center",
         y: "middle",
       };
-      const size = (block.data.size as string) ?? "large";
-      const sizePercent = size === "small" ? "33%" : size === "medium" ? "50%" : size === "full" ? "100%" : "80%";
+      const widthPct = (block.data.widthPct as number) ?? 50;
 
       let floatStyle: React.CSSProperties = {};
-      let figureClass = "rounded-lg";
+      const figureClass = "rounded-lg";
 
       if (pos.x === "left") {
-        floatStyle = { float: "left", marginRight: "1rem", marginBottom: "0.5rem", maxWidth: sizePercent };
+        floatStyle = { float: "left", marginRight: "1rem", marginBottom: "0.5rem", width: `${widthPct}%` };
       } else if (pos.x === "right") {
-        floatStyle = { float: "right", marginLeft: "1rem", marginBottom: "0.5rem", maxWidth: sizePercent };
+        floatStyle = { float: "right", marginLeft: "1rem", marginBottom: "0.5rem", width: `${widthPct}%` };
       } else {
-        floatStyle = { display: "block", margin: "0 auto", maxWidth: sizePercent };
+        floatStyle = { display: "block", margin: "0 auto", width: `${widthPct}%` };
       }
 
       return (

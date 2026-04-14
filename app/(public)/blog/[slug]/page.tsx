@@ -207,8 +207,7 @@ function BlockRenderer({ block }: { block: ContentBlock }) {
         x: "center",
         y: "middle",
       };
-      const size = (block.data.size as string) ?? "large";
-      const sizePercent = size === "small" ? "33%" : size === "medium" ? "50%" : size === "full" ? "100%" : "80%";
+      const widthPct = (block.data.widthPct as number) ?? 50;
 
       if (!url) return null;
 
@@ -216,15 +215,15 @@ function BlockRenderer({ block }: { block: ContentBlock }) {
       const imgClass = "rounded-2xl";
 
       if (pos.x === "left") {
-        figureStyle = { float: "left", marginRight: "2rem", marginBottom: "1rem", maxWidth: sizePercent };
+        figureStyle = { float: "left", marginRight: "2rem", marginBottom: "1rem", width: `${widthPct}%` };
       } else if (pos.x === "right") {
-        figureStyle = { float: "right", marginLeft: "2rem", marginBottom: "1rem", maxWidth: sizePercent };
+        figureStyle = { float: "right", marginLeft: "2rem", marginBottom: "1rem", width: `${widthPct}%` };
       } else {
-        figureStyle = { display: "block", margin: "2rem auto", maxWidth: sizePercent };
+        figureStyle = { display: "block", margin: "2rem auto", width: `${widthPct}%` };
       }
 
       return (
-        <figure className="my-8" style={figureStyle}>
+        <figure style={figureStyle}>
           <img src={url} alt={caption ?? ""} className={`w-full ${imgClass}`} />
           {caption && (
             <figcaption className="mt-2 text-center text-sm text-text-muted">
