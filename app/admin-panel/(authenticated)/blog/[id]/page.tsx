@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Plus,
@@ -481,24 +481,15 @@ function LiveTextBlock({
         </div>
       )}
 
-      {/* Editable text — styled to match public output */}
-      {isSelected ? (
-        <textarea
-          value={content}
-          onChange={(e) => onChange({ ...block.data, content: e.target.value })}
-          rows={fontSize === "title" ? 2 : fontSize === "subtitle" ? 2 : 4}
-          placeholder={fontSize === "title" ? "Title..." : fontSize === "subtitle" ? "Subtitle..." : "Start writing..."}
-          className={`w-full bg-transparent border border-dashed border-gray-200 rounded-lg px-2 py-1 outline-none resize-y ${wrapperClass}`}
-          style={{ fontWeight: fontWeight === "bold" ? "bold" : "normal", color: color || undefined }}
-        />
-      ) : (
-        <Tag
-          className={`${wrapperClass} cursor-text min-h-[1.5em]`}
-          style={{ fontWeight: fontWeight === "bold" ? "bold" : "normal", color: color || undefined, whiteSpace: "pre-wrap" }}
-        >
-          {content || <span className="text-gray-300 italic">Click to edit...</span>}
-        </Tag>
-      )}
+      {/* Inline editable text — always looks like final output */}
+      <EditableText
+        tag={Tag}
+        value={content}
+        onChange={(val) => onChange({ ...block.data, content: val })}
+        className={`${wrapperClass} outline-none min-h-[1.5em]`}
+        style={{ fontWeight: fontWeight === "bold" ? "bold" : "normal", color: color || undefined, whiteSpace: "pre-wrap" }}
+        placeholder={fontSize === "title" ? "Title..." : fontSize === "subtitle" ? "Subtitle..." : "Start writing..."}
+      />
     </div>
   );
 }
@@ -720,5 +711,62 @@ function LiveHeroBlock({
         </div>
       )}
     </div>
+  );
+}
+
+/* ----- EDITABLE TEXT (contentEditable wrapper) ----- */
+function EditableText({
+  tag: Tag,
+  value,
+  onChange,
+  className,
+  style,
+  placeholder,
+}: {
+  tag: string;
+  value: string;
+  onChange: (val: string) => void;
+  className?: string;
+  style?: React.CSSProperties;
+  placeholder?: string;
+}) {
+  const ref = useRef<HTMLElement>(null);
+  const lastValue = useRef(value);
+
+  useEffect(() => {
+    if (ref.current && value !== lastValue.current) {
+      ref.current.innerText = value;
+      lastValue.current = value;
+    }
+  }, [value]);
+
+  useEffect(() => {
+    if (ref.current && !ref.current.innerText && value) {
+      ref.current.innerText = value;
+    }
+  }, [value]);
+
+  const handleInput = () => {
+    if (ref.current) {
+      const text = ref.current.innerText;
+      lastValue.current = text;
+      onChange(text);
+    }
+  };
+
+  const isEmpty = !value;
+
+  return (
+    // @ts-expect-error dynamic tag with ref
+    <Tag
+      ref={ref}
+      contentEditable
+      suppressContentEditableWarning
+      onInput={handleInput}
+      onBlur={handleInput}
+      className={`${className} ${isEmpty ? "before:content-[attr(data-placeholder)] before:text-gray-300 before:pointer-events-none" : ""}`}
+      style={style}
+      data-placeholder={placeholder}
+    />
   );
 }
