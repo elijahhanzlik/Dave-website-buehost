@@ -13,6 +13,13 @@ interface BlogPost {
   published_at: string;
 }
 
+interface FeaturedArtwork {
+  id: string;
+  title: string;
+  images: string[];
+  category?: string | null;
+}
+
 interface HeroCrop {
   x: number;
   y: number;
@@ -23,10 +30,12 @@ export default function HomeClient({
   latestPosts,
   heroImageUrl,
   heroCrop,
+  featuredArtworks,
 }: {
   latestPosts: BlogPost[];
   heroImageUrl?: string | null;
   heroCrop?: HeroCrop | null;
+  featuredArtworks: FeaturedArtwork[];
 }) {
   const [scrollY, setScrollY] = useState(0);
   const heroRef = useRef<HTMLDivElement>(null);
@@ -177,21 +186,86 @@ export default function HomeClient({
         </div>
       </section>
 
-      {/* ===== WELCOME SECTION ===== */}
+      {/* ===== FEATURED SECTION ===== */}
       <section className="bg-primary-dark py-20 sm:py-28">
-        <div className="mx-auto max-w-3xl px-6 text-center">
-          <h2 className="font-display text-3xl font-semibold text-cream sm:text-4xl md:text-5xl">
-            Welcome
+        <div className="mx-auto max-w-6xl px-6">
+          <h2 className="font-display text-center text-3xl font-semibold text-cream sm:text-4xl md:text-5xl">
+            Featured
           </h2>
-          <p className="mt-6 font-display text-xl italic leading-relaxed text-cream/80 sm:text-2xl">
-            &ldquo;He was a certified arborist, now he&apos;s branching out.&rdquo;
-          </p>
-          <p className="mt-6 text-base leading-relaxed text-cream/60 sm:text-lg">
-            From the canopy to the canvas — David Schaldach brings an
-            arborist&apos;s eye for natural beauty to his creative work.
-            Every image is rooted in the patterns, textures, and quiet
-            drama of the living world.
-          </p>
+
+          <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-3">
+            {featuredArtworks.map((artwork) => {
+              const hasImage = artwork.images.length > 0;
+              return (
+                <Link
+                  key={artwork.id}
+                  href={`/works/${artwork.id}`}
+                  className="group relative block overflow-hidden rounded-xl"
+                >
+                  <div className="aspect-[4/5] w-full overflow-hidden">
+                    {hasImage ? (
+                      <img
+                        src={artwork.images[0]}
+                        alt={artwork.title}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sage/40 to-primary/20">
+                        <svg
+                          className="h-16 w-16 text-cream/20"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={1}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                    <div className="w-full p-5">
+                      <h3 className="font-display text-lg font-semibold text-white">
+                        {artwork.title}
+                      </h3>
+                      {artwork.category && (
+                        <p className="mt-1 text-sm text-white/70">{artwork.category}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Always-visible title on mobile */}
+                  <div className="mt-3 sm:hidden">
+                    <h3 className="font-display text-base font-medium text-cream">
+                      {artwork.title}
+                    </h3>
+                    {artwork.category && (
+                      <p className="text-sm text-cream/60">{artwork.category}</p>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+
+          <div className="mt-10 text-center">
+            <Link
+              href="/works"
+              className="group inline-flex items-center gap-2 rounded-full border border-gold/50 bg-gold/20 px-8 py-3 text-sm font-medium uppercase tracking-[0.12em] text-gold-light transition-all duration-300 hover:bg-gold/30 hover:border-gold"
+            >
+              View Full Gallery
+              <ArrowRight
+                size={14}
+                className="transition-transform group-hover:translate-x-1"
+              />
+            </Link>
+          </div>
         </div>
       </section>
 
