@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
@@ -28,34 +28,38 @@ export default function HomeClient({
   heroImageUrl?: string | null;
   heroCrop?: HeroCrop | null;
 }) {
-  const [scrollY, setScrollY] = useState(0);
-  const heroRef = useRef<HTMLDivElement>(null);
+  const parallaxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function handleScroll() {
-      if (heroRef.current) {
-        const rect = heroRef.current.getBoundingClientRect();
-        if (rect.bottom > 0) {
-          setScrollY(window.scrollY);
-        }
+    let ticking = false;
+
+    function onScroll() {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          if (parallaxRef.current) {
+            const y = window.scrollY * 0.15;
+            parallaxRef.current.style.transform = `translate3d(0, ${y}px, 0)`;
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
     }
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
     <>
       {/* ===== HERO SECTION ===== */}
       <section
-        ref={heroRef}
         className="relative h-screen w-full overflow-hidden"
       >
-        {/* Hero background — placeholder gradient until real image is set */}
+        {/* Hero background with smooth parallax */}
         <div
-          className="absolute inset-0"
-          style={{ transform: `translateY(${scrollY * 0.15}px)` }}
+          ref={parallaxRef}
+          className="absolute inset-0 will-change-transform"
         >
           {heroImageUrl ? (
             <img
@@ -145,7 +149,7 @@ export default function HomeClient({
           >
             <Link
               href="/works"
-              className="group inline-flex items-center gap-2 rounded-full bg-primary/30 px-8 py-3.5 text-sm font-medium uppercase tracking-[0.12em] text-white backdrop-blur-md border border-primary/40 transition-all duration-300 hover:bg-primary/45 hover:border-primary/60"
+              className="group inline-flex items-center gap-2 rounded-full bg-white/10 px-8 py-3.5 text-sm font-medium uppercase tracking-[0.12em] text-white backdrop-blur-md border-2 border-white/60 transition-all duration-300 hover:bg-white/20 hover:border-white/80"
             >
               View Gallery
               <ArrowRight
@@ -155,7 +159,7 @@ export default function HomeClient({
             </Link>
             <Link
               href="/about"
-              className="group inline-flex items-center gap-2 rounded-full bg-primary/30 px-8 py-3.5 text-sm font-medium uppercase tracking-[0.12em] text-white backdrop-blur-md border border-primary/40 transition-all duration-300 hover:bg-primary/45 hover:border-primary/60"
+              className="group inline-flex items-center gap-2 rounded-full bg-white/10 px-8 py-3.5 text-sm font-medium uppercase tracking-[0.12em] text-white backdrop-blur-md border-2 border-white/60 transition-all duration-300 hover:bg-white/20 hover:border-white/80"
             >
               About David
               <ArrowRight
