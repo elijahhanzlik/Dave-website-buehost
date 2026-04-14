@@ -52,7 +52,7 @@ function emptyBlockData(type: BlockType): Record<string, unknown> {
     case "image":
       return { url: "", caption: "", position: { x: "center", y: "middle" } };
     case "gallery":
-      return { images: [] };
+      return { images: [], columns: 3 };
     case "hero":
       return { url: "", overlay_text: "" };
   }
@@ -513,8 +513,27 @@ function BlockEditor({
         x: "center",
         y: "middle",
       };
+      const imgSize = (block.data.size as string) ?? "large";
+      const IMG_SIZES = [
+        { value: "small", label: "Small (33%)" },
+        { value: "medium", label: "Medium (50%)" },
+        { value: "large", label: "Large (80%)" },
+        { value: "full", label: "Full width" },
+      ];
       return (
         <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <label className="text-xs font-medium text-gray-500">Size</label>
+            <select
+              value={imgSize}
+              onChange={(e) => onChange({ ...block.data, size: e.target.value })}
+              className="border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+            >
+              {IMG_SIZES.map((s) => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+          </div>
           <ImageUploader
             images={block.data.url ? [block.data.url as string] : []}
             onChange={(imgs) =>
@@ -541,14 +560,98 @@ function BlockEditor({
         </div>
       );
     }
-    case "gallery":
+    case "gallery": {
+      const galleryImages = (block.data.images as string[]) ?? [];
+      const columns = (block.data.columns as number) ?? 3;
+
+      const moveImage = (from: number, to: number) => {
+        if (to < 0 || to >= galleryImages.length) return;
+        const newImages = [...galleryImages];
+        const [moved] = newImages.splice(from, 1);
+        newImages.splice(to, 0, moved);
+        onChange({ ...block.data, images: newImages });
+      };
+
+      const removeImage = (index: number) => {
+        onChange({ ...block.data, images: galleryImages.filter((_, i) => i !== index) });
+      };
+
       return (
-        <ImageUploader
-          images={(block.data.images as string[]) ?? []}
-          onChange={(imgs) => onChange({ ...block.data, images: imgs })}
-          multiple
-        />
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <label className="text-xs font-medium text-gray-500">Columns</label>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => onChange({ ...block.data, columns: n })}
+                  className={`w-8 h-8 rounded border text-xs font-medium ${columns === n ? "bg-primary text-white border-primary" : "border-gray-300 hover:bg-gray-50"}`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <ImageUploader
+            images={galleryImages}
+            onChange={(imgs) => onChange({ ...block.data, images: imgs })}
+            multiple
+          />
+
+          {galleryImages.length > 1 && (
+            <div className="space-y-1">
+              <p className="text-xs text-gray-500">Reorder images</p>
+              <div className="flex flex-wrap gap-2">
+                {galleryImages.map((url, i) => (
+                  <div key={url} className="relative group">
+                    <img src={url} alt={`${i + 1}`} className="w-16 h-16 object-cover rounded border border-gray-200" />
+                    <div className="absolute inset-0 flex items-center justify-between px-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={() => moveImage(i, i - 1)}
+                        disabled={i === 0}
+                        className="bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] disabled:opacity-30"
+                      >
+                        ←
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeImage(i)}
+                        className="bg-red-500/80 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px]"
+                      >
+                        ×
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveImage(i, i + 1)}
+                        disabled={i === galleryImages.length - 1}
+                        className="bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] disabled:opacity-30"
+                      >
+                        →
+                      </button>
+                    </div>
+                    <span className="absolute bottom-0 right-0 bg-black/60 text-white text-[9px] px-1 rounded-tl">
+                      {i + 1}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Preview */}
+          {galleryImages.length > 0 && (
+            <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
+              {galleryImages.map((url, i) => (
+                <img key={i} src={url} alt={`Preview ${i + 1}`} className="w-full aspect-square object-cover rounded-lg" />
+              ))}
+            </div>
+          )}
+        </div>
       );
+    }
     case "hero":
       return (
         <div className="space-y-3">
@@ -604,17 +707,18 @@ function BlockPreview({ block }: { block: ContentBlock }) {
         x: "center",
         y: "middle",
       };
+      const size = (block.data.size as string) ?? "large";
+      const sizePercent = size === "small" ? "33%" : size === "medium" ? "50%" : size === "full" ? "100%" : "80%";
 
       let floatStyle: React.CSSProperties = {};
-      let figureClass = "rounded-lg max-w-[50%]";
+      let figureClass = "rounded-lg";
 
       if (pos.x === "left") {
-        floatStyle = { float: "left", marginRight: "1rem", marginBottom: "0.5rem" };
+        floatStyle = { float: "left", marginRight: "1rem", marginBottom: "0.5rem", maxWidth: sizePercent };
       } else if (pos.x === "right") {
-        floatStyle = { float: "right", marginLeft: "1rem", marginBottom: "0.5rem" };
+        floatStyle = { float: "right", marginLeft: "1rem", marginBottom: "0.5rem", maxWidth: sizePercent };
       } else {
-        floatStyle = { display: "block", margin: "0 auto" };
-        figureClass = "rounded-lg max-w-[70%]";
+        floatStyle = { display: "block", margin: "0 auto", maxWidth: sizePercent };
       }
 
       return (
@@ -640,8 +744,9 @@ function BlockPreview({ block }: { block: ContentBlock }) {
     }
     case "gallery": {
       const images = (block.data.images as string[]) ?? [];
+      const cols = (block.data.columns as number) ?? 3;
       return images.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
           {images.map((url, i) => (
             <img
               key={i}

@@ -207,22 +207,24 @@ function BlockRenderer({ block }: { block: ContentBlock }) {
         x: "center",
         y: "middle",
       };
+      const size = (block.data.size as string) ?? "large";
+      const sizePercent = size === "small" ? "33%" : size === "medium" ? "50%" : size === "full" ? "100%" : "80%";
 
       if (!url) return null;
 
-      let figureClass = "my-8";
+      let figureStyle: React.CSSProperties = {};
       const imgClass = "rounded-2xl";
 
       if (pos.x === "left") {
-        figureClass = "float-left mr-8 mb-4 max-w-[50%]";
+        figureStyle = { float: "left", marginRight: "2rem", marginBottom: "1rem", maxWidth: sizePercent };
       } else if (pos.x === "right") {
-        figureClass = "float-right ml-8 mb-4 max-w-[50%]";
+        figureStyle = { float: "right", marginLeft: "2rem", marginBottom: "1rem", maxWidth: sizePercent };
       } else {
-        figureClass = "my-8 mx-auto max-w-[80%]";
+        figureStyle = { display: "block", margin: "2rem auto", maxWidth: sizePercent };
       }
 
       return (
-        <figure className={figureClass}>
+        <figure className="my-8" style={figureStyle}>
           <img src={url} alt={caption ?? ""} className={`w-full ${imgClass}`} />
           {caption && (
             <figcaption className="mt-2 text-center text-sm text-text-muted">
@@ -234,9 +236,10 @@ function BlockRenderer({ block }: { block: ContentBlock }) {
     }
     case "gallery": {
       const images = (block.data.images as string[]) ?? [];
+      const cols = (block.data.columns as number) ?? 3;
       if (images.length === 0) return null;
       return (
-        <div className="my-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <div className="my-8 grid gap-4" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
           {images.map((url, i) => (
             <img
               key={i}
