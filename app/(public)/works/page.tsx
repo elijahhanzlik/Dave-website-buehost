@@ -121,9 +121,9 @@ export default async function WorksPage() {
 
       {/* Gallery grid */}
       <div className="mx-auto mt-12 max-w-7xl px-6 lg:px-8">
-        <div className="columns-1 gap-6 sm:columns-2 lg:columns-3">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {artworks.map((artwork) => (
-            <div key={artwork.id} className="mb-6 break-inside-avoid">
+            <div key={artwork.id}>
               <ArtworkCard artwork={artwork} />
             </div>
           ))}
