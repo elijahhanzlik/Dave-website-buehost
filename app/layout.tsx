@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "David Schaldach — Portfolio",
   description:
-    "Portfolio of David Schaldach — ceramicist and painter based in Boulder, CO.",
+    "Portfolio of David Schaldach — studio artist based in Boulder, CO.",
 };
 
 export default function RootLayout({

@@ -148,7 +148,7 @@ export default function HomeClient({
             className="mt-4 max-w-xl text-lg text-white/80 sm:text-xl animate-fade-in-up"
             style={{ animationDelay: "0.2s", opacity: 0 }}
           >
-            Ceramicist &amp; Painter &middot; Boulder, CO
+            Studio Artist &middot; Boulder, CO
           </p>
 
           {/* CTA Buttons */}
@@ -278,11 +278,10 @@ export default function HomeClient({
                   About David
                 </h3>
                 <p className="mt-4 leading-relaxed text-white/75">
-                  Former certified arborist turned ceramicist and painter,
-                  David brings a unique perspective shaped by years working
-                  intimately with nature. Based in Boulder, Colorado, his
-                  work celebrates the organic beauty found in the world
-                  around us.
+                  Former certified arborist turned studio artist, David brings a
+                  unique perspective shaped by years working intimately with
+                  nature. Based in Boulder, Colorado, his work celebrates the
+                  organic beauty found in the world around us.
                 </p>
                 <Link
                   href="/about"
