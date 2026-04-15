@@ -11,7 +11,7 @@ export default function ExhibitsPage() {
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         {/* Hero banner */}
         <div className="relative overflow-hidden rounded-2xl">
-          <div className="h-64 w-full bg-gradient-to-br from-primary via-primary-light to-primary-dark sm:h-80">
+          <div className="h-44 w-full bg-gradient-to-br from-primary via-primary-light to-primary-dark sm:h-52 md:h-64">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(196,162,101,0.15),transparent_50%)]" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(245,240,232,0.1),transparent_50%)]" />
           </div>

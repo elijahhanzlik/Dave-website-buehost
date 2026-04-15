@@ -23,7 +23,7 @@ async function getAboutSettings(): Promise<AboutSettings> {
     tagline: null,
     location: "Boulder, CO",
     background: "Certified Arborist",
-    focus: "Ceramics & Painting",
+    focus: "Studio Art",
     banner: null,
   };
 
