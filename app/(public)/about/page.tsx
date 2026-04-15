@@ -10,6 +10,7 @@ async function getAboutContent() {
   try {
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();
+    if (!supabase) return null;
 
     // Try pages table first
     const { data: page } = await supabase

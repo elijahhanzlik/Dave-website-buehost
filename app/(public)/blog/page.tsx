@@ -58,6 +58,7 @@ async function getBlogPosts(): Promise<BlogPost[]> {
   try {
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();
+    if (!supabase) return PLACEHOLDER_POSTS;
     const { data } = await supabase
       .from("blog_posts")
       .select("*")
