@@ -33,6 +33,12 @@ export default function SettingsPage() {
   const [heroImage, setHeroImage] = useState<string[]>([]);
   const [heroCrop, setHeroCrop] = useState<CropSettings>(DEFAULT_CROP);
 
+  // About banner state
+  const [aboutBanner, setAboutBanner] = useState<string[]>([]);
+
+  // Contact photo state
+  const [contactPhoto, setContactPhoto] = useState<string[]>([]);
+
   useEffect(() => {
     fetch("/api/settings")
       .then((r) => r.json())
@@ -61,6 +67,18 @@ export default function SettingsPage() {
               // ignore
             }
           }
+
+          // Load about banner from settings
+          const aboutBannerSetting = existing.find((s) => s.key === "about_banner");
+          if (aboutBannerSetting && aboutBannerSetting.value) {
+            setAboutBanner([aboutBannerSetting.value]);
+          }
+
+          // Load contact photo from settings
+          const contactPhotoSetting = existing.find((s) => s.key === "contact_photo");
+          if (contactPhotoSetting && contactPhotoSetting.value) {
+            setContactPhoto([contactPhotoSetting.value]);
+          }
         }
       })
       .finally(() => setLoading(false));
@@ -83,7 +101,7 @@ export default function SettingsPage() {
   const handleSave = async () => {
     // Merge hero settings into the settings list
     const allSettings = settings.filter(
-      (s) => s.key.trim() !== "" && s.key !== "hero_image" && s.key !== "hero_crop",
+      (s) => s.key.trim() !== "" && s.key !== "hero_image" && s.key !== "hero_crop" && s.key !== "about_banner" && s.key !== "contact_photo",
     );
     if (heroImage[0]) {
       allSettings.push({ key: "hero_image", value: heroImage[0] });
@@ -92,6 +110,12 @@ export default function SettingsPage() {
       key: "hero_crop",
       value: JSON.stringify(heroCrop),
     });
+    if (aboutBanner[0]) {
+      allSettings.push({ key: "about_banner", value: aboutBanner[0] });
+    }
+    if (contactPhoto[0]) {
+      allSettings.push({ key: "contact_photo", value: contactPhoto[0] });
+    }
 
     setSaving(true);
     setError("");
@@ -105,8 +129,20 @@ export default function SettingsPage() {
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error?.toString() ?? "Failed to save");
+        let msg = `Failed to save (${res.status})`;
+        try {
+          const text = await res.text();
+          try {
+            const data = JSON.parse(text);
+            msg = data.error?.toString() ?? msg;
+          } catch {
+            // Show first 200 chars of non-JSON response for debugging
+            msg = `Server error (${res.status}): ${text.slice(0, 200)}`;
+          }
+        } catch {
+          // couldn't read response
+        }
+        throw new Error(msg);
       }
 
       setSaved(true);
@@ -128,7 +164,7 @@ export default function SettingsPage() {
 
   // Filter out hero keys from the general settings display
   const generalSettings = settings.filter(
-    (s) => s.key !== "hero_image" && s.key !== "hero_crop",
+    (s) => s.key !== "hero_image" && s.key !== "hero_crop" && s.key !== "about_banner" && s.key !== "contact_photo",
   );
 
   return (
@@ -181,6 +217,38 @@ export default function SettingsPage() {
             label="Position & Zoom"
           />
         )}
+      </div>
+
+      {/* ===== ABOUT BANNER IMAGE SECTION ===== */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+        <h2 className="text-lg font-display font-semibold text-gray-900">
+          About Page Banner
+        </h2>
+        <p className="text-sm text-gray-500">
+          Background image for the &ldquo;About David&rdquo; hero banner on the About page.
+        </p>
+
+        <ImageUploader
+          images={aboutBanner}
+          onChange={setAboutBanner}
+          multiple={false}
+        />
+      </div>
+
+      {/* ===== CONTACT PHOTO SECTION ===== */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+        <h2 className="text-lg font-display font-semibold text-gray-900">
+          Contact Page Photo
+        </h2>
+        <p className="text-sm text-gray-500">
+          Photo displayed on the Contact page. Replaces the default quote card.
+        </p>
+
+        <ImageUploader
+          images={contactPhoto}
+          onChange={setContactPhoto}
+          multiple={false}
+        />
       </div>
 
       {/* ===== GENERAL SETTINGS ===== */}

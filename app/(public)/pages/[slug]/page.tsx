@@ -101,7 +101,39 @@ function BlockRenderer({ block }: { block: ContentBlock }) {
     case "text": {
       const content = (block.data.content as string) ?? "";
       if (!content.trim()) return null;
-      return <div>{renderTextBlock(content)}</div>;
+      const fs = (block.data.fontSize as string) ?? "body";
+      const fw = (block.data.fontWeight as string) ?? "normal";
+      const clr = block.data.color as string;
+
+      if (fs === "title") {
+        return (
+          <h2
+            className="mt-10 mb-4 font-display text-3xl text-primary-dark"
+            style={{ fontWeight: fw === "bold" ? "bold" : 600, color: clr || undefined }}
+          >
+            {content}
+          </h2>
+        );
+      }
+      if (fs === "subtitle") {
+        return (
+          <h3
+            className="mt-8 mb-3 font-display text-xl text-primary-dark"
+            style={{ fontWeight: fw === "bold" ? "bold" : 500, color: clr || undefined }}
+          >
+            {content}
+          </h3>
+        );
+      }
+      const sizeClass = fs === "small" ? "text-sm" : "text-lg";
+      return (
+        <div
+          className={`mb-6 leading-relaxed text-text-secondary whitespace-pre-wrap ${sizeClass}`}
+          style={{ fontWeight: fw === "bold" ? "bold" : "normal", color: clr || undefined }}
+        >
+          {content}
+        </div>
+      );
     }
     case "image": {
       const url = block.data.url as string;

@@ -165,7 +165,40 @@ function BlockRenderer({ block }: { block: ContentBlock }) {
     case "text": {
       const content = (block.data.content as string) ?? "";
       if (!content.trim()) return null;
-      return <div>{renderMarkdownContent(content)}</div>;
+      const fs = (block.data.fontSize as string) ?? "body";
+      const fw = (block.data.fontWeight as string) ?? "normal";
+      const clr = block.data.color as string;
+
+      if (fs === "title") {
+        return (
+          <h2
+            className="mt-10 mb-4 font-display text-3xl text-primary-dark"
+            style={{ fontWeight: fw === "bold" ? "bold" : 600, color: clr || undefined }}
+          >
+            {content}
+          </h2>
+        );
+      }
+      if (fs === "subtitle") {
+        return (
+          <h3
+            className="mt-8 mb-3 font-display text-xl text-primary-dark"
+            style={{ fontWeight: fw === "bold" ? "bold" : 500, color: clr || undefined }}
+          >
+            {content}
+          </h3>
+        );
+      }
+      // body or small
+      const sizeClass = fs === "small" ? "text-sm" : "text-lg";
+      return (
+        <div
+          className={`mb-6 leading-relaxed text-text-secondary whitespace-pre-wrap ${sizeClass}`}
+          style={{ fontWeight: fw === "bold" ? "bold" : "normal", color: clr || undefined }}
+        >
+          {content}
+        </div>
+      );
     }
     case "image": {
       const url = block.data.url as string;
@@ -174,22 +207,23 @@ function BlockRenderer({ block }: { block: ContentBlock }) {
         x: "center",
         y: "middle",
       };
+      const widthPct = (block.data.widthPct as number) ?? 50;
 
       if (!url) return null;
 
-      let figureClass = "my-8";
+      let figureStyle: React.CSSProperties = {};
       const imgClass = "rounded-2xl";
 
       if (pos.x === "left") {
-        figureClass = "float-left mr-8 mb-4 max-w-[50%]";
+        figureStyle = { float: "left", marginRight: "2rem", marginBottom: "1rem", width: `${widthPct}%` };
       } else if (pos.x === "right") {
-        figureClass = "float-right ml-8 mb-4 max-w-[50%]";
+        figureStyle = { float: "right", marginLeft: "2rem", marginBottom: "1rem", width: `${widthPct}%` };
       } else {
-        figureClass = "my-8 mx-auto max-w-[80%]";
+        figureStyle = { display: "block", margin: "2rem auto", width: `${widthPct}%` };
       }
 
       return (
-        <figure className={figureClass}>
+        <figure style={figureStyle}>
           <img src={url} alt={caption ?? ""} className={`w-full ${imgClass}`} />
           {caption && (
             <figcaption className="mt-2 text-center text-sm text-text-muted">
@@ -201,9 +235,10 @@ function BlockRenderer({ block }: { block: ContentBlock }) {
     }
     case "gallery": {
       const images = (block.data.images as string[]) ?? [];
+      const cols = (block.data.columns as number) ?? 3;
       if (images.length === 0) return null;
       return (
-        <div className="my-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <div className="my-8 grid gap-4" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
           {images.map((url, i) => (
             <img
               key={i}
@@ -274,7 +309,7 @@ export default async function BlogPostPage({
 
   return (
     <div className="pt-24 pb-20">
-      <article className="mx-auto max-w-3xl px-6 lg:px-8">
+      <article className="mx-auto max-w-6xl px-6 lg:px-8">
         {/* Back link */}
         <Link
           href="/blog"

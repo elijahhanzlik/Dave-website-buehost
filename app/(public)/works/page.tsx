@@ -15,7 +15,7 @@ const PLACEHOLDER_ARTWORKS: Artwork[] = [
     id: "1",
     title: "Roots & Light",
     description: "Morning light filtering through ancient banyan roots.",
-    images: [],
+    images: ["https://picsum.photos/seed/roots-light/800/1000"],
     category: "Nature",
     sort_order: 0,
     is_featured: true,
@@ -24,7 +24,7 @@ const PLACEHOLDER_ARTWORKS: Artwork[] = [
     id: "2",
     title: "Canopy Heart",
     description: "The heart-shaped silhouette formed by intertwining branches.",
-    images: [],
+    images: ["https://picsum.photos/seed/canopy-heart/800/1000"],
     category: "Nature",
     sort_order: 1,
     is_featured: true,
@@ -33,7 +33,7 @@ const PLACEHOLDER_ARTWORKS: Artwork[] = [
     id: "3",
     title: "Boulder Golden Hour",
     description: "The Flatirons bathed in warm golden light at sunset.",
-    images: [],
+    images: ["https://picsum.photos/seed/boulder-golden/800/1000"],
     category: "Landscape",
     sort_order: 2,
     is_featured: false,
@@ -42,7 +42,7 @@ const PLACEHOLDER_ARTWORKS: Artwork[] = [
     id: "4",
     title: "Bark Textures",
     description: "Close-up study of Ponderosa pine bark patterns.",
-    images: [],
+    images: ["https://picsum.photos/seed/bark-textures/800/1000"],
     category: "Macro",
     sort_order: 3,
     is_featured: false,
@@ -51,7 +51,7 @@ const PLACEHOLDER_ARTWORKS: Artwork[] = [
     id: "5",
     title: "Forest Floor",
     description: "Mosses and ferns creating a miniature landscape.",
-    images: [],
+    images: ["https://picsum.photos/seed/forest-floor/800/1000"],
     category: "Nature",
     sort_order: 4,
     is_featured: false,
@@ -60,7 +60,7 @@ const PLACEHOLDER_ARTWORKS: Artwork[] = [
     id: "6",
     title: "Mountain Stream",
     description: "Water flowing over smooth river stones in Bear Canyon.",
-    images: [],
+    images: ["https://picsum.photos/seed/mountain-stream/800/1000"],
     category: "Landscape",
     sort_order: 5,
     is_featured: false,
@@ -100,10 +100,6 @@ export default async function WorksPage() {
         <h1 className="font-display text-4xl font-bold text-primary-dark sm:text-5xl">
           Gallery
         </h1>
-        <p className="mt-4 max-w-2xl text-lg text-text-secondary">
-          A collection of work spanning nature, landscape, and the organic
-          patterns that connect us to the living world.
-        </p>
 
         {/* Category filters */}
         {categories.length > 0 && (
@@ -125,7 +121,7 @@ export default async function WorksPage() {
 
       {/* Gallery grid */}
       <div className="mx-auto mt-12 max-w-7xl px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
           {artworks.map((artwork) => (
             <div key={artwork.id}>
               <ArtworkCard artwork={artwork} />
