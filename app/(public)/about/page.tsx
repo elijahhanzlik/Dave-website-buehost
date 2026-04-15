@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "About — David Schaldach",
   description:
-    "Learn about David Schaldach — former certified arborist turned creative and photographer, based in Boulder, CO.",
+    "Learn about David Schaldach — former certified arborist turned creative and studio artist, based in Boulder, CO.",
 };
 
 async function getAboutContent() {
@@ -65,19 +65,19 @@ export default async function AboutPage() {
           ) : (
             <>
               <p>
-                David Schaldach is a creative and photographer based in Boulder,
-                Colorado. Before picking up a camera, he spent years as a
+                David Schaldach is a creative and studio artist based in Boulder,
+                Colorado. Before stepping into the studio, he spent years as a
                 certified arborist — climbing into canopies, diagnosing root
                 systems, and learning to see the world from the perspective of
                 the trees themselves.
               </p>
               <p>
                 That intimate relationship with nature didn&apos;t end when he
-                traded his climbing harness for a camera. It became the
-                foundation. Every image David creates is informed by years of
-                studying organic patterns, light filtering through leaves, the
-                architecture of branches, and the quiet drama of growth and
-                decay.
+                traded his climbing harness for clay and glaze. It became the
+                foundation. Every piece David creates is informed by years of
+                studying organic patterns, the architecture of branches, and
+                the quiet drama of growth and decay — now shaped by hand
+                through ceramics, sculpture, and studio work.
               </p>
 
               <blockquote className="border-l-4 border-gold pl-6 font-display text-xl italic text-primary">
@@ -94,7 +94,7 @@ export default async function AboutPage() {
                 heart-shaped silhouette a tree canopy makes against the sky.
               </p>
               <p>
-                When he&apos;s not behind the lens, you&apos;ll find David on
+                When he&apos;s not in the studio, you&apos;ll find David on
                 the trails around Boulder, probably looking up at the trees.
               </p>
             </>
@@ -114,7 +114,7 @@ export default async function AboutPage() {
             },
             {
               label: "Focus",
-              value: "Nature & Landscape",
+              value: "Studio Art",
             },
           ].map((item) => (
             <div
