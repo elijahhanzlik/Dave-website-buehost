@@ -79,6 +79,7 @@ async function getAllArtworks(): Promise<Artwork[]> {
   try {
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();
+    if (!supabase) return PLACEHOLDER_ARTWORKS;
     const { data } = await supabase
       .from("artworks")
       .select("*")

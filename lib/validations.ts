@@ -17,6 +17,12 @@ export const artworkSchema = z.object({
 
 export type ArtworkInput = z.infer<typeof artworkSchema>;
 
+// ----- Content Blocks (shared) -----
+export const contentBlockSchema = z.object({
+  type: z.string(),
+  data: z.record(z.string(), z.unknown()),
+});
+
 // ----- Blog Posts -----
 export const blogPostSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -34,11 +40,6 @@ export const blogPostSchema = z.object({
 export type BlogPostInput = z.infer<typeof blogPostSchema>;
 
 // ----- Pages -----
-export const contentBlockSchema = z.object({
-  type: z.string(),
-  data: z.record(z.string(), z.unknown()),
-});
-
 export const pageSchema = z.object({
   slug: z
     .string()
