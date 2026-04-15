@@ -41,7 +41,7 @@ export default function ExhibitsPage() {
               </svg>
             </div>
             <h2 className="font-display text-2xl font-semibold text-primary-dark sm:text-3xl">
-              Under Construction
+              Page is Under Construction
             </h2>
             <p className="mt-4 text-lg text-text-secondary">
               Come back April 21st!
