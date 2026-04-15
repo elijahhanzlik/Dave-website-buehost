@@ -63,7 +63,7 @@ export default function HomeClient({
     <>
       {/* ===== HERO SECTION ===== */}
       <section
-        className="relative h-screen w-full overflow-hidden"
+        className="relative h-screen w-full overflow-hidden bg-primary-dark"
       >
         {/* Hero background with smooth parallax */}
         <div
@@ -74,18 +74,7 @@ export default function HomeClient({
             <img
               src={heroImageUrl}
               alt="David Schaldach among the trees"
-              className="h-[120%] w-full object-cover"
-              style={{
-                objectPosition: heroCrop
-                  ? `${heroCrop.x}% ${heroCrop.y}%`
-                  : "center 20%",
-                transform: heroCrop && heroCrop.zoom > 1
-                  ? `scale(${heroCrop.zoom})`
-                  : undefined,
-                transformOrigin: heroCrop
-                  ? `${heroCrop.x}% ${heroCrop.y}%`
-                  : undefined,
-              }}
+              className="h-full w-full object-contain"
             />
           ) : (
             <div
