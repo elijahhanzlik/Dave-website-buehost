@@ -16,7 +16,7 @@ export default function Footer() {
             <p className="mt-3 text-sm leading-relaxed text-text-secondary">
               He was a certified arborist, now he&apos;s branching out.
               <br />
-              Painter &amp; ceramicist based in Boulder, CO.
+              Studio artist based in Boulder, CO.
             </p>
           </div>
 
@@ -28,6 +28,7 @@ export default function Footer() {
             <ul className="mt-4 space-y-3">
               {[
                 { href: "/works", label: "Gallery" },
+                { href: "/exhibits", label: "Exhibits" },
                 { href: "/about", label: "About" },
                 { href: "/blog", label: "Blog" },
                 { href: "/contact", label: "Contact" },

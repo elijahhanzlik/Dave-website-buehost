@@ -8,6 +8,7 @@ import { cn } from "@/lib/formatters";
 
 const NAV_LINKS = [
   { href: "/works", label: "Gallery" },
+  { href: "/exhibits", label: "Exhibits" },
   { href: "/about", label: "About" },
   { href: "/blog", label: "Blog" },
   { href: "/contact", label: "Contact" },

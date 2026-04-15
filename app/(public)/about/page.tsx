@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "About — David Schaldach",
   description:
-    "Learn about David Schaldach — former certified arborist turned ceramicist and painter, based in Boulder, CO.",
+    "Learn about David Schaldach — former certified arborist turned studio artist, based in Boulder, CO.",
 };
 
 interface AboutSettings {
@@ -123,7 +123,7 @@ export default async function AboutPage() {
             ) : (
               <>
                 <p>
-                  David Schaldach is a ceramicist and painter based in Boulder,
+                  David Schaldach is a studio artist based in Boulder,
                   Colorado. Before picking up a brush, he spent years as a
                   certified arborist — climbing into canopies, diagnosing root
                   systems, and learning to see the world from the perspective of
