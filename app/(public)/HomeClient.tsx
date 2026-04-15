@@ -139,7 +139,7 @@ export default function HomeClient({
                 <img
                   src={heroImageUrl}
                   alt="David Schaldach among the trees"
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-contain"
                 />
               ) : (
                 <div
