@@ -16,7 +16,7 @@ export default function Footer() {
             <p className="mt-3 text-sm leading-relaxed text-text-secondary">
               He was a certified arborist, now he&apos;s branching out.
               <br />
-              Creative &amp; photographer based in Boulder, CO.
+              Painter &amp; ceramicist based in Boulder, CO.
             </p>
           </div>
 
@@ -66,14 +66,6 @@ export default function Footer() {
           <p className="text-xs text-text-muted">
             &copy; {new Date().getFullYear()} Davidschaldach.com. All rights reserved.
           </p>
-          <div className="flex gap-6 text-xs text-text-muted">
-            <Link href="#" className="transition-colors hover:text-text-secondary">
-              Privacy Policy
-            </Link>
-            <Link href="#" className="transition-colors hover:text-text-secondary">
-              Terms
-            </Link>
-          </div>
         </div>
       </div>
     </footer>
