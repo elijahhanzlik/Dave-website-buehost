@@ -124,18 +124,18 @@ export default async function AboutPage() {
               <>
                 <p>
                   David Schaldach is a studio artist based in Boulder,
-                  Colorado. Before picking up a brush, he spent years as a
+                  Colorado. Before stepping into the studio, he spent years as a
                   certified arborist — climbing into canopies, diagnosing root
                   systems, and learning to see the world from the perspective of
                   the trees themselves.
                 </p>
                 <p>
                   That intimate relationship with nature didn&apos;t end when he
-                  traded his climbing harness for a studio. It became the
+                  traded his climbing harness for clay and glaze. It became the
                   foundation. Every piece David creates is informed by years of
-                  studying organic patterns, light filtering through leaves, the
-                  architecture of branches, and the quiet drama of growth and
-                  decay.
+                  studying organic patterns, the architecture of branches, and
+                  the quiet drama of growth and decay — now shaped by hand
+                  through ceramics, sculpture, and studio work.
                 </p>
                 <p>
                   Based at the foot of the Flatirons, David draws inspiration from
