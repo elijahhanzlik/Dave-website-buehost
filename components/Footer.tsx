@@ -14,7 +14,7 @@ export default function Footer() {
               David Schaldach
             </Link>
             <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-              He was a certified arborist, now he&apos;s branching out.
+              He was a Certified Arborist, now he&apos;s branching out.
               <br />
               Studio artist based in Boulder, CO.
             </p>

@@ -4,7 +4,7 @@ import { MapPin, Mail } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Contact — David Schaldach",
-  description: "Get in touch with David Schaldach. Based in Boulder, CO.",
+  description: "Keep in touch with David Schaldach. Based in Boulder, CO.",
 };
 
 async function getContactPhoto(): Promise<string | null> {
@@ -34,7 +34,7 @@ export default async function ContactPage() {
           {/* Left column — info */}
           <div>
             <h1 className="font-display text-4xl font-bold text-primary-dark sm:text-5xl">
-              Get in Touch
+              Keep in Touch
             </h1>
             <p className="mt-4 text-lg leading-relaxed text-text-secondary">
               Have a question, want to collaborate, or just want to say hello?
