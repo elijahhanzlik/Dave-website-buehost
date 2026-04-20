@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/supabase/admin";
 import { inquirySchema } from "@/lib/validations";
+import { sendInquiryNotification } from "@/lib/email";
 
 export async function GET() {
   const auth = await requireAdmin();
@@ -39,5 +40,12 @@ export async function POST(request: NextRequest) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  try {
+    await sendInquiryNotification(parsed.data);
+  } catch (err) {
+    console.error("[inquiries] failed to send notification email", err);
+  }
+
   return NextResponse.json({ ok: true }, { status: 201 });
 }
