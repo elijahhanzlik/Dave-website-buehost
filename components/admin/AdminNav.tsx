@@ -20,7 +20,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/formatters";
 
-const ADMIN_BASE = "/admin-panel";
+const ADMIN_BASE = "/dave-admin-website-wonderland";
 
 const navItems = [
   { href: `${ADMIN_BASE}/dashboard`, label: "Dashboard", icon: LayoutDashboard },

@@ -123,7 +123,7 @@ export default function NewBlogPostPage() {
         throw new Error(data.error?.toString() ?? "Failed to save");
       }
 
-      router.push("/admin-panel/blog");
+      router.push("/dave-admin-website-wonderland/blog");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");

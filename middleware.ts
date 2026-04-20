@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
-const ADMIN_ROUTE = process.env.ADMIN_ROUTE ?? "admin-panel";
+const ADMIN_ROUTE = process.env.ADMIN_ROUTE ?? "dave-admin-website-wonderland";
 
 // Simple in-memory rate limiter (per-process; use Redis in production)
 const rateLimit = new Map<string, { count: number; timestamp: number }>();

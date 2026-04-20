@@ -121,7 +121,7 @@ export default function NewExhibitPage() {
         throw new Error(data.error?.toString() ?? "Failed to save");
       }
 
-      router.push("/admin-panel/exhibits");
+      router.push("/dave-admin-website-wonderland/exhibits");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");

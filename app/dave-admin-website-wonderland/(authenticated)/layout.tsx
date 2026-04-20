@@ -10,7 +10,7 @@ export default async function AuthenticatedAdminLayout({
   const supabase = await createClient();
 
   if (!supabase) {
-    redirect("/admin-panel/login");
+    redirect("/dave-admin-website-wonderland/login");
   }
 
   const {
@@ -18,12 +18,12 @@ export default async function AuthenticatedAdminLayout({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/admin-panel/login");
+    redirect("/dave-admin-website-wonderland/login");
   }
 
   const adminEmail = process.env.ADMIN_EMAIL;
   if (adminEmail && user.email !== adminEmail) {
-    redirect("/admin-panel/login");
+    redirect("/dave-admin-website-wonderland/login");
   }
 
   const { count } = await supabase

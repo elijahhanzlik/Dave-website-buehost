@@ -87,7 +87,7 @@ export default function WorkForm({ initialData }: WorkFormProps) {
         throw new Error(data.error?.toString() ?? "Failed to save");
       }
 
-      router.push("/admin-panel/works");
+      router.push("/dave-admin-website-wonderland/works");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
@@ -254,7 +254,7 @@ export default function WorkForm({ initialData }: WorkFormProps) {
         </button>
         <button
           type="button"
-          onClick={() => router.push("/admin-panel/works")}
+          onClick={() => router.push("/dave-admin-website-wonderland/works")}
           className="px-5 py-2 rounded-lg text-sm border border-gray-300 hover:bg-gray-50"
         >
           Cancel

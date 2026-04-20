@@ -205,7 +205,7 @@ export default function EditBlogPostPage() {
       <div className="flex items-center justify-between flex-wrap gap-3 sticky top-0 z-20 bg-gray-50 -mx-6 lg:-mx-8 px-6 lg:px-8 py-3 border-b border-gray-200">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => router.push("/admin-panel/blog")}
+            onClick={() => router.push("/dave-admin-website-wonderland/blog")}
             className="text-sm text-gray-500 hover:text-gray-700"
           >
             ← Back
