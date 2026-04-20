@@ -123,6 +123,12 @@ export default function WorksListPage() {
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
                 <th className="w-10 px-3 py-3" />
+                <th
+                  className="w-12 px-3 py-3 font-medium text-gray-600 text-center"
+                  title="Position on the public gallery"
+                >
+                  #
+                </th>
                 <th className="w-16 px-3 py-3" />
                 <th className="text-left px-3 py-3 font-medium text-gray-600">
                   Title
@@ -151,6 +157,11 @@ export default function WorksListPage() {
                 >
                   <td className="px-3 py-2 text-gray-400">
                     <GripVertical size={16} />
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium tabular-nums">
+                      {index + 1}
+                    </span>
                   </td>
                   <td className="px-3 py-2">
                     {work.images[0] ? (
