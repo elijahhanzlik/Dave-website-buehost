@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 /* ===== Design System Tokens ===== */
 :root {
@@ -198,4 +199,75 @@ html {
 .prose-custom img {
   border-radius: 12px;
   margin: 2rem 0;
+}
+
+/* ===== Tiptap image alignment (resizable image + text wrap) ===== */
+.prose-custom .node-image,
+.prose-custom span.node-image {
+  display: inline-block;
+  vertical-align: top;
+}
+
+.prose-custom .image-component {
+  display: inline-block;
+}
+
+.prose-custom img.img-align-left,
+.prose-custom .node-image:has(img.img-align-left) {
+  float: left;
+  margin: 0.25rem 1.5rem 1rem 0;
+  max-width: 60%;
+}
+
+.prose-custom img.img-align-right,
+.prose-custom .node-image:has(img.img-align-right) {
+  float: right;
+  margin: 0.25rem 0 1rem 1.5rem;
+  max-width: 60%;
+}
+
+.prose-custom img.img-align-left,
+.prose-custom img.img-align-right {
+  margin: 0;
+}
+
+/* ===== Editor-only styles (admin-facing) ===== */
+.ProseMirror {
+  min-height: 60vh;
+}
+
+.ProseMirror:focus {
+  outline: none;
+}
+
+.ProseMirror .node-image {
+  display: inline-block;
+}
+
+.ProseMirror img.img-align-left,
+.ProseMirror .node-image:has(img.img-align-left) {
+  float: left;
+  margin: 0.25rem 1.5rem 1rem 0;
+  max-width: 60%;
+}
+
+.ProseMirror img.img-align-right,
+.ProseMirror .node-image:has(img.img-align-right) {
+  float: right;
+  margin: 0.25rem 0 1rem 1.5rem;
+  max-width: 60%;
+}
+
+.ProseMirror img.img-align-left,
+.ProseMirror img.img-align-right {
+  margin: 0;
+}
+
+/* Placeholder for an empty editor. */
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: #9ca3af;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
 }
