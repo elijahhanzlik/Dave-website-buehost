@@ -11,6 +11,7 @@ import { Color } from "@tiptap/extension-color";
 import { ResizableImage } from "tiptap-extension-resizable-image";
 import "tiptap-extension-resizable-image/styles.css";
 import { NodeSelection, Plugin, PluginKey } from "@tiptap/pm/state";
+import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import {
   Bold as BoldIcon,
   Italic as ItalicIcon,
@@ -76,9 +77,44 @@ const AlignedResizableImage = ResizableImage.extend({
   },
   addProseMirrorPlugins() {
     const parent = this.parent?.() ?? [];
-    return [...parent, imageDragHandlePlugin(this.name)];
+    return [
+      ...parent,
+      imageAlignDecorationPlugin(this.name),
+      imageDragHandlePlugin(this.name),
+    ];
   },
 });
+
+/**
+ * Mirrors `dataAlign` onto the image's outer node DOM as `img-align-{v}` so
+ * the editor's float CSS has something to match. The library's React node
+ * view spreads `node.attrs` directly onto `<img>` and never invokes our
+ * `dataAlign.renderHTML`, so the class only ends up in serialized output —
+ * not in the live editor DOM. This plugin closes that gap without changing
+ * saved HTML or schema (decorations are editor-only).
+ */
+function imageAlignDecorationPlugin(nodeName: string) {
+  return new Plugin({
+    key: new PluginKey("image-align-class"),
+    props: {
+      decorations(state) {
+        const decos: Decoration[] = [];
+        state.doc.descendants((node, pos) => {
+          if (node.type.name !== nodeName) return;
+          const v = node.attrs.dataAlign as string | undefined;
+          if (v === "left" || v === "right") {
+            decos.push(
+              Decoration.node(pos, pos + node.nodeSize, {
+                class: `img-align-${v}`,
+              }),
+            );
+          }
+        });
+        return DecorationSet.create(state.doc, decos);
+      },
+    },
+  });
+}
 
 const GRIP_SVG =
   '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false">' +
@@ -88,18 +124,26 @@ const GRIP_SVG =
   "</svg>";
 
 /**
- * Injects a grip button into the selected image's node DOM so the drag
- * affordance is discoverable. The button carries `data-drag-handle`, which
- * Tiptap's NodeView uses to initiate a native ProseMirror drag of the parent
- * image node — so drops land at the same positions (block-between or inline)
- * that cut/paste produces. The button is never emitted by `editor.getHTML()`
- * because it lives outside React reconciliation and is removed on blur.
+ * Injects a grip element into the selected image's node DOM so the drag
+ * affordance is discoverable. The grip is a `<span role="button">` rather
+ * than a real `<button>` for two reasons:
+ *   1. Tiptap's NodeView.stopEvent returns true for any mousedown whose
+ *      target tagName is BUTTON/INPUT/SELECT/TEXTAREA — that early-return
+ *      would block PM's `mousedown → mightDrag → dragstart → view.dragging`
+ *      pipeline, leaving drops as no-ops or copies.
+ *   2. The span has no `draggable` attribute, so the browser walks up to the
+ *      nearest draggable ancestor (the `.node-image` outer wrapper, on which
+ *      PM auto-sets `draggable="true"`) and initiates the drag of the image
+ *      node itself.
+ *
+ * Keyboard alternative for repositioning: select the image, Cmd+X, move
+ * caret, Cmd+V — same node, same attrs.
  */
 function imageDragHandlePlugin(nodeName: string) {
   return new Plugin({
     key: new PluginKey("image-drag-handle"),
     view(editorView) {
-      let handle: HTMLButtonElement | null = null;
+      let handle: HTMLSpanElement | null = null;
       let host: HTMLElement | null = null;
 
       const remove = () => {
@@ -111,16 +155,16 @@ function imageDragHandlePlugin(nodeName: string) {
       const ensureHandleOn = (dom: HTMLElement) => {
         if (host === dom && handle) return;
         remove();
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "tiptap-image-drag-handle";
-        btn.setAttribute("aria-label", "Drag to reposition image");
-        btn.setAttribute("data-drag-handle", "");
-        btn.setAttribute("draggable", "true");
-        btn.setAttribute("contenteditable", "false");
-        btn.innerHTML = GRIP_SVG;
-        dom.appendChild(btn);
-        handle = btn;
+        const grip = document.createElement("span");
+        grip.className = "tiptap-image-drag-handle";
+        grip.setAttribute("role", "button");
+        grip.setAttribute("tabindex", "0");
+        grip.setAttribute("aria-label", "Drag to reposition image");
+        grip.setAttribute("data-drag-handle", "");
+        grip.setAttribute("contenteditable", "false");
+        grip.innerHTML = GRIP_SVG;
+        dom.appendChild(grip);
+        handle = grip;
         host = dom;
       };
 
