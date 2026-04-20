@@ -1,7 +1,7 @@
 # David Schaldach Portfolio & Admin Portal
 
 ## About
-Personal portfolio for David Schaldach — former certified arborist, now creative/photographer based in Boulder, CO. Tagline: "He was a certified arborist, now he's branching out."
+Personal portfolio for David Schaldach — former certified arborist, now studio artist based in Boulder, CO. Tagline: "He was a certified arborist, now he's branching out."
 
 ## Stack
 - **Framework**: Next.js 14 (App Router)

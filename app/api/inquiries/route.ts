@@ -34,14 +34,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { data, error } = await supabase
-    .from("inquiries")
-    .insert(parsed.data)
-    .select()
-    .single();
+  const { error } = await supabase.from("inquiries").insert(parsed.data);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json(data, { status: 201 });
+  return NextResponse.json({ ok: true }, { status: 201 });
 }

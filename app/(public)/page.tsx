@@ -22,6 +22,19 @@ const PLACEHOLDER_BLOG_POSTS = [
   },
 ];
 
+interface FeaturedArtwork {
+  id: string;
+  title: string;
+  images: string[];
+  category: string | null;
+}
+
+const PLACEHOLDER_FEATURED: FeaturedArtwork[] = [
+  { id: "1", title: "Roots & Light", images: ["https://picsum.photos/seed/roots-light/800/1000"], category: "Nature" },
+  { id: "2", title: "Canopy Heart", images: ["https://picsum.photos/seed/canopy-heart/800/1000"], category: "Nature" },
+  { id: "3", title: "Boulder Golden Hour", images: ["https://picsum.photos/seed/boulder-golden/800/1000"], category: "Landscape" },
+];
+
 interface HeroSettings {
   imageUrl: string | null;
   crop: { x: number; y: number; zoom: number } | null;
@@ -57,6 +70,24 @@ async function getHeroSettings(): Promise<HeroSettings> {
   return { imageUrl: null, crop: null };
 }
 
+async function getFeaturedArtworks(): Promise<FeaturedArtwork[]> {
+  try {
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+    if (!supabase) return PLACEHOLDER_FEATURED;
+    const { data } = await supabase
+      .from("artworks")
+      .select("id, title, images, category")
+      .order("sort_order", { ascending: true })
+      .limit(3);
+
+    if (data && data.length > 0) return data;
+  } catch {
+    // Supabase not configured
+  }
+  return PLACEHOLDER_FEATURED;
+}
+
 async function getLatestPosts() {
   try {
     const { createClient } = await import("@/lib/supabase/server");
@@ -84,9 +115,10 @@ async function getLatestPosts() {
 }
 
 export default async function HomePage() {
-  const [latestPosts, hero] = await Promise.all([
+  const [latestPosts, hero, featuredArtworks] = await Promise.all([
     getLatestPosts(),
     getHeroSettings(),
+    getFeaturedArtworks(),
   ]);
 
   return (
@@ -94,6 +126,7 @@ export default async function HomePage() {
       latestPosts={latestPosts}
       heroImageUrl={hero.imageUrl}
       heroCrop={hero.crop}
+      featuredArtworks={featuredArtworks}
     />
   );
 }

@@ -18,7 +18,7 @@ const PLACEHOLDER_ARTWORKS: Artwork[] = [
     title: "Roots & Light",
     description:
       "Morning light filtering through ancient banyan roots. This image captures the interplay of light and shadow as the sun rises through the complex root system of a centuries-old banyan tree. The roots create natural frames and patterns that draw the eye deeper into the composition.",
-    images: [],
+    images: ["https://picsum.photos/seed/roots-light/800/1000"],
     category: "Nature",
     sort_order: 0,
     is_featured: true,
@@ -28,7 +28,7 @@ const PLACEHOLDER_ARTWORKS: Artwork[] = [
     title: "Canopy Heart",
     description:
       "The heart-shaped silhouette formed by intertwining branches overhead. Looking straight up through the canopy, two major limbs curve toward each other creating a natural heart shape against the sky — a moment of organic geometry that speaks to the poetry hidden in nature's architecture.",
-    images: [],
+    images: ["https://picsum.photos/seed/canopy-heart/800/1000"],
     category: "Nature",
     sort_order: 1,
     is_featured: true,
@@ -38,7 +38,7 @@ const PLACEHOLDER_ARTWORKS: Artwork[] = [
     title: "Boulder Golden Hour",
     description:
       "The Flatirons bathed in warm golden light at sunset. The iconic sandstone formations glow orange and amber as the day's last light paints them from the west. Below, the meadows turn gold, creating a symphony of warm tones.",
-    images: [],
+    images: ["https://picsum.photos/seed/boulder-golden/800/1000"],
     category: "Landscape",
     sort_order: 2,
     is_featured: false,
@@ -48,7 +48,7 @@ const PLACEHOLDER_ARTWORKS: Artwork[] = [
     title: "Bark Textures",
     description:
       "Close-up study of Ponderosa pine bark patterns. The puzzle-piece pattern of mature Ponderosa bark reveals warm cinnamon and amber tones. Each plate tells a story of years of growth, fire resistance, and adaptation.",
-    images: [],
+    images: ["https://picsum.photos/seed/bark-textures/800/1000"],
     category: "Macro",
     sort_order: 3,
     is_featured: false,
@@ -58,7 +58,7 @@ const PLACEHOLDER_ARTWORKS: Artwork[] = [
     title: "Forest Floor",
     description:
       "Mosses and ferns creating a miniature landscape on the forest floor. A macro perspective reveals an entire world in miniature — tiny forests of moss, delicate fern fronds unfurling, and the soft carpet of decomposing leaves that feeds the cycle of life.",
-    images: [],
+    images: ["https://picsum.photos/seed/forest-floor/800/1000"],
     category: "Nature",
     sort_order: 4,
     is_featured: false,
@@ -68,7 +68,7 @@ const PLACEHOLDER_ARTWORKS: Artwork[] = [
     title: "Mountain Stream",
     description:
       "Water flowing over smooth river stones in Bear Canyon. Long exposure reveals the silky motion of water as it navigates the ancient stones, each one shaped by millennia of patient flow.",
-    images: [],
+    images: ["https://picsum.photos/seed/mountain-stream/800/1000"],
     category: "Landscape",
     sort_order: 5,
     is_featured: false,

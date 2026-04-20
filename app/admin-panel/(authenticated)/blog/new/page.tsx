@@ -13,6 +13,8 @@ import {
   LayoutGrid,
   Maximize2,
   Save,
+  Bold,
+  Palette,
 } from "lucide-react";
 import { slugify } from "@/lib/formatters";
 import ImageUploader from "@/components/ImageUploader";
@@ -40,7 +42,7 @@ function emptyBlockData(type: BlockType): Record<string, unknown> {
     case "image":
       return { url: "", caption: "", position: { x: "center", y: "middle" } };
     case "gallery":
-      return { images: [] };
+      return { images: [], columns: 3 };
     case "hero":
       return { url: "", overlay_text: "" };
   }
@@ -302,57 +304,270 @@ function BlockEditor({
   onChange: (data: Record<string, unknown>) => void;
 }) {
   switch (block.type) {
-    case "text":
+    case "text": {
+      const fontSize = (block.data.fontSize as string) ?? "body";
+      const fontWeight = (block.data.fontWeight as string) ?? "normal";
+      const color = (block.data.color as string) ?? "";
+      const showColorPicker = (block.data._showColorPicker as boolean) ?? false;
+
+      const FONT_SIZES = [
+        { value: "title", label: "Title" },
+        { value: "subtitle", label: "Subtitle" },
+        { value: "body", label: "Body" },
+        { value: "small", label: "Small" },
+      ];
+
+      const COLORS = [
+        { value: "", label: "Default" },
+        { value: "#2D5016", label: "Forest Green" },
+        { value: "#1E3A0E", label: "Dark Green" },
+        { value: "#C4A265", label: "Gold" },
+        { value: "#4a4a4a", label: "Dark Gray" },
+        { value: "#8B4513", label: "Brown" },
+        { value: "#1a1a1a", label: "Black" },
+        { value: "#ffffff", label: "White" },
+      ];
+
+      const textSizeClass =
+        fontSize === "title" ? "text-2xl font-display" :
+        fontSize === "subtitle" ? "text-lg" :
+        fontSize === "small" ? "text-xs" : "text-sm";
+
       return (
-        <textarea
-          value={(block.data.content as string) ?? ""}
-          onChange={(e) => onChange({ ...block.data, content: e.target.value })}
-          rows={4}
-          placeholder="Enter text or markdown..."
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-        />
+        <div className="space-y-2">
+          <div className="flex items-center gap-1 flex-wrap">
+            <select
+              value={fontSize}
+              onChange={(e) => onChange({ ...block.data, fontSize: e.target.value })}
+              className="border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+            >
+              {FONT_SIZES.map((s) => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => onChange({ ...block.data, fontWeight: fontWeight === "bold" ? "normal" : "bold" })}
+              className={`p-1.5 rounded border text-xs ${fontWeight === "bold" ? "bg-primary text-white border-primary" : "border-gray-300 hover:bg-gray-50"}`}
+            >
+              <Bold size={14} />
+            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => onChange({ ...block.data, _showColorPicker: !showColorPicker })}
+                className={`p-1.5 rounded border text-xs flex items-center gap-1 ${showColorPicker ? "bg-gray-100 border-gray-400" : "border-gray-300 hover:bg-gray-50"}`}
+              >
+                <Palette size={14} />
+                {color && (
+                  <span
+                    className="w-3 h-3 rounded-full border border-gray-300"
+                    style={{ backgroundColor: color }}
+                  />
+                )}
+              </button>
+              {showColorPicker && (
+                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-10 flex gap-1.5 flex-wrap w-48">
+                  {COLORS.map((c) => (
+                    <button
+                      key={c.value}
+                      type="button"
+                      title={c.label}
+                      onClick={() => onChange({ ...block.data, color: c.value, _showColorPicker: false })}
+                      className={`w-7 h-7 rounded-full border-2 transition-transform hover:scale-110 ${color === c.value ? "border-primary ring-2 ring-primary/30" : "border-gray-200"}`}
+                      style={{ backgroundColor: c.value || "#e5e7eb" }}
+                    >
+                      {c.value === "" && <span className="text-[10px] text-gray-500">A</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <textarea
+            value={(block.data.content as string) ?? ""}
+            onChange={(e) => onChange({ ...block.data, content: e.target.value })}
+            rows={fontSize === "title" ? 2 : fontSize === "subtitle" ? 3 : 4}
+            placeholder={fontSize === "title" ? "Enter title..." : fontSize === "subtitle" ? "Enter subtitle..." : "Enter text or markdown..."}
+            className={`w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 ${textSizeClass}`}
+            style={{
+              fontWeight: fontWeight === "bold" ? "bold" : "normal",
+              color: color || undefined,
+            }}
+          />
+        </div>
       );
+    }
     case "image": {
       const imgPosition: ImagePosition = (block.data.position as ImagePosition) ?? {
         x: "center",
         y: "middle",
       };
+      const widthPct = (block.data.widthPct as number) ?? 50;
+      const hasUrl = typeof block.data.url === "string" && block.data.url !== "";
+
       return (
         <div className="space-y-3">
-          <ImageUploader
-            images={block.data.url ? [block.data.url as string] : []}
-            onChange={(imgs) =>
-              onChange({ ...block.data, url: imgs[0] ?? "" })
-            }
-            multiple={false}
-          />
-          {typeof block.data.url === "string" && block.data.url !== "" && (
-            <ImagePositionPicker
-              imageUrl={block.data.url as string}
-              position={imgPosition}
-              onChange={(pos) => onChange({ ...block.data, position: pos })}
+          {!hasUrl && (
+            <ImageUploader
+              images={[]}
+              onChange={(imgs) =>
+                onChange({ ...block.data, url: imgs[0] ?? "" })
+              }
+              multiple={false}
             />
           )}
-          <input
-            type="text"
-            value={(block.data.caption as string) ?? ""}
-            onChange={(e) =>
-              onChange({ ...block.data, caption: e.target.value })
-            }
-            placeholder="Caption (optional)"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-          />
+
+          {hasUrl && (
+            <>
+              <div className="relative border border-gray-200 rounded-lg p-3 bg-white overflow-hidden" style={{ minHeight: 120 }}>
+                <figure
+                  style={{
+                    float: imgPosition.x === "left" ? "left" : imgPosition.x === "right" ? "right" : undefined,
+                    display: imgPosition.x === "center" ? "block" : undefined,
+                    width: `${widthPct}%`,
+                    margin: imgPosition.x === "left" ? "0 1rem 0.5rem 0" : imgPosition.x === "right" ? "0 0 0.5rem 1rem" : "0 auto 1rem",
+                  }}
+                >
+                  <img
+                    src={block.data.url as string}
+                    alt={(block.data.caption as string) ?? ""}
+                    className="w-full rounded-lg"
+                  />
+                  {typeof block.data.caption === "string" && block.data.caption && (
+                    <figcaption className="text-[10px] text-gray-400 mt-1 text-center">
+                      {block.data.caption}
+                    </figcaption>
+                  )}
+                </figure>
+                {imgPosition.x !== "center" && (
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+                  </p>
+                )}
+                <div style={{ clear: "both" }} />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <label className="text-xs font-medium text-gray-500 shrink-0">Width</label>
+                <input
+                  type="range"
+                  min="20"
+                  max="100"
+                  step="5"
+                  value={widthPct}
+                  onChange={(e) => onChange({ ...block.data, widthPct: parseInt(e.target.value) })}
+                  className="flex-1 accent-primary"
+                />
+                <span className="text-xs text-gray-500 w-10 text-right">{widthPct}%</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-medium text-gray-500">Position</label>
+                {(["left", "center", "right"] as const).map((pos) => (
+                  <button
+                    key={pos}
+                    type="button"
+                    onClick={() => onChange({ ...block.data, position: { ...imgPosition, x: pos } })}
+                    className={`px-3 py-1 rounded border text-xs capitalize ${imgPosition.x === pos ? "bg-primary text-white border-primary" : "border-gray-300 hover:bg-gray-50"}`}
+                  >
+                    {pos}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={(block.data.caption as string) ?? ""}
+                  onChange={(e) =>
+                    onChange({ ...block.data, caption: e.target.value })
+                  }
+                  placeholder="Caption (optional)"
+                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...block.data, url: "" })}
+                  className="text-xs text-red-500 hover:text-red-700 shrink-0"
+                >
+                  Remove
+                </button>
+              </div>
+            </>
+          )}
         </div>
       );
     }
-    case "gallery":
+    case "gallery": {
+      const galleryImages = (block.data.images as string[]) ?? [];
+      const columns = (block.data.columns as number) ?? 3;
+
+      const moveImage = (from: number, to: number) => {
+        if (to < 0 || to >= galleryImages.length) return;
+        const newImages = [...galleryImages];
+        const [moved] = newImages.splice(from, 1);
+        newImages.splice(to, 0, moved);
+        onChange({ ...block.data, images: newImages });
+      };
+
+      const removeImage = (index: number) => {
+        onChange({ ...block.data, images: galleryImages.filter((_, i) => i !== index) });
+      };
+
       return (
-        <ImageUploader
-          images={(block.data.images as string[]) ?? []}
-          onChange={(imgs) => onChange({ ...block.data, images: imgs })}
-          multiple
-        />
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <label className="text-xs font-medium text-gray-500">Columns</label>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => onChange({ ...block.data, columns: n })}
+                  className={`w-8 h-8 rounded border text-xs font-medium ${columns === n ? "bg-primary text-white border-primary" : "border-gray-300 hover:bg-gray-50"}`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <ImageUploader
+            images={galleryImages}
+            onChange={(imgs) => onChange({ ...block.data, images: imgs })}
+            multiple
+          />
+
+          {galleryImages.length > 1 && (
+            <div className="space-y-1">
+              <p className="text-xs text-gray-500">Reorder images</p>
+              <div className="flex flex-wrap gap-2">
+                {galleryImages.map((url, i) => (
+                  <div key={url} className="relative group">
+                    <img src={url} alt={`${i + 1}`} className="w-16 h-16 object-cover rounded border border-gray-200" />
+                    <div className="absolute inset-0 flex items-center justify-between px-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button type="button" onClick={() => moveImage(i, i - 1)} disabled={i === 0} className="bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] disabled:opacity-30">←</button>
+                      <button type="button" onClick={() => removeImage(i)} className="bg-red-500/80 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px]">×</button>
+                      <button type="button" onClick={() => moveImage(i, i + 1)} disabled={i === galleryImages.length - 1} className="bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] disabled:opacity-30">→</button>
+                    </div>
+                    <span className="absolute bottom-0 right-0 bg-black/60 text-white text-[9px] px-1 rounded-tl">{i + 1}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {galleryImages.length > 0 && (
+            <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
+              {galleryImages.map((url, i) => (
+                <img key={i} src={url} alt={`Preview ${i + 1}`} className="w-full aspect-square object-cover rounded-lg" />
+              ))}
+            </div>
+          )}
+        </div>
       );
+    }
     case "hero":
       return (
         <div className="space-y-3">

@@ -104,6 +104,41 @@ create policy "Authenticated admin delete on pages"
   to authenticated
   using (true);
 
+-- ----- exhibits -----
+create table public.exhibits (
+  id           uuid primary key default uuid_generate_v4(),
+  title        text not null,
+  slug         text not null unique,
+  content      text,
+  content_blocks jsonb not null default '[]'::jsonb,
+  cover_image  text,
+  status       text not null default 'draft' check (status in ('draft', 'published')),
+  published_at timestamptz,
+  created_at   timestamptz not null default now()
+);
+
+alter table public.exhibits enable row level security;
+
+create policy "Public read published exhibits"
+  on public.exhibits for select
+  using (status = 'published' or auth.role() = 'authenticated');
+
+create policy "Authenticated admin insert on exhibits"
+  on public.exhibits for insert
+  to authenticated
+  with check (true);
+
+create policy "Authenticated admin update on exhibits"
+  on public.exhibits for update
+  to authenticated
+  using (true)
+  with check (true);
+
+create policy "Authenticated admin delete on exhibits"
+  on public.exhibits for delete
+  to authenticated
+  using (true);
+
 -- ----- inquiries -----
 create table public.inquiries (
   id         uuid primary key default uuid_generate_v4(),

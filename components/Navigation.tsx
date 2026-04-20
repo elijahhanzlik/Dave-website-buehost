@@ -8,6 +8,7 @@ import { cn } from "@/lib/formatters";
 
 const NAV_LINKS = [
   { href: "/works", label: "Gallery" },
+  { href: "/exhibits", label: "Exhibits" },
   { href: "/about", label: "About" },
   { href: "/blog", label: "Blog" },
   { href: "/contact", label: "Contact" },
@@ -38,6 +39,8 @@ export default function Navigation() {
   }, [mobileOpen]);
 
   const showSolid = scrolled || !isHome;
+  // On homepage before scroll, hide desktop nav (hero green panel has its own)
+  const hideDesktopNav = isHome && !scrolled;
 
   return (
     <>
@@ -54,15 +57,21 @@ export default function Navigation() {
           <Link
             href="/"
             className={cn(
-              "font-display text-2xl font-semibold tracking-tight transition-colors duration-300",
-              showSolid ? "text-primary-dark" : "text-white"
+              "font-display text-2xl font-semibold tracking-tight transition-all duration-300",
+              showSolid ? "text-primary-dark" : "text-white",
+              hideDesktopNav && "md:opacity-0 md:pointer-events-none"
             )}
           >
             David Schaldach
           </Link>
 
           {/* Desktop links */}
-          <ul className="hidden items-center gap-8 md:flex">
+          <ul
+            className={cn(
+              "hidden items-center gap-8 md:flex transition-opacity duration-300",
+              hideDesktopNav && "opacity-0 pointer-events-none"
+            )}
+          >
             {NAV_LINKS.map((link) => (
               <li key={link.href}>
                 <Link

@@ -5,8 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Image,
-  FileText,
   BookOpen,
+  MapPin,
   MessageSquare,
   Settings,
   ExternalLink,
@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
+  User,
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -25,6 +26,8 @@ const navItems = [
   { href: `${ADMIN_BASE}/dashboard`, label: "Dashboard", icon: LayoutDashboard },
   { href: `${ADMIN_BASE}/works`, label: "Works", icon: Image },
   { href: `${ADMIN_BASE}/blog`, label: "Blogs", icon: BookOpen },
+  { href: `${ADMIN_BASE}/about`, label: "About", icon: User },
+  { href: `${ADMIN_BASE}/exhibits`, label: "Exhibits", icon: MapPin },
   { href: `${ADMIN_BASE}/inquiries`, label: "Inquiries", icon: MessageSquare },
   { href: `${ADMIN_BASE}/settings`, label: "Settings", icon: Settings },
 ];

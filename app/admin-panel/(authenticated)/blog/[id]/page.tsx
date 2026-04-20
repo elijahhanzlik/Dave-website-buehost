@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Plus,
@@ -13,11 +13,12 @@ import {
   LayoutGrid,
   Maximize2,
   Save,
+  Bold,
+  Palette,
+  Settings2,
 } from "lucide-react";
 import { slugify } from "@/lib/formatters";
 import ImageUploader from "@/components/ImageUploader";
-import ImagePositionPicker from "@/components/admin/ImagePositionPicker";
-import type { ImagePosition } from "@/components/admin/ImagePositionPicker";
 
 type BlockType = "text" | "image" | "gallery" | "hero";
 
@@ -48,13 +49,15 @@ function emptyBlockData(type: BlockType): Record<string, unknown> {
     case "text":
       return { content: "" };
     case "image":
-      return { url: "", caption: "", position: { x: "center", y: "middle" } };
+      return { url: "", caption: "", position: { x: "center", y: "middle" }, widthPct: 50 };
     case "gallery":
-      return { images: [] };
+      return { images: [], columns: 3 };
     case "hero":
       return { url: "", overlay_text: "" };
   }
 }
+
+type ImagePosition = { x: "left" | "center" | "right"; y: "top" | "middle" | "bottom" };
 
 export default function EditBlogPostPage() {
   const params = useParams();
@@ -71,8 +74,9 @@ export default function EditBlogPostPage() {
   const [status, setStatus] = useState<"draft" | "published">("draft");
   const [publishedAt, setPublishedAt] = useState("");
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
-  const [showPreview, setShowPreview] = useState(false);
+  const [selectedBlock, setSelectedBlock] = useState<number | null>(null);
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const [showMeta, setShowMeta] = useState(false);
 
   useEffect(() => {
     fetch(`/api/blog/${params.id}`)
@@ -91,7 +95,6 @@ export default function EditBlogPostPage() {
             ? new Date(data.published_at).toISOString().slice(0, 16)
             : "",
         );
-        // Support legacy posts that only have content (no blocks)
         if (data.content_blocks && data.content_blocks.length > 0) {
           setBlocks(data.content_blocks);
         } else if ((data as unknown as { content?: string }).content) {
@@ -112,12 +115,15 @@ export default function EditBlogPostPage() {
   };
 
   const addBlock = (type: BlockType) => {
-    setBlocks([...blocks, { type, data: emptyBlockData(type) }]);
+    const newBlocks = [...blocks, { type, data: emptyBlockData(type) }];
+    setBlocks(newBlocks);
+    setSelectedBlock(newBlocks.length - 1);
     setShowAddMenu(false);
   };
 
   const removeBlock = (index: number) => {
     setBlocks(blocks.filter((_, i) => i !== index));
+    setSelectedBlock(null);
   };
 
   const moveBlock = (index: number, direction: -1 | 1) => {
@@ -126,6 +132,7 @@ export default function EditBlogPostPage() {
     const newBlocks = [...blocks];
     [newBlocks[index], newBlocks[newIndex]] = [newBlocks[newIndex], newBlocks[index]];
     setBlocks(newBlocks);
+    setSelectedBlock(newIndex);
   };
 
   const updateBlockData = useCallback(
@@ -149,7 +156,12 @@ export default function EditBlogPostPage() {
         body: JSON.stringify({
           title,
           slug,
-          content_blocks: blocks,
+          content_blocks: blocks.map((b) => ({
+            ...b,
+            data: Object.fromEntries(
+              Object.entries(b.data).filter(([k]) => !k.startsWith("_"))
+            ),
+          })),
           cover_image: coverImage[0] || "",
           status,
           published_at:
@@ -184,68 +196,49 @@ export default function EditBlogPostPage() {
   }
 
   if (!post) {
-    return (
-      <div className="text-center py-12 text-red-500">Post not found</div>
-    );
+    return <div className="text-center py-12 text-red-500">Post not found</div>;
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-display font-bold text-gray-900">
-            {title || "Untitled Post"}
-          </h1>
-          <p className="text-sm text-gray-500 font-mono">/{slug}</p>
-        </div>
-        <div className="flex items-center gap-2">
+    <div className="space-y-4">
+      {/* Top bar */}
+      <div className="flex items-center justify-between flex-wrap gap-3 sticky top-0 z-20 bg-gray-50 -mx-6 lg:-mx-8 px-6 lg:px-8 py-3 border-b border-gray-200">
+        <div className="flex items-center gap-3">
           <button
-            type="button"
-            onClick={() => setShowPreview(!showPreview)}
-            className="text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50"
+            onClick={() => router.push("/admin-panel/blog")}
+            className="text-sm text-gray-500 hover:text-gray-700"
           >
-            {showPreview ? "Edit" : "Preview"}
+            ← Back
           </button>
+          <span className="text-gray-300">|</span>
           <button
-            onClick={handleSave}
-            disabled={saving}
-            className="inline-flex items-center gap-2 bg-primary text-white px-4 py-1.5 rounded-lg text-sm hover:bg-primary-dark disabled:opacity-50"
+            onClick={() => setShowMeta(!showMeta)}
+            className={`inline-flex items-center gap-1 text-sm ${showMeta ? "text-primary" : "text-gray-500 hover:text-gray-700"}`}
           >
-            {saving ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              <Save size={14} />
-            )}
-            {saved ? "Saved!" : "Save"}
+            <Settings2 size={14} />
+            Post Settings
           </button>
         </div>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="inline-flex items-center gap-2 bg-primary text-white px-4 py-1.5 rounded-lg text-sm hover:bg-primary-dark disabled:opacity-50"
+        >
+          {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+          {saved ? "Saved!" : "Save"}
+        </button>
       </div>
 
       {error && (
-        <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm">
-          {error}
-        </div>
+        <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>
       )}
 
-      {/* Post metadata */}
-      {!showPreview && (
-        <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-4 max-w-2xl">
+      {/* Collapsible metadata */}
+      {showMeta && (
+        <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Title *
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => handleTitleChange(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Slug
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Slug</label>
               <input
                 type="text"
                 value={slug}
@@ -253,322 +246,529 @@ export default function EditBlogPostPage() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
             </div>
+            <div className="flex items-end gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as "draft" | "published")}
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                </select>
+              </div>
+              {status === "published" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Publish Date</label>
+                  <input
+                    type="datetime-local"
+                    value={publishedAt}
+                    onChange={(e) => setPublishedAt(e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  />
+                </div>
+              )}
+            </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Cover Image
-            </label>
-            <ImageUploader
-              images={coverImage}
-              onChange={setCoverImage}
-              multiple={false}
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Cover Image</label>
+            <ImageUploader images={coverImage} onChange={setCoverImage} multiple={false} />
           </div>
-          <div className="flex flex-wrap items-end gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as "draft" | "published")}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-              >
-                <option value="draft">Draft</option>
-                <option value="published">Published</option>
-              </select>
+        </div>
+      )}
+
+      {/* ===== WYSIWYG CANVAS ===== */}
+      <div
+        className="bg-white rounded-xl border border-gray-200 shadow-sm mx-auto"
+        style={{ maxWidth: 1152 }}
+        onClick={(e) => {
+          // Deselect when clicking canvas background
+          if (e.target === e.currentTarget) setSelectedBlock(null);
+        }}
+      >
+        <div className="px-8 sm:px-12 lg:px-16 py-10">
+          {/* Cover image */}
+          {coverImage[0] && (
+            <div className="mb-8 -mx-4 overflow-hidden rounded-2xl">
+              <img src={coverImage[0]} alt={title} className="w-full max-h-80 object-cover" />
             </div>
-            {status === "published" && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Publish Date
-                </label>
-                <input
-                  type="datetime-local"
-                  value={publishedAt}
-                  onChange={(e) => setPublishedAt(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
+          )}
+
+          {/* Title — editable inline */}
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => handleTitleChange(e.target.value)}
+            placeholder="Post title..."
+            className="w-full font-display text-4xl font-bold text-gray-900 border-none outline-none placeholder:text-gray-300 bg-transparent mb-8"
+          />
+
+          {/* Blocks rendered as live content */}
+          {blocks.map((block, index) => (
+            <div
+              key={index}
+              className={`relative group ${selectedBlock === index ? "ring-2 ring-primary/30 rounded-lg" : ""}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedBlock(index);
+              }}
+            >
+              {/* Block controls — show on hover or selection */}
+              {selectedBlock === index && (
+                <div className="absolute -top-9 left-0 right-0 flex items-center justify-between z-10">
+                  <span className="text-[10px] uppercase tracking-wide text-primary font-medium bg-primary/10 px-2 py-0.5 rounded">
+                    {block.type}
+                  </span>
+                  <div className="flex items-center gap-0.5">
+                    <button onClick={() => moveBlock(index, -1)} disabled={index === 0} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30"><ChevronUp size={14} /></button>
+                    <button onClick={() => moveBlock(index, 1)} disabled={index === blocks.length - 1} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30"><ChevronDown size={14} /></button>
+                    <button onClick={() => removeBlock(index)} className="p-1 rounded hover:bg-red-50 text-gray-500 hover:text-red-600"><Trash2 size={14} /></button>
+                  </div>
+                </div>
+              )}
+
+              <LiveBlock
+                block={block}
+                isSelected={selectedBlock === index}
+                onChange={(data) => updateBlockData(index, data)}
+              />
+            </div>
+          ))}
+
+          {/* Clear floats */}
+          <div style={{ clear: "both" }} />
+
+          {/* Add block */}
+          <div className="relative mt-8">
+            <button
+              onClick={() => setShowAddMenu(!showAddMenu)}
+              className="w-full border-2 border-dashed border-gray-200 rounded-lg py-3 text-sm text-gray-400 hover:border-gray-300 hover:text-gray-500 transition-colors flex items-center justify-center gap-2"
+            >
+              <Plus size={16} /> Add Block
+            </button>
+            {showAddMenu && (
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                {blockTypeOptions.map((opt) => (
+                  <button
+                    key={opt.type}
+                    onClick={() => addBlock(opt.type)}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 text-left"
+                  >
+                    {opt.icon}
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===== LIVE BLOCK — renders as it would appear, with inline editing ===== */
+
+function LiveBlock({
+  block,
+  isSelected,
+  onChange,
+}: {
+  block: ContentBlock;
+  isSelected: boolean;
+  onChange: (data: Record<string, unknown>) => void;
+}) {
+  switch (block.type) {
+    case "text":
+      return <LiveTextBlock block={block} isSelected={isSelected} onChange={onChange} />;
+    case "image":
+      return <LiveImageBlock block={block} isSelected={isSelected} onChange={onChange} />;
+    case "gallery":
+      return <LiveGalleryBlock block={block} isSelected={isSelected} onChange={onChange} />;
+    case "hero":
+      return <LiveHeroBlock block={block} isSelected={isSelected} onChange={onChange} />;
+    default:
+      return null;
+  }
+}
+
+/* ----- TEXT BLOCK ----- */
+function LiveTextBlock({
+  block,
+  isSelected,
+  onChange,
+}: {
+  block: ContentBlock;
+  isSelected: boolean;
+  onChange: (data: Record<string, unknown>) => void;
+}) {
+  const content = (block.data.content as string) ?? "";
+  const fontSize = (block.data.fontSize as string) ?? "body";
+  const fontWeight = (block.data.fontWeight as string) ?? "normal";
+  const color = (block.data.color as string) ?? "";
+  const showColorPicker = (block.data._showColorPicker as boolean) ?? false;
+
+  const COLORS = [
+    { value: "", label: "Default" },
+    { value: "#2D5016", label: "Forest Green" },
+    { value: "#1E3A0E", label: "Dark Green" },
+    { value: "#C4A265", label: "Gold" },
+    { value: "#4a4a4a", label: "Dark Gray" },
+    { value: "#8B4513", label: "Brown" },
+    { value: "#1a1a1a", label: "Black" },
+    { value: "#ffffff", label: "White" },
+  ];
+
+  // Render classes matching public output
+  const wrapperClass =
+    fontSize === "title"
+      ? "mt-6 mb-3 font-display text-3xl"
+      : fontSize === "subtitle"
+        ? "mt-4 mb-2 font-display text-xl"
+        : fontSize === "small"
+          ? "mb-4 text-sm leading-relaxed text-gray-500"
+          : "mb-4 text-lg leading-relaxed text-gray-600";
+
+  const Tag = fontSize === "title" ? "h2" : fontSize === "subtitle" ? "h3" : "div";
+
+  return (
+    <div className="relative">
+      {/* Toolbar — only when selected */}
+      {isSelected && (
+        <div className="flex items-center gap-1 mb-2 flex-wrap">
+          <select
+            value={fontSize}
+            onChange={(e) => onChange({ ...block.data, fontSize: e.target.value })}
+            className="border border-gray-300 rounded px-2 py-1 text-xs"
+          >
+            <option value="title">Title</option>
+            <option value="subtitle">Subtitle</option>
+            <option value="body">Body</option>
+            <option value="small">Small</option>
+          </select>
+          <button
+            type="button"
+            onClick={() => onChange({ ...block.data, fontWeight: fontWeight === "bold" ? "normal" : "bold" })}
+            className={`p-1.5 rounded border text-xs ${fontWeight === "bold" ? "bg-primary text-white border-primary" : "border-gray-300"}`}
+          >
+            <Bold size={14} />
+          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => onChange({ ...block.data, _showColorPicker: !showColorPicker })}
+              className="p-1.5 rounded border border-gray-300 text-xs flex items-center gap-1"
+            >
+              <Palette size={14} />
+              {color && <span className="w-3 h-3 rounded-full border border-gray-300" style={{ backgroundColor: color }} />}
+            </button>
+            {showColorPicker && (
+              <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-20 flex gap-1.5 flex-wrap w-48">
+                {COLORS.map((c) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    title={c.label}
+                    onClick={() => onChange({ ...block.data, color: c.value, _showColorPicker: false })}
+                    className={`w-7 h-7 rounded-full border-2 hover:scale-110 transition-transform ${color === c.value ? "border-primary ring-2 ring-primary/30" : "border-gray-200"}`}
+                    style={{ backgroundColor: c.value || "#e5e7eb" }}
+                  />
+                ))}
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* Block editor / preview */}
-      <div className={showPreview ? "grid grid-cols-1 lg:grid-cols-2 gap-6" : ""}>
-        {!showPreview && (
-          <div className="max-w-2xl space-y-4">
-            <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-              Content Blocks
-            </h2>
-            {blocks.map((block, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-lg border border-gray-200 p-4"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                    {block.type}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => moveBlock(index, -1)}
-                      disabled={index === 0}
-                      className="p-1 rounded hover:bg-gray-100 disabled:opacity-30"
-                    >
-                      <ChevronUp size={14} />
-                    </button>
-                    <button
-                      onClick={() => moveBlock(index, 1)}
-                      disabled={index === blocks.length - 1}
-                      className="p-1 rounded hover:bg-gray-100 disabled:opacity-30"
-                    >
-                      <ChevronDown size={14} />
-                    </button>
-                    <button
-                      onClick={() => removeBlock(index)}
-                      className="p-1 rounded hover:bg-red-50 text-gray-500 hover:text-red-600"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-
-                <BlockEditor
-                  block={block}
-                  onChange={(data) => updateBlockData(index, data)}
-                />
-              </div>
-            ))}
-
-            <div className="relative">
-              <button
-                onClick={() => setShowAddMenu(!showAddMenu)}
-                className="w-full border-2 border-dashed border-gray-300 rounded-lg py-3 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors flex items-center justify-center gap-2"
-              >
-                <Plus size={16} /> Add Block
-              </button>
-              {showAddMenu && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
-                  {blockTypeOptions.map((opt) => (
-                    <button
-                      key={opt.type}
-                      onClick={() => addBlock(opt.type)}
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 text-left"
-                    >
-                      {opt.icon}
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {showPreview && (
-          <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-6">
-            <p className="text-xs text-gray-400 uppercase tracking-wide">
-              Live Preview
-            </p>
-            {coverImage[0] && (
-              <img
-                src={coverImage[0]}
-                alt={title}
-                className="w-full max-h-64 object-cover rounded-lg"
-              />
-            )}
-            <h2 className="font-display text-2xl font-bold text-primary-dark">
-              {title || "Untitled"}
-            </h2>
-            {blocks.length === 0 ? (
-              <p className="text-sm text-gray-400">No content blocks</p>
-            ) : (
-              blocks.map((block, i) => (
-                <BlockPreview key={i} block={block} />
-              ))
-            )}
-          </div>
-        )}
-      </div>
+      {/* Inline editable text — always looks like final output */}
+      <EditableText
+        tag={Tag}
+        value={content}
+        onChange={(val) => onChange({ ...block.data, content: val })}
+        className={`${wrapperClass} outline-none min-h-[1.5em]`}
+        style={{ fontWeight: fontWeight === "bold" ? "bold" : "normal", color: color || undefined, whiteSpace: "pre-wrap" }}
+        placeholder={fontSize === "title" ? "Title..." : fontSize === "subtitle" ? "Subtitle..." : "Start writing..."}
+      />
     </div>
   );
 }
 
-function BlockEditor({
+/* ----- IMAGE BLOCK ----- */
+function LiveImageBlock({
   block,
+  isSelected,
   onChange,
 }: {
   block: ContentBlock;
+  isSelected: boolean;
   onChange: (data: Record<string, unknown>) => void;
 }) {
-  switch (block.type) {
-    case "text":
-      return (
-        <textarea
-          value={(block.data.content as string) ?? ""}
-          onChange={(e) => onChange({ ...block.data, content: e.target.value })}
-          rows={4}
-          placeholder="Enter text or markdown..."
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-        />
-      );
-    case "image": {
-      const imgPosition: ImagePosition = (block.data.position as ImagePosition) ?? {
-        x: "center",
-        y: "middle",
-      };
-      return (
-        <div className="space-y-3">
-          <ImageUploader
-            images={block.data.url ? [block.data.url as string] : []}
-            onChange={(imgs) =>
-              onChange({ ...block.data, url: imgs[0] ?? "" })
-            }
-            multiple={false}
-          />
-          {typeof block.data.url === "string" && block.data.url !== "" && (
-            <ImagePositionPicker
-              imageUrl={block.data.url as string}
-              position={imgPosition}
-              onChange={(pos) => onChange({ ...block.data, position: pos })}
-            />
-          )}
-          <input
-            type="text"
-            value={(block.data.caption as string) ?? ""}
-            onChange={(e) =>
-              onChange({ ...block.data, caption: e.target.value })
-            }
-            placeholder="Caption (optional)"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-          />
-        </div>
-      );
-    }
-    case "gallery":
-      return (
+  const url = block.data.url as string;
+  const caption = (block.data.caption as string) ?? "";
+  const pos: ImagePosition = (block.data.position as ImagePosition) ?? { x: "center", y: "middle" };
+  const widthPct = (block.data.widthPct as number) ?? 50;
+
+  if (!url) {
+    return (
+      <div className="my-4">
         <ImageUploader
-          images={(block.data.images as string[]) ?? []}
-          onChange={(imgs) => onChange({ ...block.data, images: imgs })}
-          multiple
+          images={[]}
+          onChange={(imgs) => onChange({ ...block.data, url: imgs[0] ?? "" })}
+          multiple={false}
         />
-      );
-    case "hero":
-      return (
-        <div className="space-y-3">
-          <ImageUploader
-            images={block.data.url ? [block.data.url as string] : []}
-            onChange={(imgs) =>
-              onChange({ ...block.data, url: imgs[0] ?? "" })
-            }
-            multiple={false}
-          />
-          <input
-            type="text"
-            value={(block.data.overlay_text as string) ?? ""}
-            onChange={(e) =>
-              onChange({ ...block.data, overlay_text: e.target.value })
-            }
-            placeholder="Overlay text (optional)"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-          />
-        </div>
-      );
-    default:
-      return <p className="text-sm text-gray-400">Unknown block type</p>;
+      </div>
+    );
   }
+
+  const figureStyle: React.CSSProperties = {};
+  if (pos.x === "left") {
+    figureStyle.float = "left";
+    figureStyle.marginRight = "1.5rem";
+    figureStyle.marginBottom = "1rem";
+    figureStyle.width = `${widthPct}%`;
+  } else if (pos.x === "right") {
+    figureStyle.float = "right";
+    figureStyle.marginLeft = "1.5rem";
+    figureStyle.marginBottom = "1rem";
+    figureStyle.width = `${widthPct}%`;
+  } else {
+    figureStyle.display = "block";
+    figureStyle.margin = "1.5rem auto";
+    figureStyle.width = `${widthPct}%`;
+  }
+
+  return (
+    <figure style={figureStyle} className="my-4">
+      <img src={url} alt={caption} className="w-full rounded-2xl" />
+      {caption && (
+        <figcaption className="mt-2 text-center text-sm text-gray-400">{caption}</figcaption>
+      )}
+
+      {/* Controls — only when selected */}
+      {isSelected && (
+        <div className="mt-3 space-y-2 bg-gray-50 rounded-lg p-3 border border-gray-200">
+          <div className="flex items-center gap-3">
+            <label className="text-xs font-medium text-gray-500 shrink-0">Width</label>
+            <input
+              type="range"
+              min="20"
+              max="100"
+              step="5"
+              value={widthPct}
+              onChange={(e) => onChange({ ...block.data, widthPct: parseInt(e.target.value) })}
+              className="flex-1 accent-primary"
+            />
+            <span className="text-xs text-gray-500 w-10 text-right">{widthPct}%</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-gray-500">Align</label>
+            {(["left", "center", "right"] as const).map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => onChange({ ...block.data, position: { ...pos, x: p } })}
+                className={`px-3 py-1 rounded border text-xs capitalize ${pos.x === p ? "bg-primary text-white border-primary" : "border-gray-300"}`}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={caption}
+              onChange={(e) => onChange({ ...block.data, caption: e.target.value })}
+              placeholder="Caption (optional)"
+              className="flex-1 border border-gray-300 rounded px-2 py-1 text-xs"
+            />
+            <button
+              type="button"
+              onClick={() => onChange({ ...block.data, url: "" })}
+              className="text-xs text-red-500 hover:text-red-700"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+      )}
+    </figure>
+  );
 }
 
-function BlockPreview({ block }: { block: ContentBlock }) {
-  switch (block.type) {
-    case "text":
-      return (
-        <div className="whitespace-pre-wrap text-sm">
-          {(block.data.content as string) || (
-            <span className="text-gray-300 italic">Empty text block</span>
-          )}
-        </div>
-      );
-    case "image": {
-      const pos = (block.data.position as ImagePosition) ?? {
-        x: "center",
-        y: "middle",
-      };
+/* ----- GALLERY BLOCK ----- */
+function LiveGalleryBlock({
+  block,
+  isSelected,
+  onChange,
+}: {
+  block: ContentBlock;
+  isSelected: boolean;
+  onChange: (data: Record<string, unknown>) => void;
+}) {
+  const images = (block.data.images as string[]) ?? [];
+  const columns = (block.data.columns as number) ?? 3;
 
-      let floatStyle: React.CSSProperties = {};
-      let figureClass = "rounded-lg max-w-[50%]";
+  const moveImage = (from: number, to: number) => {
+    if (to < 0 || to >= images.length) return;
+    const newImages = [...images];
+    const [moved] = newImages.splice(from, 1);
+    newImages.splice(to, 0, moved);
+    onChange({ ...block.data, images: newImages });
+  };
 
-      if (pos.x === "left") {
-        floatStyle = { float: "left", marginRight: "1rem", marginBottom: "0.5rem" };
-      } else if (pos.x === "right") {
-        floatStyle = { float: "right", marginLeft: "1rem", marginBottom: "0.5rem" };
-      } else {
-        floatStyle = { display: "block", margin: "0 auto" };
-        figureClass = "rounded-lg max-w-[70%]";
-      }
-
-      return (
-        <figure style={floatStyle} className={figureClass}>
-          {block.data.url ? (
-            <img
-              src={block.data.url as string}
-              alt={(block.data.caption as string) ?? ""}
-              className="w-full rounded-lg"
-            />
-          ) : (
-            <div className="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-sm">
-              No image
-            </div>
-          )}
-          {typeof block.data.caption === "string" && block.data.caption && (
-            <figcaption className="text-xs text-gray-500 mt-1 text-center">
-              {block.data.caption}
-            </figcaption>
-          )}
-        </figure>
-      );
-    }
-    case "gallery": {
-      const images = (block.data.images as string[]) ?? [];
-      return images.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+  return (
+    <div className="my-6">
+      {images.length > 0 ? (
+        <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
           {images.map((url, i) => (
-            <img
-              key={i}
-              src={url}
-              alt={`Gallery ${i + 1}`}
-              className="w-full aspect-square object-cover rounded-lg"
-            />
+            <div key={url} className="relative group">
+              <img src={url} alt={`Gallery ${i + 1}`} className="w-full aspect-square object-cover rounded-xl" />
+              {isSelected && (
+                <div className="absolute inset-0 flex items-center justify-between px-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button type="button" onClick={() => moveImage(i, i - 1)} disabled={i === 0} className="bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs disabled:opacity-30">←</button>
+                  <button
+                    type="button"
+                    onClick={() => onChange({ ...block.data, images: images.filter((_, j) => j !== i) })}
+                    className="bg-red-500/80 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                  >×</button>
+                  <button type="button" onClick={() => moveImage(i, i + 1)} disabled={i === images.length - 1} className="bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs disabled:opacity-30">→</button>
+                </div>
+              )}
+            </div>
           ))}
         </div>
       ) : (
-        <div className="text-sm text-gray-300 italic">Empty gallery</div>
-      );
-    }
-    case "hero":
-      return (
-        <div className="relative rounded-lg overflow-hidden">
-          {block.data.url ? (
-            <img
-              src={block.data.url as string}
-              alt=""
-              className="w-full h-40 object-cover"
-            />
-          ) : (
-            <div className="w-full h-40 bg-gray-100" />
-          )}
-          {typeof block.data.overlay_text === "string" && block.data.overlay_text && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-              <span className="text-white font-display text-lg font-bold">
-                {block.data.overlay_text}
-              </span>
-            </div>
-          )}
+        <div className="text-center py-8 text-gray-300 text-sm">No images in gallery</div>
+      )}
+
+      {isSelected && (
+        <div className="mt-3 space-y-3 bg-gray-50 rounded-lg p-3 border border-gray-200">
+          <div className="flex items-center gap-3">
+            <label className="text-xs font-medium text-gray-500">Columns</label>
+            {[1, 2, 3, 4].map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => onChange({ ...block.data, columns: n })}
+                className={`w-8 h-8 rounded border text-xs font-medium ${columns === n ? "bg-primary text-white border-primary" : "border-gray-300"}`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+          <ImageUploader
+            images={images}
+            onChange={(imgs) => onChange({ ...block.data, images: imgs })}
+            multiple
+          />
         </div>
-      );
-    default:
-      return null;
-  }
+      )}
+    </div>
+  );
+}
+
+/* ----- HERO BLOCK ----- */
+function LiveHeroBlock({
+  block,
+  isSelected,
+  onChange,
+}: {
+  block: ContentBlock;
+  isSelected: boolean;
+  onChange: (data: Record<string, unknown>) => void;
+}) {
+  const url = block.data.url as string;
+  const overlayText = (block.data.overlay_text as string) ?? "";
+
+  return (
+    <div className="relative my-6 rounded-2xl overflow-hidden">
+      {url ? (
+        <img src={url} alt="" className="w-full h-64 sm:h-80 object-cover" />
+      ) : (
+        <div className="w-full h-64 bg-gradient-to-br from-primary to-primary-dark" />
+      )}
+      {overlayText && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+          <span className="text-white font-display text-2xl font-bold">{overlayText}</span>
+        </div>
+      )}
+
+      {isSelected && (
+        <div className="mt-3 space-y-3 bg-gray-50 rounded-lg p-3 border border-gray-200">
+          <ImageUploader
+            images={url ? [url] : []}
+            onChange={(imgs) => onChange({ ...block.data, url: imgs[0] ?? "" })}
+            multiple={false}
+          />
+          <input
+            type="text"
+            value={overlayText}
+            onChange={(e) => onChange({ ...block.data, overlay_text: e.target.value })}
+            placeholder="Overlay text (optional)"
+            className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ----- EDITABLE TEXT (contentEditable wrapper) ----- */
+function EditableText({
+  tag: Tag,
+  value,
+  onChange,
+  className,
+  style,
+  placeholder,
+}: {
+  tag: string;
+  value: string;
+  onChange: (val: string) => void;
+  className?: string;
+  style?: React.CSSProperties;
+  placeholder?: string;
+}) {
+  const ref = useRef<HTMLElement>(null);
+  const lastValue = useRef(value);
+
+  useEffect(() => {
+    if (ref.current && value !== lastValue.current) {
+      ref.current.innerText = value;
+      lastValue.current = value;
+    }
+  }, [value]);
+
+  useEffect(() => {
+    if (ref.current && !ref.current.innerText && value) {
+      ref.current.innerText = value;
+    }
+  }, [value]);
+
+  const handleInput = () => {
+    if (ref.current) {
+      const text = ref.current.innerText;
+      lastValue.current = text;
+      onChange(text);
+    }
+  };
+
+  const isEmpty = !value;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const DynTag = Tag as any;
+
+  return (
+    <DynTag
+      ref={ref}
+      contentEditable
+      suppressContentEditableWarning
+      onInput={handleInput}
+      onBlur={handleInput}
+      className={`${className} ${isEmpty ? "before:content-[attr(data-placeholder)] before:text-gray-300 before:pointer-events-none" : ""}`}
+      style={style}
+      data-placeholder={placeholder}
+    />
+  );
 }
