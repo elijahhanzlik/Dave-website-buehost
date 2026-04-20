@@ -271,3 +271,49 @@ html {
   height: 0;
   pointer-events: none;
 }
+
+/* Drop indicator while dragging an image between nodes. */
+.ProseMirror .prosemirror-dropcursor-block,
+.ProseMirror .prosemirror-dropcursor-inline {
+  background-color: #2d5016 !important;
+  border-color: #2d5016 !important;
+}
+
+/* Drag handle overlay on the selected image. */
+.ProseMirror .node-image .tiptap-image-drag-handle {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 3;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 6px;
+  background: #2d5016;
+  color: #f5f0e8;
+  cursor: grab;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  touch-action: none;
+}
+
+.ProseMirror .node-image.ProseMirror-selectednode .tiptap-image-drag-handle {
+  display: inline-flex;
+}
+
+.ProseMirror .tiptap-image-drag-handle:active {
+  cursor: grabbing;
+}
+
+.ProseMirror .tiptap-image-drag-handle:focus-visible {
+  outline: 2px solid #c4a265;
+  outline-offset: 2px;
+}
+
+.ProseMirror .tiptap-image-drag-handle > svg {
+  fill: currentColor;
+  pointer-events: none;
+}

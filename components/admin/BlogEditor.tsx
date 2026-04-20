@@ -10,6 +10,7 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
 import { ResizableImage } from "tiptap-extension-resizable-image";
 import "tiptap-extension-resizable-image/styles.css";
+import { NodeSelection, Plugin, PluginKey } from "@tiptap/pm/state";
 import {
   Bold as BoldIcon,
   Italic as ItalicIcon,
@@ -51,8 +52,14 @@ const BRAND_COLORS: { value: string; label: string }[] = [
 /**
  * Extend ResizableImage with a data-align attribute that flows text
  * around the image (left/right float). Value "none" keeps it inline/centered.
+ *
+ * `draggable: true` enables ProseMirror's native drag-and-drop for the node;
+ * the accompanying plugin paints a grip handle over the selected image so the
+ * affordance is discoverable. Keyboard alternative: select image, Cmd+X to
+ * cut, move caret, Cmd+V to paste — same node, same attrs.
  */
 const AlignedResizableImage = ResizableImage.extend({
+  draggable: true,
   addAttributes() {
     return {
       ...this.parent?.(),
@@ -67,7 +74,81 @@ const AlignedResizableImage = ResizableImage.extend({
       },
     };
   },
+  addProseMirrorPlugins() {
+    const parent = this.parent?.() ?? [];
+    return [...parent, imageDragHandlePlugin(this.name)];
+  },
 });
+
+const GRIP_SVG =
+  '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false">' +
+  '<circle cx="3" cy="3" r="1"/><circle cx="9" cy="3" r="1"/>' +
+  '<circle cx="3" cy="6" r="1"/><circle cx="9" cy="6" r="1"/>' +
+  '<circle cx="3" cy="9" r="1"/><circle cx="9" cy="9" r="1"/>' +
+  "</svg>";
+
+/**
+ * Injects a grip button into the selected image's node DOM so the drag
+ * affordance is discoverable. The button carries `data-drag-handle`, which
+ * Tiptap's NodeView uses to initiate a native ProseMirror drag of the parent
+ * image node — so drops land at the same positions (block-between or inline)
+ * that cut/paste produces. The button is never emitted by `editor.getHTML()`
+ * because it lives outside React reconciliation and is removed on blur.
+ */
+function imageDragHandlePlugin(nodeName: string) {
+  return new Plugin({
+    key: new PluginKey("image-drag-handle"),
+    view(editorView) {
+      let handle: HTMLButtonElement | null = null;
+      let host: HTMLElement | null = null;
+
+      const remove = () => {
+        if (handle && handle.parentElement === host) host?.removeChild(handle);
+        handle = null;
+        host = null;
+      };
+
+      const ensureHandleOn = (dom: HTMLElement) => {
+        if (host === dom && handle) return;
+        remove();
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "tiptap-image-drag-handle";
+        btn.setAttribute("aria-label", "Drag to reposition image");
+        btn.setAttribute("data-drag-handle", "");
+        btn.setAttribute("draggable", "true");
+        btn.setAttribute("contenteditable", "false");
+        btn.innerHTML = GRIP_SVG;
+        dom.appendChild(btn);
+        handle = btn;
+        host = dom;
+      };
+
+      const update = () => {
+        const { selection } = editorView.state;
+        if (
+          !(selection instanceof NodeSelection) ||
+          selection.node.type.name !== nodeName
+        ) {
+          remove();
+          return;
+        }
+        const dom = editorView.nodeDOM(selection.from);
+        if (!(dom instanceof HTMLElement)) {
+          remove();
+          return;
+        }
+        ensureHandleOn(dom);
+      };
+
+      update();
+      return {
+        update,
+        destroy: remove,
+      };
+    },
+  });
+}
 
 export default function BlogEditor({ value, onChange }: Props) {
   const [linkOpen, setLinkOpen] = useState(false);
@@ -84,6 +165,7 @@ export default function BlogEditor({ value, onChange }: Props) {
         link: false,
         underline: false,
         heading: { levels: [1, 2, 3] },
+        dropcursor: { color: "#2D5016", width: 2 },
       }),
       Underline,
       Link.configure({
