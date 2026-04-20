@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Archive, Mail, MailOpen, Trash2 } from "lucide-react";
 import { formatDate, cn } from "@/lib/formatters";
 
@@ -14,6 +15,7 @@ interface Inquiry {
 }
 
 export default function InquiriesPage() {
+  const router = useRouter();
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [selected, setSelected] = useState<Inquiry | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,10 +41,12 @@ export default function InquiriesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "read" }),
       });
+      router.refresh();
     }
   };
 
   const archiveInquiry = async (id: string) => {
+    const wasNew = inquiries.find((i) => i.id === id)?.status === "new";
     setInquiries((prev) =>
       prev.map((i) => (i.id === id ? { ...i, status: "archived" } : i)),
     );
@@ -54,13 +58,16 @@ export default function InquiriesPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: "archived" }),
     });
+    if (wasNew) router.refresh();
   };
 
   const deleteInquiry = async (id: string) => {
     if (!confirm("Delete this inquiry?")) return;
+    const wasNew = inquiries.find((i) => i.id === id)?.status === "new";
     setInquiries((prev) => prev.filter((i) => i.id !== id));
     if (selected?.id === id) setSelected(null);
     await fetch(`/api/inquiries/${id}`, { method: "DELETE" });
+    if (wasNew) router.refresh();
   };
 
   if (loading) {
