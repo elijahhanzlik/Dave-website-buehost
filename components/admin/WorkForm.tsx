@@ -236,7 +236,9 @@ export default function WorkForm({ initialData }: WorkFormProps) {
             <p className="text-sm text-gray-500 mt-1">{category}</p>
           )}
           {description && (
-            <p className="text-sm text-gray-600 mt-2">{description}</p>
+            <p className="text-sm text-gray-600 mt-2 whitespace-pre-line">
+              {description}
+            </p>
           )}
         </div>
       )}

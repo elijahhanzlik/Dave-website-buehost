@@ -215,7 +215,7 @@ export default async function ArtworkDetailPage({
             {artwork.title}
           </h1>
           {artwork.description && (
-            <p className="mt-4 max-w-2xl text-lg leading-relaxed text-text-secondary">
+            <p className="mt-4 max-w-2xl whitespace-pre-line text-lg leading-relaxed text-text-secondary">
               {artwork.description}
             </p>
           )}

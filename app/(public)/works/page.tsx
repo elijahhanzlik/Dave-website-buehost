@@ -1,4 +1,4 @@
-import ArtworkCard from "@/components/ArtworkCard";
+import WorksGallery from "@/components/WorksGallery";
 
 interface Artwork {
   id: string;
@@ -95,45 +95,12 @@ export default async function WorksPage() {
 
   return (
     <div className="pt-24 pb-20">
-      {/* Header */}
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <h1 className="font-display text-4xl font-bold text-primary-dark sm:text-5xl">
           Gallery
         </h1>
 
-        {/* Category filters */}
-        {categories.length > 0 && (
-          <div className="mt-8 flex flex-wrap gap-3">
-            <span className="rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-white">
-              All
-            </span>
-            {categories.map((cat) => (
-              <span
-                key={cat}
-                className="rounded-full border border-primary/20 px-4 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-white cursor-pointer"
-              >
-                {cat}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Gallery grid */}
-      <div className="mx-auto mt-12 max-w-7xl px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-          {artworks.map((artwork) => (
-            <div key={artwork.id}>
-              <ArtworkCard artwork={artwork} />
-            </div>
-          ))}
-        </div>
-
-        {artworks.length === 0 && (
-          <div className="py-20 text-center">
-            <p className="text-text-muted">No artworks to display yet.</p>
-          </div>
-        )}
+        <WorksGallery artworks={artworks} categories={categories} />
       </div>
     </div>
   );
