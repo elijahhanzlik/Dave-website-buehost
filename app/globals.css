@@ -244,23 +244,23 @@ html {
   display: inline-block;
 }
 
-.ProseMirror img.img-align-left,
+/* `.node-image.img-align-{v}` is added by imageAlignDecorationPlugin in
+   BlogEditor.tsx — the React node view spreads node.attrs onto the <img>
+   without invoking renderHTML, so without the decoration the float CSS
+   would have nothing to match in the live editor DOM. The :has() variant
+   stays as a fallback in case the decoration is ever removed. */
+.ProseMirror .node-image.img-align-left,
 .ProseMirror .node-image:has(img.img-align-left) {
   float: left;
   margin: 0.25rem 1.5rem 1rem 0;
   max-width: 60%;
 }
 
-.ProseMirror img.img-align-right,
+.ProseMirror .node-image.img-align-right,
 .ProseMirror .node-image:has(img.img-align-right) {
   float: right;
   margin: 0.25rem 0 1rem 1.5rem;
   max-width: 60%;
-}
-
-.ProseMirror img.img-align-left,
-.ProseMirror img.img-align-right {
-  margin: 0;
 }
 
 /* Placeholder for an empty editor. */
@@ -269,5 +269,55 @@ html {
   content: attr(data-placeholder);
   float: left;
   height: 0;
+  pointer-events: none;
+}
+
+/* Drop indicator while dragging an image between nodes. */
+.ProseMirror .prosemirror-dropcursor-block,
+.ProseMirror .prosemirror-dropcursor-inline {
+  background-color: #2d5016 !important;
+  border-color: #2d5016 !important;
+}
+
+/* Drag handle overlay on the selected image.
+   Rendered as a <span role="button"> so Tiptap's stopEvent doesn't trip
+   its INPUT/BUTTON early-return on mousedown — that would block PM's
+   mousedown → mightDrag → dragstart pipeline and break the drop. */
+.ProseMirror .node-image .tiptap-image-drag-handle {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 3;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 6px;
+  background: #2d5016;
+  color: #f5f0e8;
+  cursor: grab;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  touch-action: none;
+  user-select: none;
+}
+
+.ProseMirror .node-image.ProseMirror-selectednode .tiptap-image-drag-handle {
+  display: inline-flex;
+}
+
+.ProseMirror .tiptap-image-drag-handle:active {
+  cursor: grabbing;
+}
+
+.ProseMirror .tiptap-image-drag-handle:focus-visible {
+  outline: 2px solid #c4a265;
+  outline-offset: 2px;
+}
+
+.ProseMirror .tiptap-image-drag-handle > svg {
+  fill: currentColor;
   pointer-events: none;
 }
