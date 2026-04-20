@@ -47,7 +47,7 @@ export default function PagesListPage() {
       });
       if (res.ok) {
         const page = await res.json();
-        router.push(`/admin-panel/pages/${page.id}`);
+        router.push(`/dave-admin-website-wonderland/pages/${page.id}`);
       }
     } finally {
       setCreating(false);
@@ -170,7 +170,7 @@ export default function PagesListPage() {
                 >
                   <td className="px-4 py-3 font-medium">
                     <Link
-                      href={`/admin-panel/pages/${page.id}`}
+                      href={`/dave-admin-website-wonderland/pages/${page.id}`}
                       className="hover:text-primary transition-colors"
                     >
                       {page.title}
@@ -189,7 +189,7 @@ export default function PagesListPage() {
                     <div className="flex items-center gap-1 justify-center">
                       <button
                         onClick={() =>
-                          router.push(`/admin-panel/pages/${page.id}`)
+                          router.push(`/dave-admin-website-wonderland/pages/${page.id}`)
                         }
                         className="p-1.5 rounded hover:bg-gray-100 text-gray-500"
                       >

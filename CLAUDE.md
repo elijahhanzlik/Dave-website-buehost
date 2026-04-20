@@ -20,7 +20,7 @@ app/
 │   ├── about/
 │   ├── blog/
 │   └── contact/
-├── admin-panel/        # Admin CMS (protected route)
+├── dave-admin-website-wonderland/  # Admin CMS (protected, obscured route)
 │   ├── layout.tsx      # Sidebar layout
 │   ├── login/
 │   ├── dashboard/

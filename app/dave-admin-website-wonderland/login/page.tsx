@@ -34,7 +34,7 @@ export default function AdminLoginPage() {
       return;
     }
 
-    router.push("/admin-panel/dashboard");
+    router.push("/dave-admin-website-wonderland/dashboard");
     router.refresh();
   };
 

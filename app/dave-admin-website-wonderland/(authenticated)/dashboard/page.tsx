@@ -98,13 +98,13 @@ export default function DashboardPage() {
       {/* Quick actions */}
       <div className="flex flex-wrap gap-3">
         <Link
-          href="/admin-panel/works/new"
+          href="/dave-admin-website-wonderland/works/new"
           className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-primary-dark transition-colors"
         >
           <Plus size={16} /> Add Work
         </Link>
         <Link
-          href="/admin-panel/blog/new"
+          href="/dave-admin-website-wonderland/blog/new"
           className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-primary-dark transition-colors"
         >
           <Plus size={16} /> New Blog Post
@@ -125,7 +125,7 @@ export default function DashboardPage() {
                   className="py-2 flex items-center justify-between"
                 >
                   <Link
-                    href={`/admin-panel/works/${w.id}`}
+                    href={`/dave-admin-website-wonderland/works/${w.id}`}
                     className="text-sm hover:text-primary transition-colors"
                   >
                     {w.title}

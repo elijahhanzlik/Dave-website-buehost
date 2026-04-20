@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Edit2, Trash2 } from "lucide-react";
 import { formatDate } from "@/lib/formatters";
 
-interface Exhibit {
+interface BlogPost {
   id: string;
   title: string;
   slug: string;
@@ -15,24 +15,24 @@ interface Exhibit {
   created_at: string;
 }
 
-export default function ExhibitsListPage() {
+export default function BlogListPage() {
   const router = useRouter();
-  const [exhibits, setExhibits] = useState<Exhibit[]>([]);
+  const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/exhibits?all=true")
+    fetch("/api/blog?all=true")
       .then((r) => r.json())
       .then((data) => {
-        if (Array.isArray(data)) setExhibits(data);
+        if (Array.isArray(data)) setPosts(data);
       })
       .finally(() => setLoading(false));
   }, []);
 
-  const deleteExhibit = async (id: string) => {
-    if (!confirm("Delete this exhibit?")) return;
-    setExhibits((prev) => prev.filter((e) => e.id !== id));
-    await fetch(`/api/exhibits/${id}`, { method: "DELETE" });
+  const deletePost = async (id: string) => {
+    if (!confirm("Delete this post?")) return;
+    setPosts((prev) => prev.filter((p) => p.id !== id));
+    await fetch(`/api/blog/${id}`, { method: "DELETE" });
   };
 
   if (loading) {
@@ -46,18 +46,18 @@ export default function ExhibitsListPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-bold text-gray-900">Exhibits</h1>
+        <h1 className="text-2xl font-display font-bold text-gray-900">Blogs</h1>
         <Link
-          href="/admin-panel/exhibits/new"
+          href="/dave-admin-website-wonderland/blog/new"
           className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-primary-dark transition-colors"
         >
-          <Plus size={16} /> New Exhibit
+          <Plus size={16} /> New Post
         </Link>
       </div>
 
-      {exhibits.length === 0 ? (
+      {posts.length === 0 ? (
         <div className="text-center py-12 text-gray-400">
-          <p>No exhibits yet.</p>
+          <p>No blog posts yet.</p>
         </div>
       ) : (
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -82,43 +82,43 @@ export default function ExhibitsListPage() {
               </tr>
             </thead>
             <tbody>
-              {exhibits.map((exhibit) => (
+              {posts.map((post) => (
                 <tr
-                  key={exhibit.id}
+                  key={post.id}
                   className="border-b border-gray-100 hover:bg-gray-50"
                 >
-                  <td className="px-4 py-3 font-medium">{exhibit.title}</td>
+                  <td className="px-4 py-3 font-medium">{post.title}</td>
                   <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">
-                    {exhibit.slug}
+                    {post.slug}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span
                       className={`inline-block text-xs px-2 py-0.5 rounded-full ${
-                        exhibit.status === "published"
+                        post.status === "published"
                           ? "bg-green-100 text-green-700"
                           : "bg-yellow-100 text-yellow-700"
                       }`}
                     >
-                      {exhibit.status}
+                      {post.status}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-gray-500 text-xs hidden md:table-cell">
-                    {exhibit.published_at
-                      ? formatDate(exhibit.published_at)
-                      : formatDate(exhibit.created_at)}
+                    {post.published_at
+                      ? formatDate(post.published_at)
+                      : formatDate(post.created_at)}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1 justify-center">
                       <button
                         onClick={() =>
-                          router.push(`/admin-panel/exhibits/${exhibit.id}`)
+                          router.push(`/dave-admin-website-wonderland/blog/${post.id}`)
                         }
                         className="p-1.5 rounded hover:bg-gray-100 text-gray-500"
                       >
                         <Edit2 size={14} />
                       </button>
                       <button
-                        onClick={() => deleteExhibit(exhibit.id)}
+                        onClick={() => deletePost(post.id)}
                         className="p-1.5 rounded hover:bg-red-50 text-gray-500 hover:text-red-600"
                       >
                         <Trash2 size={14} />

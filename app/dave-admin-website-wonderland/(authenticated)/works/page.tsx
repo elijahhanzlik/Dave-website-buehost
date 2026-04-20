@@ -106,7 +106,7 @@ export default function WorksListPage() {
           Works
         </h1>
         <Link
-          href="/admin-panel/works/new"
+          href="/dave-admin-website-wonderland/works/new"
           className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-primary-dark transition-colors"
         >
           <Plus size={16} /> Add Work
@@ -194,7 +194,7 @@ export default function WorksListPage() {
                     <div className="flex items-center gap-1 justify-center">
                       <button
                         onClick={() =>
-                          router.push(`/admin-panel/works/${work.id}`)
+                          router.push(`/dave-admin-website-wonderland/works/${work.id}`)
                         }
                         className="p-1.5 rounded hover:bg-gray-100 text-gray-500"
                       >
