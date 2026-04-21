@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { formatDate } from "@/lib/formatters";
-import { sanitizeHtml } from "@/lib/sanitizeHtml";
 import type { Metadata } from "next";
 
 interface ContentBlock {
@@ -108,9 +107,7 @@ export async function generateMetadata({
     title: post
       ? `${post.title} — David Schaldach`
       : "Blog — David Schaldach",
-    description: post?.content
-      ? post.content.replace(/<[^>]+>/g, "").slice(0, 160)
-      : undefined,
+    description: post?.content?.slice(0, 160) ?? undefined,
   };
 }
 
@@ -214,8 +211,8 @@ function BlockRenderer({ block }: { block: ContentBlock }) {
 
       if (!url) return null;
 
-      const imgClass = "rounded-2xl";
       let figureStyle: React.CSSProperties = {};
+      const imgClass = "rounded-2xl";
 
       if (pos.x === "left") {
         figureStyle = { float: "left", marginRight: "2rem", marginBottom: "1rem", width: `${widthPct}%` };
@@ -309,9 +306,6 @@ export default async function BlogPostPage({
   }
 
   const hasBlocks = post.content_blocks && post.content_blocks.length > 0;
-  const rawContent = post.content ?? "";
-  const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(rawContent);
-  const sanitizedHtml = !hasBlocks && looksLikeHtml ? sanitizeHtml(rawContent) : "";
 
   return (
     <div className="pt-24 pb-20">
@@ -355,14 +349,6 @@ export default async function BlogPostPage({
               {post.content_blocks!.map((block, i) => (
                 <BlockRenderer key={i} block={block} />
               ))}
-              <div style={{ clear: "both" }} />
-            </>
-          ) : sanitizedHtml ? (
-            <>
-              <div
-                className="prose prose-lg prose-custom max-w-none"
-                dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
-              />
               <div style={{ clear: "both" }} />
             </>
           ) : post.content ? (
