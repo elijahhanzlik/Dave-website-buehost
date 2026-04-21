@@ -1,10 +1,13 @@
 import { z } from "zod";
 
 // ----- Shared -----
-export const contentBlockSchema = z.object({
-  type: z.string(),
-  data: z.record(z.string(), z.unknown()),
-});
+// passthrough() preserves Editor.js block metadata (id, tunes) on round-trip.
+export const contentBlockSchema = z
+  .object({
+    type: z.string(),
+    data: z.record(z.string(), z.unknown()),
+  })
+  .passthrough();
 
 // ----- Artworks -----
 export const artworkSchema = z.object({

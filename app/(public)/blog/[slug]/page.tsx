@@ -1,19 +1,15 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { formatDate } from "@/lib/formatters";
+import { blocksToPreview, formatDate } from "@/lib/formatters";
+import EditorJsRenderer from "@/components/admin/blog-renderer/EditorJsRenderer";
 import type { Metadata } from "next";
-
-interface ContentBlock {
-  type: "text" | "image" | "gallery" | "hero";
-  data: Record<string, unknown>;
-}
 
 interface BlogPost {
   id: string;
   title: string;
   slug: string;
   content: string | null;
-  content_blocks: ContentBlock[] | null;
+  content_blocks: unknown;
   cover_image: string | null;
   status: string;
   published_at: string | null;
@@ -107,11 +103,11 @@ export async function generateMetadata({
     title: post
       ? `${post.title} — David Schaldach`
       : "Blog — David Schaldach",
-    description: post?.content?.slice(0, 160) ?? undefined,
+    description: post
+      ? blocksToPreview(post.content_blocks, post.content) || undefined
+      : undefined,
   };
 }
-
-type ImagePosition = { x: "left" | "center" | "right"; y: "top" | "middle" | "bottom" };
 
 function renderMarkdownContent(content: string) {
   const lines = content.split("\n");
@@ -160,121 +156,6 @@ function renderMarkdownContent(content: string) {
   return elements;
 }
 
-function BlockRenderer({ block }: { block: ContentBlock }) {
-  switch (block.type) {
-    case "text": {
-      const content = (block.data.content as string) ?? "";
-      if (!content.trim()) return null;
-      const fs = (block.data.fontSize as string) ?? "body";
-      const fw = (block.data.fontWeight as string) ?? "normal";
-      const clr = block.data.color as string;
-
-      if (fs === "title") {
-        return (
-          <h2
-            className="mt-10 mb-4 font-display text-3xl text-primary-dark"
-            style={{ fontWeight: fw === "bold" ? "bold" : 600, color: clr || undefined }}
-          >
-            {content}
-          </h2>
-        );
-      }
-      if (fs === "subtitle") {
-        return (
-          <h3
-            className="mt-8 mb-3 font-display text-xl text-primary-dark"
-            style={{ fontWeight: fw === "bold" ? "bold" : 500, color: clr || undefined }}
-          >
-            {content}
-          </h3>
-        );
-      }
-      // body or small
-      const sizeClass = fs === "small" ? "text-sm" : "text-lg";
-      return (
-        <div
-          className={`mb-6 leading-relaxed text-text-secondary whitespace-pre-wrap ${sizeClass}`}
-          style={{ fontWeight: fw === "bold" ? "bold" : "normal", color: clr || undefined }}
-        >
-          {content}
-        </div>
-      );
-    }
-    case "image": {
-      const url = block.data.url as string;
-      const caption = block.data.caption as string;
-      const pos: ImagePosition = (block.data.position as ImagePosition) ?? {
-        x: "center",
-        y: "middle",
-      };
-      const widthPct = (block.data.widthPct as number) ?? 50;
-
-      if (!url) return null;
-
-      let figureStyle: React.CSSProperties = {};
-      const imgClass = "rounded-2xl";
-
-      if (pos.x === "left") {
-        figureStyle = { float: "left", marginRight: "2rem", marginBottom: "1rem", width: `${widthPct}%` };
-      } else if (pos.x === "right") {
-        figureStyle = { float: "right", marginLeft: "2rem", marginBottom: "1rem", width: `${widthPct}%` };
-      } else {
-        figureStyle = { display: "block", margin: "2rem auto", width: `${widthPct}%` };
-      }
-
-      return (
-        <figure style={figureStyle}>
-          <img src={url} alt={caption ?? ""} className={`w-full ${imgClass}`} />
-          {caption && (
-            <figcaption className="mt-2 text-center text-sm text-text-muted">
-              {caption}
-            </figcaption>
-          )}
-        </figure>
-      );
-    }
-    case "gallery": {
-      const images = (block.data.images as string[]) ?? [];
-      const cols = (block.data.columns as number) ?? 3;
-      if (images.length === 0) return null;
-      return (
-        <div className="my-8 grid gap-4" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
-          {images.map((url, i) => (
-            <img
-              key={i}
-              src={url}
-              alt={`Gallery image ${i + 1}`}
-              className="aspect-square w-full rounded-xl object-cover"
-            />
-          ))}
-        </div>
-      );
-    }
-    case "hero": {
-      const url = block.data.url as string;
-      const overlayText = block.data.overlay_text as string;
-      return (
-        <div className="relative my-8 overflow-hidden rounded-2xl">
-          {url ? (
-            <img src={url} alt="" className="h-64 w-full object-cover sm:h-80 md:h-96" />
-          ) : (
-            <div className="h-64 w-full bg-gradient-to-br from-primary via-primary-light to-primary-dark sm:h-80 md:h-96" />
-          )}
-          {overlayText && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-              <h2 className="font-display text-3xl font-bold text-white sm:text-4xl md:text-5xl">
-                {overlayText}
-              </h2>
-            </div>
-          )}
-        </div>
-      );
-    }
-    default:
-      return null;
-  }
-}
-
 export default async function BlogPostPage({
   params,
 }: {
@@ -305,12 +186,12 @@ export default async function BlogPostPage({
     );
   }
 
-  const hasBlocks = post.content_blocks && post.content_blocks.length > 0;
+  const blocks = Array.isArray(post.content_blocks) ? post.content_blocks : null;
+  const hasBlocks = blocks !== null && blocks.length > 0;
 
   return (
     <div className="pt-24 pb-20">
       <article className="mx-auto max-w-6xl px-6 lg:px-8">
-        {/* Back link */}
         <Link
           href="/blog"
           className="inline-flex items-center gap-2 text-sm text-text-muted transition-colors hover:text-primary"
@@ -319,7 +200,6 @@ export default async function BlogPostPage({
           Back to Blog
         </Link>
 
-        {/* Cover image */}
         {post.cover_image && (
           <div className="mt-8 overflow-hidden rounded-2xl">
             <img
@@ -330,7 +210,6 @@ export default async function BlogPostPage({
           </div>
         )}
 
-        {/* Header */}
         <header className="mt-8">
           {post.published_at && (
             <p className="text-sm font-medium uppercase tracking-[0.1em] text-text-muted">
@@ -342,15 +221,9 @@ export default async function BlogPostPage({
           </h1>
         </header>
 
-        {/* Content */}
-        <div className="mt-10 border-t border-sage pt-10">
+        <div className="mt-10 border-t border-sage pt-10 prose-custom max-w-none">
           {hasBlocks ? (
-            <>
-              {post.content_blocks!.map((block, i) => (
-                <BlockRenderer key={i} block={block} />
-              ))}
-              <div style={{ clear: "both" }} />
-            </>
+            <EditorJsRenderer blocks={blocks} />
           ) : post.content ? (
             renderMarkdownContent(post.content)
           ) : (
@@ -358,7 +231,6 @@ export default async function BlogPostPage({
           )}
         </div>
 
-        {/* Footer */}
         <div className="mt-16 border-t border-sage pt-8">
           <Link
             href="/blog"

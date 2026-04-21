@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { formatDate } from "@/lib/formatters";
+import { blocksToPreview, formatDate } from "@/lib/formatters";
 
 export const metadata: Metadata = {
   title: "Blog — David Schaldach",
@@ -12,6 +12,7 @@ interface BlogPost {
   title: string;
   slug: string;
   content: string | null;
+  content_blocks?: unknown;
   cover_image: string | null;
   status: string;
   published_at: string | null;
@@ -130,11 +131,14 @@ export default async function BlogPage() {
                 <h2 className="mt-2 font-display text-xl font-semibold text-primary-dark transition-colors group-hover:text-primary">
                   {post.title}
                 </h2>
-                {post.content && (
-                  <p className="mt-3 text-sm leading-relaxed text-text-secondary line-clamp-3">
-                    {post.content.replace(/[#*_>\-\[\]()]/g, "").slice(0, 160)}...
-                  </p>
-                )}
+                {(() => {
+                  const preview = blocksToPreview(post.content_blocks, post.content);
+                  return preview ? (
+                    <p className="mt-3 text-sm leading-relaxed text-text-secondary line-clamp-3">
+                      {preview}
+                    </p>
+                  ) : null;
+                })()}
                 <span className="mt-4 inline-block text-sm font-medium text-gold-dark transition-colors group-hover:text-gold">
                   Read more &rarr;
                 </span>
