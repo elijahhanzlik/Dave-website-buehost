@@ -1,21 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Save } from "lucide-react";
-import type { OutputBlockData } from "@editorjs/editorjs";
-import { slugify } from "@/lib/formatters";
+import { formatApiError, slugify } from "@/lib/formatters";
 import ImageUploader from "@/components/ImageUploader";
-import BlogEditor from "@/components/admin/BlogEditor";
+import BlogEditor, { type BlogEditorHandle } from "@/components/admin/BlogEditor";
 
 export default function NewBlogPostPage() {
   const router = useRouter();
+  const editorRef = useRef<BlogEditorHandle>(null);
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [coverImage, setCoverImage] = useState<string[]>([]);
   const [status, setStatus] = useState<"draft" | "published">("draft");
   const [publishedAt, setPublishedAt] = useState("");
-  const [blocks, setBlocks] = useState<OutputBlockData[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -33,6 +32,10 @@ export default function NewBlogPostPage() {
     setError("");
 
     try {
+      const blocks = (await editorRef.current?.save()) ?? [];
+      const publishedIso = publishedAt
+        ? new Date(publishedAt).toISOString()
+        : null;
       const res = await fetch("/api/blog", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -44,14 +47,14 @@ export default function NewBlogPostPage() {
           status,
           published_at:
             status === "published"
-              ? publishedAt || new Date().toISOString()
+              ? publishedIso ?? new Date().toISOString()
               : null,
         }),
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error?.toString() ?? "Failed to save");
+        const data = await res.json().catch(() => ({}));
+        throw new Error(formatApiError(data.error, "Failed to save"));
       }
 
       router.push("/dave-admin-website-wonderland/blog");
@@ -84,7 +87,7 @@ export default function NewBlogPostPage() {
       </div>
 
       {error && (
-        <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm">
+        <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm whitespace-pre-line">
           {error}
         </div>
       )}
@@ -158,7 +161,7 @@ export default function NewBlogPostPage() {
         <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
           Content
         </h2>
-        <BlogEditor value={blocks} onChange={setBlocks} />
+        <BlogEditor ref={editorRef} />
       </div>
     </div>
   );

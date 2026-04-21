@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2, Save, Settings2 } from "lucide-react";
 import type { OutputBlockData } from "@editorjs/editorjs";
-import { slugify } from "@/lib/formatters";
+import { formatApiError, isoToLocalDatetimeInput, slugify } from "@/lib/formatters";
 import ImageUploader from "@/components/ImageUploader";
-import BlogEditor from "@/components/admin/BlogEditor";
+import BlogEditor, { type BlogEditorHandle } from "@/components/admin/BlogEditor";
 
 interface BlogPost {
   id: string;
@@ -22,6 +22,7 @@ interface BlogPost {
 export default function EditBlogPostPage() {
   const params = useParams();
   const router = useRouter();
+  const editorRef = useRef<BlogEditorHandle>(null);
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -33,7 +34,7 @@ export default function EditBlogPostPage() {
   const [coverImage, setCoverImage] = useState<string[]>([]);
   const [status, setStatus] = useState<"draft" | "published">("draft");
   const [publishedAt, setPublishedAt] = useState("");
-  const [blocks, setBlocks] = useState<OutputBlockData[]>([]);
+  const [initialBlocks, setInitialBlocks] = useState<OutputBlockData[]>([]);
   const [showMeta, setShowMeta] = useState(false);
 
   useEffect(() => {
@@ -49,11 +50,11 @@ export default function EditBlogPostPage() {
         setCoverImage(data.cover_image ? [data.cover_image] : []);
         setStatus(data.status);
         setPublishedAt(
-          data.published_at
-            ? new Date(data.published_at).toISOString().slice(0, 16)
-            : "",
+          data.published_at ? isoToLocalDatetimeInput(data.published_at) : "",
         );
-        setBlocks(Array.isArray(data.content_blocks) ? data.content_blocks : []);
+        setInitialBlocks(
+          Array.isArray(data.content_blocks) ? data.content_blocks : [],
+        );
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -72,12 +73,10 @@ export default function EditBlogPostPage() {
     setSaved(false);
 
     try {
-      // Blur to flush any pending caret-bound edits before serializing.
-      if (typeof document !== "undefined") {
-        const active = document.activeElement as HTMLElement | null;
-        if (active && typeof active.blur === "function") active.blur();
-      }
-
+      const blocks = (await editorRef.current?.save()) ?? [];
+      const publishedIso = publishedAt
+        ? new Date(publishedAt).toISOString()
+        : null;
       const res = await fetch(`/api/blog/${params.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -89,16 +88,14 @@ export default function EditBlogPostPage() {
           status,
           published_at:
             status === "published"
-              ? publishedAt
-                ? new Date(publishedAt).toISOString()
-                : new Date().toISOString()
+              ? publishedIso ?? new Date().toISOString()
               : null,
         }),
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error?.toString() ?? "Failed to save");
+        const data = await res.json().catch(() => ({}));
+        throw new Error(formatApiError(data.error, "Failed to save"));
       }
 
       setSaved(true);
@@ -152,7 +149,9 @@ export default function EditBlogPostPage() {
       </div>
 
       {error && (
-        <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>
+        <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm whitespace-pre-line">
+          {error}
+        </div>
       )}
 
       {showMeta && (
@@ -225,7 +224,7 @@ export default function EditBlogPostPage() {
             className="w-full font-display text-4xl font-bold text-gray-900 border-none outline-none placeholder:text-gray-300 bg-transparent mb-6"
           />
 
-          <BlogEditor value={blocks} onChange={setBlocks} />
+          <BlogEditor ref={editorRef} initialBlocks={initialBlocks} />
         </div>
       </div>
     </div>

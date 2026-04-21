@@ -1,30 +1,40 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useImperativeHandle, useRef, type Ref } from "react";
 import type EditorJS from "@editorjs/editorjs";
 import type { OutputBlockData } from "@editorjs/editorjs";
-
-interface BlogEditorProps {
-  value: OutputBlockData[] | null;
-  onChange: (blocks: OutputBlockData[]) => void;
-}
 
 export interface BlogEditorHandle {
   save: () => Promise<OutputBlockData[]>;
 }
 
-export default function BlogEditor({ value, onChange }: BlogEditorProps) {
+interface BlogEditorProps {
+  initialBlocks?: OutputBlockData[] | null;
+  ref?: Ref<BlogEditorHandle>;
+}
+
+export default function BlogEditor({ initialBlocks, ref }: BlogEditorProps) {
   const holderId = useId().replace(/[:]/g, "_");
   const editorRef = useRef<EditorJS | null>(null);
-  const onChangeRef = useRef(onChange);
+  // Seed is captured once at mount; parent changes to initialBlocks after
+  // mount are intentionally ignored — the editor owns the content from there.
+  const initialBlocksRef = useRef(initialBlocks);
 
-  useEffect(() => {
-    onChangeRef.current = onChange;
-  }, [onChange]);
+  useImperativeHandle(
+    ref,
+    () => ({
+      async save() {
+        const e = editorRef.current;
+        if (!e) return [];
+        const out = await e.save();
+        return out.blocks;
+      },
+    }),
+    [],
+  );
 
   useEffect(() => {
     let cancelled = false;
-    let editor: EditorJS | null = null;
 
     (async () => {
       const [
@@ -79,25 +89,26 @@ export default function BlogEditor({ value, onChange }: BlogEditorProps) {
         },
       };
 
-      editor = new EditorJSCtor({
+      // No onChange handler: serializing the tree while typing inside a
+      // nested Columns block steals focus back to the parent editor
+      // (see @calumk/editorjs-columns #11). The parent reads content via the
+      // imperative `save()` handle at submit time instead.
+      const editor = new EditorJSCtor({
         holder: holderId,
         autofocus: false,
         placeholder: "Start writing…",
-        data: { blocks: value ?? [] },
+        data: { blocks: initialBlocksRef.current ?? [] },
         // The Tools type expects a specific generic shape per tool; our runtime
         // shape (mix of class refs and config objects) matches what EditorJS
         // actually consumes but doesn't satisfy the inferred type.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         tools: tools as any,
-        onChange: async (api) => {
-          try {
-            const out = await api.saver.save();
-            onChangeRef.current(out.blocks);
-          } catch {
-            /* save failures surface in the editor UI */
-          }
-        },
       });
+
+      if (cancelled) {
+        void editor.destroy?.();
+        return;
+      }
 
       editorRef.current = editor;
     })();
@@ -107,14 +118,10 @@ export default function BlogEditor({ value, onChange }: BlogEditorProps) {
       const e = editorRef.current;
       editorRef.current = null;
       if (e && typeof e.destroy === "function") {
-        // destroy() is sync in v2.31; ignore returned promise if any
         void e.destroy();
       }
     };
-    // We intentionally only initialize once. `value` is the seed; subsequent
-    // updates flow back via onChange and are not re-fed into the editor.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [holderId]);
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 px-3 py-2 min-h-[300px]">
