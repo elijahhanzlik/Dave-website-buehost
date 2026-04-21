@@ -41,14 +41,15 @@ create policy "Authenticated admin delete on artworks"
 
 -- ----- blog_posts -----
 create table public.blog_posts (
-  id           uuid primary key default uuid_generate_v4(),
-  title        text not null,
-  slug         text not null unique,
-  content      text,
-  cover_image  text,
-  status       text not null default 'draft' check (status in ('draft', 'published')),
-  published_at timestamptz,
-  created_at   timestamptz not null default now()
+  id             uuid primary key default uuid_generate_v4(),
+  title          text not null,
+  slug           text not null unique,
+  content        text,
+  content_blocks jsonb not null default '[]'::jsonb,
+  cover_image    text,
+  status         text not null default 'draft' check (status in ('draft', 'published')),
+  published_at   timestamptz,
+  created_at     timestamptz not null default now()
 );
 
 alter table public.blog_posts enable row level security;
