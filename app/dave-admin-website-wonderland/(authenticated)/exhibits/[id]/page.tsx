@@ -14,7 +14,7 @@ import {
   Maximize2,
   Save,
 } from "lucide-react";
-import { slugify } from "@/lib/formatters";
+import { formatApiError, slugify } from "@/lib/formatters";
 import ImageUploader from "@/components/ImageUploader";
 import ImagePositionPicker from "@/components/admin/ImagePositionPicker";
 import type { ImagePosition } from "@/components/admin/ImagePositionPicker";
@@ -162,7 +162,7 @@ export default function EditExhibitPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error?.toString() ?? "Failed to save");
+        throw new Error(formatApiError(data.error, "Failed to save"));
       }
 
       setSaved(true);
