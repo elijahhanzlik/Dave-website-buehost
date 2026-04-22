@@ -34,8 +34,27 @@ async function getExhibits(): Promise<Exhibit[]> {
   }
 }
 
+async function getBannerImage(): Promise<string | null> {
+  try {
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+    if (!supabase) return null;
+    const { data } = await supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", "exhibits_banner")
+      .maybeSingle();
+    return data?.value || null;
+  } catch {
+    return null;
+  }
+}
+
 export default async function ExhibitsPage() {
-  const exhibits = await getExhibits();
+  const [exhibits, bannerImage] = await Promise.all([
+    getExhibits(),
+    getBannerImage(),
+  ]);
 
   return (
     <div className="pt-24 pb-20">
@@ -43,8 +62,22 @@ export default async function ExhibitsPage() {
         {/* Hero banner */}
         <div className="relative overflow-hidden rounded-2xl">
           <div className="h-44 w-full bg-gradient-to-br from-primary via-primary-light to-primary-dark sm:h-52 md:h-64">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(196,162,101,0.15),transparent_50%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(245,240,232,0.1),transparent_50%)]" />
+            {bannerImage ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={bannerImage}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/40" />
+              </>
+            ) : (
+              <>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(196,162,101,0.15),transparent_50%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(245,240,232,0.1),transparent_50%)]" />
+              </>
+            )}
           </div>
           <div className="absolute inset-0 flex items-center justify-center">
             <h1 className="font-display text-4xl font-bold text-white sm:text-5xl md:text-6xl">

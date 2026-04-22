@@ -39,6 +39,9 @@ export default function SettingsPage() {
   // Contact photo state
   const [contactPhoto, setContactPhoto] = useState<string[]>([]);
 
+  // Exhibits banner state
+  const [exhibitsBanner, setExhibitsBanner] = useState<string[]>([]);
+
   useEffect(() => {
     fetch("/api/settings")
       .then((r) => r.json())
@@ -79,6 +82,12 @@ export default function SettingsPage() {
           if (contactPhotoSetting && contactPhotoSetting.value) {
             setContactPhoto([contactPhotoSetting.value]);
           }
+
+          // Load exhibits banner from settings
+          const exhibitsBannerSetting = existing.find((s) => s.key === "exhibits_banner");
+          if (exhibitsBannerSetting && exhibitsBannerSetting.value) {
+            setExhibitsBanner([exhibitsBannerSetting.value]);
+          }
         }
       })
       .finally(() => setLoading(false));
@@ -101,7 +110,7 @@ export default function SettingsPage() {
   const handleSave = async () => {
     // Merge hero settings into the settings list
     const allSettings = settings.filter(
-      (s) => s.key.trim() !== "" && s.key !== "hero_image" && s.key !== "hero_crop" && s.key !== "about_banner" && s.key !== "contact_photo",
+      (s) => s.key.trim() !== "" && s.key !== "hero_image" && s.key !== "hero_crop" && s.key !== "about_banner" && s.key !== "contact_photo" && s.key !== "exhibits_banner",
     );
     if (heroImage[0]) {
       allSettings.push({ key: "hero_image", value: heroImage[0] });
@@ -115,6 +124,9 @@ export default function SettingsPage() {
     }
     if (contactPhoto[0]) {
       allSettings.push({ key: "contact_photo", value: contactPhoto[0] });
+    }
+    if (exhibitsBanner[0]) {
+      allSettings.push({ key: "exhibits_banner", value: exhibitsBanner[0] });
     }
 
     setSaving(true);
@@ -164,7 +176,7 @@ export default function SettingsPage() {
 
   // Filter out hero keys from the general settings display
   const generalSettings = settings.filter(
-    (s) => s.key !== "hero_image" && s.key !== "hero_crop" && s.key !== "about_banner" && s.key !== "contact_photo",
+    (s) => s.key !== "hero_image" && s.key !== "hero_crop" && s.key !== "about_banner" && s.key !== "contact_photo" && s.key !== "exhibits_banner",
   );
 
   return (
@@ -247,6 +259,23 @@ export default function SettingsPage() {
         <ImageUploader
           images={contactPhoto}
           onChange={setContactPhoto}
+          multiple={false}
+        />
+      </div>
+
+      {/* ===== EXHIBITS BANNER SECTION ===== */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+        <h2 className="text-lg font-display font-semibold text-gray-900">
+          Exhibits Page Banner
+        </h2>
+        <p className="text-sm text-gray-500">
+          Background image for the hero banner on the Exhibits page. Leave
+          empty to use the default green gradient.
+        </p>
+
+        <ImageUploader
+          images={exhibitsBanner}
+          onChange={setExhibitsBanner}
           multiple={false}
         />
       </div>
