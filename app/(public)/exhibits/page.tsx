@@ -12,6 +12,10 @@ interface Exhibit {
   title: string;
   slug: string;
   cover_image: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  venue: string | null;
+  link: string | null;
   status: string;
   published_at: string | null;
   created_at: string;
@@ -24,9 +28,11 @@ async function getExhibits(): Promise<Exhibit[]> {
     if (!supabase) return [];
     const { data } = await supabase
       .from("exhibits")
-      .select("id, title, slug, cover_image, status, published_at, created_at")
+      .select(
+        "id, title, slug, cover_image, start_date, end_date, venue, link, status, published_at, created_at",
+      )
       .eq("status", "published")
-      .order("published_at", { ascending: false });
+      .order("start_date", { ascending: false, nullsFirst: false });
 
     return data ?? [];
   } catch {
@@ -34,18 +40,74 @@ async function getExhibits(): Promise<Exhibit[]> {
   }
 }
 
+async function getExhibitsBanner(): Promise<{ image: string | null; intro: string | null }> {
+  try {
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+    if (!supabase) return { image: null, intro: null };
+    const { data } = await supabase
+      .from("site_settings")
+      .select("key, value")
+      .in("key", ["exhibits_banner", "exhibits_intro"]);
+
+    const image = data?.find((s) => s.key === "exhibits_banner")?.value ?? null;
+    const intro = data?.find((s) => s.key === "exhibits_intro")?.value ?? null;
+    return { image, intro };
+  } catch {
+    return { image: null, intro: null };
+  }
+}
+
+function formatDateRange(start: string | null, end: string | null): string | null {
+  if (!start && !end) return null;
+  const fmt = (d: string) => {
+    const parts = d.split("-");
+    if (parts.length !== 3) return formatDate(d);
+    const year = Number(parts[0]);
+    const month = Number(parts[1]) - 1;
+    const day = Number(parts[2]);
+    return new Date(year, month, day).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+  if (start && end) return `${fmt(start)} – ${fmt(end)}`;
+  return fmt(start ?? (end as string));
+}
+
 export default async function ExhibitsPage() {
-  const exhibits = await getExhibits();
+  const [exhibits, banner] = await Promise.all([
+    getExhibits(),
+    getExhibitsBanner(),
+  ]);
+
+  const introText =
+    banner.intro && banner.intro.trim().length > 0
+      ? banner.intro
+      : "A record of past and present shows.";
 
   return (
     <div className="pt-24 pb-20">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         {/* Hero banner */}
         <div className="relative overflow-hidden rounded-2xl">
-          <div className="h-44 w-full bg-gradient-to-br from-primary via-primary-light to-primary-dark sm:h-52 md:h-64">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(196,162,101,0.15),transparent_50%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(245,240,232,0.1),transparent_50%)]" />
-          </div>
+          {banner.image ? (
+            <div className="relative h-44 w-full sm:h-52 md:h-64">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={banner.image}
+                alt="Exhibits banner"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-black/35" />
+            </div>
+          ) : (
+            <div className="h-44 w-full bg-gradient-to-br from-primary via-primary-light to-primary-dark sm:h-52 md:h-64">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(196,162,101,0.15),transparent_50%)]" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(245,240,232,0.1),transparent_50%)]" />
+            </div>
+          )}
           <div className="absolute inset-0 flex items-center justify-center">
             <h1 className="font-display text-4xl font-bold text-white sm:text-5xl md:text-6xl">
               Exhibits
@@ -53,8 +115,8 @@ export default async function ExhibitsPage() {
           </div>
         </div>
 
-        <p className="mt-8 max-w-2xl text-lg text-text-secondary">
-          A record of past and present shows.
+        <p className="mt-8 max-w-2xl text-lg whitespace-pre-line text-text-secondary">
+          {introText}
         </p>
 
         {exhibits.length === 0 ? (
@@ -119,14 +181,28 @@ export default async function ExhibitsPage() {
                 </div>
 
                 <div className="p-6">
-                  {exhibit.published_at && (
-                    <p className="text-xs font-medium uppercase tracking-[0.1em] text-text-muted">
-                      {formatDate(exhibit.published_at)}
-                    </p>
-                  )}
+                  {(() => {
+                    const range = formatDateRange(
+                      exhibit.start_date,
+                      exhibit.end_date,
+                    );
+                    const label =
+                      range ??
+                      (exhibit.published_at ? formatDate(exhibit.published_at) : null);
+                    return label ? (
+                      <p className="text-xs font-medium uppercase tracking-[0.1em] text-text-muted">
+                        {label}
+                      </p>
+                    ) : null;
+                  })()}
                   <h2 className="mt-2 font-display text-xl font-semibold text-primary-dark transition-colors group-hover:text-primary">
                     {exhibit.title}
                   </h2>
+                  {exhibit.venue && (
+                    <p className="mt-1 text-sm text-text-secondary">
+                      {exhibit.venue}
+                    </p>
+                  )}
                   <span className="mt-4 inline-block text-sm font-medium text-gold-dark transition-colors group-hover:text-gold">
                     View exhibit &rarr;
                   </span>

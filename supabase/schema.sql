@@ -9,6 +9,7 @@ create extension if not exists "uuid-ossp";
 create table public.artworks (
   id          uuid primary key default uuid_generate_v4(),
   title       text not null,
+  year        integer,
   description text,
   images      text[] not null default '{}',
   category    text,
@@ -113,6 +114,10 @@ create table public.exhibits (
   content      text,
   content_blocks jsonb not null default '[]'::jsonb,
   cover_image  text,
+  start_date   date,
+  end_date     date,
+  venue        text,
+  link         text,
   status       text not null default 'draft' check (status in ('draft', 'published')),
   published_at timestamptz,
   created_at   timestamptz not null default now()
@@ -214,3 +219,16 @@ create policy "Authenticated delete from artwork-images"
   on storage.objects for delete
   to authenticated
   using (bucket_id = 'artwork-images');
+
+-- =============================================================
+-- Migrations (idempotent — safe to re-run on existing databases)
+-- =============================================================
+
+-- artworks: add optional year column
+alter table public.artworks add column if not exists year integer;
+
+-- exhibits: add date range, venue, and external link
+alter table public.exhibits add column if not exists start_date date;
+alter table public.exhibits add column if not exists end_date date;
+alter table public.exhibits add column if not exists venue text;
+alter table public.exhibits add column if not exists link text;

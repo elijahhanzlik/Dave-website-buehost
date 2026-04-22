@@ -11,6 +11,7 @@ interface WorkFormProps {
   initialData?: {
     id: string;
     title: string;
+    year: number | null;
     description: string | null;
     images: string[];
     image_crops?: Record<string, CropSettings>;
@@ -25,6 +26,9 @@ export default function WorkForm({ initialData }: WorkFormProps) {
   const isEditing = !!initialData;
 
   const [title, setTitle] = useState(initialData?.title ?? "");
+  const [year, setYear] = useState<string>(
+    initialData?.year != null ? String(initialData.year) : "",
+  );
   const [description, setDescription] = useState(
     initialData?.description ?? "",
   );
@@ -61,8 +65,17 @@ export default function WorkForm({ initialData }: WorkFormProps) {
     setSaving(true);
     setError("");
 
+    const trimmedYear = year.trim();
+    const parsedYear = trimmedYear ? Number(trimmedYear) : null;
+    if (trimmedYear && (!Number.isInteger(parsedYear) || parsedYear! < 1000 || parsedYear! > 9999)) {
+      setError("Year must be a 4-digit number");
+      setSaving(false);
+      return;
+    }
+
     const payload = {
       title,
+      year: parsedYear,
       description: description || undefined,
       images,
       image_crops: imageCrops,
@@ -115,6 +128,25 @@ export default function WorkForm({ initialData }: WorkFormProps) {
           required
           className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
         />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Year
+        </label>
+        <input
+          type="number"
+          value={year}
+          onChange={(e) => setYear(e.target.value)}
+          min={1000}
+          max={9999}
+          step={1}
+          placeholder="e.g., 2024"
+          className="w-40 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+        />
+        <p className="mt-1 text-xs text-gray-500">
+          The year this work was made.
+        </p>
       </div>
 
       <div>
@@ -232,6 +264,7 @@ export default function WorkForm({ initialData }: WorkFormProps) {
             />
           )}
           <h3 className="font-display font-semibold text-lg">{title}</h3>
+          {year && <p className="text-sm text-gray-600 mt-1">{year}</p>}
           {category && (
             <p className="text-sm text-gray-500 mt-1">{category}</p>
           )}

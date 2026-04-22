@@ -51,6 +51,10 @@ export default function NewExhibitPage() {
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [coverImage, setCoverImage] = useState<string[]>([]);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [venue, setVenue] = useState("");
+  const [link, setLink] = useState("");
   const [status, setStatus] = useState<"draft" | "published">("draft");
   const [publishedAt, setPublishedAt] = useState("");
   const [blocks, setBlocks] = useState<ContentBlock[]>([
@@ -108,6 +112,10 @@ export default function NewExhibitPage() {
           slug: slug || slugify(title),
           content_blocks: blocks,
           cover_image: coverImage[0] || "",
+          start_date: startDate || null,
+          end_date: endDate || null,
+          venue: venue.trim() || null,
+          link: link.trim() || null,
           status,
           published_at:
             status === "published"
@@ -191,6 +199,57 @@ export default function NewExhibitPage() {
             onChange={setCoverImage}
             multiple={false}
           />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Start Date
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              End Date
+            </label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Venue
+          </label>
+          <input
+            type="text"
+            value={venue}
+            onChange={(e) => setVenue(e.target.value)}
+            placeholder="e.g., Boulder Museum of Contemporary Art"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Link
+          </label>
+          <input
+            type="url"
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
+            placeholder="https://example.com/exhibition"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            External URL for this exhibit (venue page, press release, etc.).
+          </p>
         </div>
         <div className="flex flex-wrap items-end gap-4">
           <div>

@@ -9,6 +9,7 @@ export default function EditWorkPage() {
   const [work, setWork] = useState<{
     id: string;
     title: string;
+    year: number | null;
     description: string | null;
     images: string[];
     category: string | null;

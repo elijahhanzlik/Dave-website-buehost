@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 interface Artwork {
   id: string;
   title: string;
+  year?: number | null;
   description?: string | null;
   images: string[];
   category?: string | null;
@@ -206,14 +207,19 @@ export default async function ArtworkDetailPage({
 
         {/* Info */}
         <div className="mt-8">
+          <h1 className="font-display text-3xl font-bold text-primary-dark sm:text-4xl">
+            {artwork.title}
+          </h1>
+          {artwork.year && (
+            <p className="mt-2 font-display text-lg italic text-text-secondary">
+              {artwork.year}
+            </p>
+          )}
           {artwork.category && (
-            <p className="text-sm font-medium uppercase tracking-[0.12em] text-gold-dark">
+            <p className="mt-2 text-sm font-medium uppercase tracking-[0.12em] text-gold-dark">
               {artwork.category}
             </p>
           )}
-          <h1 className="mt-2 font-display text-3xl font-bold text-primary-dark sm:text-4xl">
-            {artwork.title}
-          </h1>
           {artwork.description && (
             <p className="mt-4 max-w-2xl whitespace-pre-line text-lg leading-relaxed text-text-secondary">
               {artwork.description}

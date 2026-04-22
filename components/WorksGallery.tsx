@@ -6,6 +6,7 @@ import ArtworkCard from "@/components/ArtworkCard";
 interface Artwork {
   id: string;
   title: string;
+  year?: number | null;
   description?: string | null;
   images: string[];
   category?: string | null;

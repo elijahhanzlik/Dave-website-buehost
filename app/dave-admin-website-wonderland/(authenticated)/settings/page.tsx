@@ -39,6 +39,10 @@ export default function SettingsPage() {
   // Contact photo state
   const [contactPhoto, setContactPhoto] = useState<string[]>([]);
 
+  // Exhibits banner state
+  const [exhibitsBanner, setExhibitsBanner] = useState<string[]>([]);
+  const [exhibitsIntro, setExhibitsIntro] = useState("");
+
   useEffect(() => {
     fetch("/api/settings")
       .then((r) => r.json())
@@ -79,6 +83,16 @@ export default function SettingsPage() {
           if (contactPhotoSetting && contactPhotoSetting.value) {
             setContactPhoto([contactPhotoSetting.value]);
           }
+
+          // Load exhibits banner from settings
+          const exhibitsBannerSetting = existing.find((s) => s.key === "exhibits_banner");
+          if (exhibitsBannerSetting && exhibitsBannerSetting.value) {
+            setExhibitsBanner([exhibitsBannerSetting.value]);
+          }
+          const exhibitsIntroSetting = existing.find((s) => s.key === "exhibits_intro");
+          if (exhibitsIntroSetting) {
+            setExhibitsIntro(exhibitsIntroSetting.value);
+          }
         }
       })
       .finally(() => setLoading(false));
@@ -98,10 +112,19 @@ export default function SettingsPage() {
     setSettings(settings.filter((_, i) => i !== index));
   };
 
+  const MANAGED_KEYS = new Set([
+    "hero_image",
+    "hero_crop",
+    "about_banner",
+    "contact_photo",
+    "exhibits_banner",
+    "exhibits_intro",
+  ]);
+
   const handleSave = async () => {
     // Merge hero settings into the settings list
     const allSettings = settings.filter(
-      (s) => s.key.trim() !== "" && s.key !== "hero_image" && s.key !== "hero_crop" && s.key !== "about_banner" && s.key !== "contact_photo",
+      (s) => s.key.trim() !== "" && !MANAGED_KEYS.has(s.key),
     );
     if (heroImage[0]) {
       allSettings.push({ key: "hero_image", value: heroImage[0] });
@@ -116,6 +139,10 @@ export default function SettingsPage() {
     if (contactPhoto[0]) {
       allSettings.push({ key: "contact_photo", value: contactPhoto[0] });
     }
+    if (exhibitsBanner[0]) {
+      allSettings.push({ key: "exhibits_banner", value: exhibitsBanner[0] });
+    }
+    allSettings.push({ key: "exhibits_intro", value: exhibitsIntro });
 
     setSaving(true);
     setError("");
@@ -162,10 +189,8 @@ export default function SettingsPage() {
     );
   }
 
-  // Filter out hero keys from the general settings display
-  const generalSettings = settings.filter(
-    (s) => s.key !== "hero_image" && s.key !== "hero_crop" && s.key !== "about_banner" && s.key !== "contact_photo",
-  );
+  // Filter out managed keys from the general settings display
+  const generalSettings = settings.filter((s) => !MANAGED_KEYS.has(s.key));
 
   return (
     <div className="space-y-8 max-w-3xl">
@@ -249,6 +274,39 @@ export default function SettingsPage() {
           onChange={setContactPhoto}
           multiple={false}
         />
+      </div>
+
+      {/* ===== EXHIBITS BANNER SECTION ===== */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+        <h2 className="text-lg font-display font-semibold text-gray-900">
+          Exhibits Page Banner
+        </h2>
+        <p className="text-sm text-gray-500">
+          Background image shown behind the &ldquo;Exhibits&rdquo; heading. Leave
+          empty to use the default gradient.
+        </p>
+
+        <ImageUploader
+          images={exhibitsBanner}
+          onChange={setExhibitsBanner}
+          multiple={false}
+        />
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Intro text
+          </label>
+          <textarea
+            value={exhibitsIntro}
+            onChange={(e) => setExhibitsIntro(e.target.value)}
+            rows={3}
+            placeholder="A record of past and present shows."
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Short description shown under the banner.
+          </p>
+        </div>
       </div>
 
       {/* ===== GENERAL SETTINGS ===== */}

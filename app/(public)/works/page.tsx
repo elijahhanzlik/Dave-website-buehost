@@ -3,6 +3,7 @@ import WorksGallery from "@/components/WorksGallery";
 interface Artwork {
   id: string;
   title: string;
+  year?: number | null;
   description?: string | null;
   images: string[];
   category?: string | null;

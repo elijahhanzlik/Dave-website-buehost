@@ -3,6 +3,7 @@ import Link from "next/link";
 interface Artwork {
   id: string;
   title: string;
+  year?: number | null;
   description?: string | null;
   images: string[];
   category?: string | null;
@@ -49,6 +50,9 @@ export default function ArtworkCard({ artwork }: { artwork: Artwork }) {
           <h3 className="font-display text-lg font-semibold text-white">
             {artwork.title}
           </h3>
+          {artwork.year && (
+            <p className="mt-1 text-sm text-white/80">{artwork.year}</p>
+          )}
           {artwork.category && (
             <p className="mt-1 text-sm text-white/70">{artwork.category}</p>
           )}
@@ -60,6 +64,9 @@ export default function ArtworkCard({ artwork }: { artwork: Artwork }) {
         <h3 className="font-display text-base font-medium text-primary-dark">
           {artwork.title}
         </h3>
+        {artwork.year && (
+          <p className="text-sm text-text-secondary">{artwork.year}</p>
+        )}
         {artwork.category && (
           <p className="text-sm text-text-muted">{artwork.category}</p>
         )}

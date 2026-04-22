@@ -15,9 +15,31 @@ interface Exhibit {
   content: string | null;
   content_blocks: ContentBlock[] | null;
   cover_image: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  venue: string | null;
+  link: string | null;
   status: string;
   published_at: string | null;
   created_at: string;
+}
+
+function formatDateRange(start: string | null, end: string | null): string | null {
+  if (!start && !end) return null;
+  const fmt = (d: string) => {
+    const parts = d.split("-");
+    if (parts.length !== 3) return formatDate(d);
+    const year = Number(parts[0]);
+    const month = Number(parts[1]) - 1;
+    const day = Number(parts[2]);
+    return new Date(year, month, day).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+  if (start && end) return `${fmt(start)} – ${fmt(end)}`;
+  return fmt(start ?? (end as string));
 }
 
 async function getExhibit(slug: string): Promise<Exhibit | null> {
@@ -223,14 +245,35 @@ export default async function ExhibitPage({
         )}
 
         <header className="mt-8">
-          {exhibit.published_at && (
-            <p className="text-sm font-medium uppercase tracking-[0.1em] text-text-muted">
-              {formatDate(exhibit.published_at)}
-            </p>
-          )}
+          {(() => {
+            const range = formatDateRange(exhibit.start_date, exhibit.end_date);
+            const label =
+              range ??
+              (exhibit.published_at ? formatDate(exhibit.published_at) : null);
+            return label ? (
+              <p className="text-sm font-medium uppercase tracking-[0.1em] text-text-muted">
+                {label}
+              </p>
+            ) : null;
+          })()}
           <h1 className="mt-3 font-display text-3xl font-bold text-primary-dark sm:text-4xl md:text-5xl">
             {exhibit.title}
           </h1>
+          {exhibit.venue && (
+            <p className="mt-3 font-display text-lg italic text-text-secondary">
+              {exhibit.venue}
+            </p>
+          )}
+          {exhibit.link && (
+            <a
+              href={exhibit.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-gold-dark underline underline-offset-4 transition-colors hover:text-gold"
+            >
+              Visit exhibit page &rarr;
+            </a>
+          )}
         </header>
 
         <div className="mt-10 border-t border-sage pt-10">

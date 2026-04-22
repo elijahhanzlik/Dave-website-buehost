@@ -15,6 +15,7 @@ import {
 interface Artwork {
   id: string;
   title: string;
+  year: number | null;
   description: string | null;
   images: string[];
   category: string | null;
@@ -133,6 +134,9 @@ export default function WorksListPage() {
                 <th className="text-left px-3 py-3 font-medium text-gray-600">
                   Title
                 </th>
+                <th className="w-20 px-3 py-3 font-medium text-gray-600 hidden sm:table-cell">
+                  Year
+                </th>
                 <th className="text-left px-3 py-3 font-medium text-gray-600 hidden sm:table-cell">
                   Category
                 </th>
@@ -175,6 +179,9 @@ export default function WorksListPage() {
                     )}
                   </td>
                   <td className="px-3 py-2 font-medium">{work.title}</td>
+                  <td className="px-3 py-2 text-gray-500 hidden sm:table-cell tabular-nums">
+                    {work.year ?? "—"}
+                  </td>
                   <td className="px-3 py-2 text-gray-500 hidden sm:table-cell">
                     {work.category || "—"}
                   </td>
