@@ -35,7 +35,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { error } = await supabase.from("inquiries").insert(parsed.data);
+  const { data: inserted, error } = await supabase
+    .from("inquiries")
+    .insert(parsed.data)
+    .select("id")
+    .single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -44,7 +48,11 @@ export async function POST(request: NextRequest) {
   try {
     await sendInquiryNotification(parsed.data);
   } catch (err) {
-    console.error("[inquiries] failed to send notification email", err);
+    console.error("[inquiries] failed to send notification email", {
+      inquiryId: inserted?.id,
+      timestamp: new Date().toISOString(),
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 
   return NextResponse.json({ ok: true }, { status: 201 });
