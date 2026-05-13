@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, Edit2, Trash2 } from "lucide-react";
-import { formatDate } from "@/lib/formatters";
+import { formatDate, slugify } from "@/lib/formatters";
 
 interface PageItem {
   id: string;
@@ -20,7 +20,6 @@ export default function PagesListPage() {
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
   const [newTitle, setNewTitle] = useState("");
-  const [newSlug, setNewSlug] = useState("");
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
@@ -41,7 +40,7 @@ export default function PagesListPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: newTitle,
-          slug: newSlug,
+          slug: slugify(newTitle),
           content_blocks: [],
         }),
       });
@@ -94,29 +93,9 @@ export default function PagesListPage() {
             <input
               type="text"
               value={newTitle}
-              onChange={(e) => {
-                setNewTitle(e.target.value);
-                setNewSlug(
-                  e.target.value
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, "-")
-                    .replace(/(^-|-$)/g, ""),
-                );
-              }}
+              onChange={(e) => setNewTitle(e.target.value)}
               required
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
-          </div>
-          <div className="flex-1 min-w-[180px]">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Slug
-            </label>
-            <input
-              type="text"
-              value={newSlug}
-              onChange={(e) => setNewSlug(e.target.value)}
-              required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
           <button

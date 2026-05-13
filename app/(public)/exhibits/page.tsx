@@ -131,7 +131,7 @@ export default async function ExhibitsPage() {
                   {exhibit.title}
                 </h2>
                 {exhibit.content && (
-                  <p className="mt-3 text-base text-text-secondary line-clamp-3">
+                  <p className="mt-3 text-base text-text-secondary whitespace-pre-line">
                     {exhibit.content}
                   </p>
                 )}

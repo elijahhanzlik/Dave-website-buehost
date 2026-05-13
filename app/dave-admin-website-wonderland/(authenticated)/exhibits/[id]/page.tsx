@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { Loader2, Save } from "lucide-react";
 import { formatApiError, slugify } from "@/lib/formatters";
 
@@ -16,7 +16,6 @@ interface Exhibit {
 
 export default function EditExhibitPage() {
   const params = useParams();
-  const router = useRouter();
   const [exhibit, setExhibit] = useState<Exhibit | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -24,7 +23,6 @@ export default function EditExhibitPage() {
   const [saved, setSaved] = useState(false);
 
   const [title, setTitle] = useState("");
-  const [slug, setSlug] = useState("");
   const [content, setContent] = useState("");
   const [status, setStatus] = useState<"draft" | "published">("draft");
   const [publishedAt, setPublishedAt] = useState("");
@@ -38,7 +36,6 @@ export default function EditExhibitPage() {
       .then((data: Exhibit) => {
         setExhibit(data);
         setTitle(data.title);
-        setSlug(data.slug);
         setContent(data.content ?? "");
         setStatus(data.status);
         setPublishedAt(
@@ -53,9 +50,6 @@ export default function EditExhibitPage() {
 
   const handleTitleChange = (val: string) => {
     setTitle(val);
-    if (slug === slugify(exhibit?.title ?? "")) {
-      setSlug(slugify(val));
-    }
   };
 
   const handleSave = async () => {
@@ -69,7 +63,7 @@ export default function EditExhibitPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title,
-          slug,
+          slug: slugify(title),
           content,
           status,
           published_at:
@@ -116,7 +110,7 @@ export default function EditExhibitPage() {
           <h1 className="text-2xl font-display font-bold text-gray-900">
             {title || "Untitled Exhibit"}
           </h1>
-          <p className="text-sm text-gray-500 font-mono">/{slug}</p>
+          <p className="text-sm text-gray-500 font-mono">/{slugify(title)}</p>
         </div>
         <button
           onClick={handleSave}
@@ -139,29 +133,16 @@ export default function EditExhibitPage() {
       )}
 
       <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-4 max-w-2xl">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Title *
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => handleTitleChange(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Slug
-            </label>
-            <input
-              type="text"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Title *
+          </label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => handleTitleChange(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+          />
         </div>
         <div className="flex flex-wrap items-end gap-4">
           <div>

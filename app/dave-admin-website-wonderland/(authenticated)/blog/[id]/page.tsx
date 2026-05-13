@@ -30,7 +30,6 @@ export default function EditBlogPostPage() {
   const [saved, setSaved] = useState(false);
 
   const [title, setTitle] = useState("");
-  const [slug, setSlug] = useState("");
   const [coverImage, setCoverImage] = useState<string[]>([]);
   const [status, setStatus] = useState<"draft" | "published">("draft");
   const [publishedAt, setPublishedAt] = useState("");
@@ -46,7 +45,6 @@ export default function EditBlogPostPage() {
       .then((data: BlogPost) => {
         setPost(data);
         setTitle(data.title);
-        setSlug(data.slug);
         setCoverImage(data.cover_image ? [data.cover_image] : []);
         setStatus(data.status);
         setPublishedAt(
@@ -62,9 +60,6 @@ export default function EditBlogPostPage() {
 
   const handleTitleChange = (val: string) => {
     setTitle(val);
-    if (slug === slugify(post?.title ?? "")) {
-      setSlug(slugify(val));
-    }
   };
 
   const handleSave = async () => {
@@ -82,7 +77,7 @@ export default function EditBlogPostPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title,
-          slug,
+          slug: slugify(title),
           content_blocks: blocks,
           cover_image: coverImage[0] || "",
           status,
@@ -164,15 +159,6 @@ export default function EditBlogPostPage() {
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Slug</label>
-              <input
-                type="text"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
             </div>
             <div>

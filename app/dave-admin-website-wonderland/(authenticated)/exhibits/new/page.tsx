@@ -8,7 +8,6 @@ import { formatApiError, slugify } from "@/lib/formatters";
 export default function NewExhibitPage() {
   const router = useRouter();
   const [title, setTitle] = useState("");
-  const [slug, setSlug] = useState("");
   const [content, setContent] = useState("");
   const [status, setStatus] = useState<"draft" | "published">("draft");
   const [publishedAt, setPublishedAt] = useState("");
@@ -17,7 +16,6 @@ export default function NewExhibitPage() {
 
   const handleTitleChange = (val: string) => {
     setTitle(val);
-    setSlug(slugify(val));
   };
 
   const handleSave = async () => {
@@ -34,7 +32,7 @@ export default function NewExhibitPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title,
-          slug: slug || slugify(title),
+          slug: slugify(title),
           content,
           status,
           published_at:
@@ -85,29 +83,16 @@ export default function NewExhibitPage() {
       )}
 
       <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-4 max-w-2xl">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Title *
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => handleTitleChange(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Slug
-            </label>
-            <input
-              type="text"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Title *
+          </label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => handleTitleChange(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+          />
         </div>
         <div className="flex flex-wrap items-end gap-4">
           <div>
