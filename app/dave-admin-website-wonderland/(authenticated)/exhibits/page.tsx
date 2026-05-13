@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Edit2, Trash2 } from "lucide-react";
+import { Plus, GripVertical, Edit2, Trash2 } from "lucide-react";
 import { formatDate } from "@/lib/formatters";
 
 interface Exhibit {
@@ -11,6 +11,7 @@ interface Exhibit {
   title: string;
   slug: string;
   status: "draft" | "published";
+  sort_order: number;
   created_at: string;
 }
 
@@ -18,6 +19,8 @@ export default function ExhibitsListPage() {
   const router = useRouter();
   const [exhibits, setExhibits] = useState<Exhibit[]>([]);
   const [loading, setLoading] = useState(true);
+  const dragItem = useRef<number | null>(null);
+  const dragOverItem = useRef<number | null>(null);
 
   useEffect(() => {
     fetch("/api/exhibits?all=true")
@@ -27,6 +30,43 @@ export default function ExhibitsListPage() {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  const handleDragStart = (index: number) => {
+    dragItem.current = index;
+  };
+
+  const handleDragEnter = (index: number) => {
+    dragOverItem.current = index;
+  };
+
+  const handleDragEnd = async () => {
+    if (dragItem.current === null || dragOverItem.current === null) return;
+    if (dragItem.current === dragOverItem.current) return;
+
+    const reordered = [...exhibits];
+    const [removed] = reordered.splice(dragItem.current, 1);
+    reordered.splice(dragOverItem.current, 0, removed);
+
+    const updated = reordered.map((e, i) => ({ ...e, sort_order: i }));
+    setExhibits(updated);
+
+    dragItem.current = null;
+    dragOverItem.current = null;
+
+    const res = await fetch("/api/exhibits/reorder", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        items: updated.map((e) => ({ id: e.id, sort_order: e.sort_order })),
+      }),
+    });
+
+    if (!res.ok) {
+      fetch("/api/exhibits?all=true")
+        .then((r) => r.json())
+        .then((data) => { if (Array.isArray(data)) setExhibits(data); });
+    }
+  };
 
   const deleteExhibit = async (id: string) => {
     if (!confirm("Delete this exhibit?")) return;
@@ -63,6 +103,13 @@ export default function ExhibitsListPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="w-10 px-3 py-3" />
+                <th
+                  className="w-12 px-3 py-3 font-medium text-gray-600 text-center"
+                  title="Position on the public exhibits page"
+                >
+                  #
+                </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
                   Title
                 </th>
@@ -81,11 +128,24 @@ export default function ExhibitsListPage() {
               </tr>
             </thead>
             <tbody>
-              {exhibits.map((exhibit) => (
+              {exhibits.map((exhibit, index) => (
                 <tr
                   key={exhibit.id}
-                  className="border-b border-gray-100 hover:bg-gray-50"
+                  draggable
+                  onDragStart={() => handleDragStart(index)}
+                  onDragEnter={() => handleDragEnter(index)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={(e) => e.preventDefault()}
+                  className="border-b border-gray-100 hover:bg-gray-50 cursor-grab active:cursor-grabbing"
                 >
+                  <td className="px-3 py-2 text-gray-400">
+                    <GripVertical size={16} />
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium tabular-nums">
+                      {index + 1}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 font-medium">{exhibit.title}</td>
                   <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">
                     {exhibit.slug}

@@ -23,7 +23,7 @@ async function getExhibits(): Promise<Exhibit[]> {
       .from("exhibits")
       .select("id, title, slug, content, status")
       .eq("status", "published")
-      .order("published_at", { ascending: false });
+      .order("sort_order", { ascending: true });
 
     return data ?? [];
   } catch {
