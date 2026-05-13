@@ -111,8 +111,8 @@ create table public.exhibits (
   title        text not null,
   slug         text not null unique,
   content      text,
-  content_blocks jsonb not null default '[]'::jsonb,
-  cover_image  text,
+  content_blocks jsonb not null default '[]'::jsonb, -- DEPRECATED 2026-05: exhibits now use plain text content only
+  cover_image  text, -- DEPRECATED 2026-05: exhibits now use plain text content only
   status       text not null default 'draft' check (status in ('draft', 'published')),
   published_at timestamptz,
   created_at   timestamptz not null default now()
