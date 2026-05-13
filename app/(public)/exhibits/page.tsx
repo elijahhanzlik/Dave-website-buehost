@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { formatDate } from "@/lib/formatters";
 
 export const metadata: Metadata = {
   title: "Exhibits — David Schaldach",
@@ -13,8 +12,6 @@ interface Exhibit {
   slug: string;
   content: string | null;
   status: string;
-  published_at: string | null;
-  created_at: string;
 }
 
 async function getExhibits(): Promise<Exhibit[]> {
@@ -24,7 +21,7 @@ async function getExhibits(): Promise<Exhibit[]> {
     if (!supabase) return [];
     const { data } = await supabase
       .from("exhibits")
-      .select("id, title, slug, content, status, published_at, created_at")
+      .select("id, title, slug, content, status")
       .eq("status", "published")
       .order("published_at", { ascending: false });
 
@@ -122,12 +119,7 @@ export default async function ExhibitsPage() {
                 href={`/exhibits/${exhibit.slug}`}
                 className="group block py-8 first:pt-0"
               >
-                {exhibit.published_at && (
-                  <p className="text-xs font-medium uppercase tracking-[0.1em] text-text-muted">
-                    {formatDate(exhibit.published_at)}
-                  </p>
-                )}
-                <h2 className="mt-2 font-display text-xl font-bold text-primary-dark transition-colors group-hover:text-primary">
+                <h2 className="font-display text-xl font-bold text-primary-dark transition-colors group-hover:text-primary">
                   {exhibit.title}
                 </h2>
                 {exhibit.content && (

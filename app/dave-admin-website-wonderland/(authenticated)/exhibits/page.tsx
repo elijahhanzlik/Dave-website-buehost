@@ -11,7 +11,6 @@ interface Exhibit {
   title: string;
   slug: string;
   status: "draft" | "published";
-  published_at: string | null;
   created_at: string;
 }
 
@@ -103,9 +102,7 @@ export default function ExhibitsListPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-gray-500 text-xs hidden md:table-cell">
-                    {exhibit.published_at
-                      ? formatDate(exhibit.published_at)
-                      : formatDate(exhibit.created_at)}
+                    {formatDate(exhibit.created_at)}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1 justify-center">

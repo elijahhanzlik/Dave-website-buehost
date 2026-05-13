@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { formatDate } from "@/lib/formatters";
 import type { Metadata } from "next";
 
 interface Exhibit {
@@ -9,8 +8,6 @@ interface Exhibit {
   slug: string;
   content: string | null;
   status: string;
-  published_at: string | null;
-  created_at: string;
 }
 
 async function getExhibit(slug: string): Promise<Exhibit | null> {
@@ -20,7 +17,7 @@ async function getExhibit(slug: string): Promise<Exhibit | null> {
     if (!supabase) return null;
     const { data } = await supabase
       .from("exhibits")
-      .select("id, title, slug, content, status, published_at, created_at")
+      .select("id, title, slug, content, status")
       .eq("slug", slug)
       .eq("status", "published")
       .single();
@@ -88,12 +85,7 @@ export default async function ExhibitPage({
         </Link>
 
         <header className="mt-8">
-          {exhibit.published_at && (
-            <p className="text-sm font-medium uppercase tracking-[0.1em] text-text-muted">
-              {formatDate(exhibit.published_at)}
-            </p>
-          )}
-          <h1 className="mt-3 font-display text-3xl font-bold text-primary-dark sm:text-4xl md:text-5xl">
+          <h1 className="font-display text-3xl font-bold text-primary-dark sm:text-4xl md:text-5xl">
             {exhibit.title}
           </h1>
         </header>

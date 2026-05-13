@@ -11,7 +11,6 @@ interface Exhibit {
   slug: string;
   content: string | null;
   status: "draft" | "published";
-  published_at: string | null;
 }
 
 export default function EditExhibitPage() {
@@ -25,7 +24,6 @@ export default function EditExhibitPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [status, setStatus] = useState<"draft" | "published">("draft");
-  const [publishedAt, setPublishedAt] = useState("");
 
   useEffect(() => {
     fetch(`/api/exhibits/${params.id}`)
@@ -38,11 +36,6 @@ export default function EditExhibitPage() {
         setTitle(data.title);
         setContent(data.content ?? "");
         setStatus(data.status);
-        setPublishedAt(
-          data.published_at
-            ? new Date(data.published_at).toISOString().slice(0, 16)
-            : "",
-        );
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -67,11 +60,7 @@ export default function EditExhibitPage() {
           content,
           status,
           published_at:
-            status === "published"
-              ? publishedAt
-                ? new Date(publishedAt).toISOString()
-                : new Date().toISOString()
-              : null,
+            status === "published" ? new Date().toISOString() : null,
         }),
       });
 
@@ -158,19 +147,6 @@ export default function EditExhibitPage() {
               <option value="published">Published</option>
             </select>
           </div>
-          {status === "published" && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Publish Date
-              </label>
-              <input
-                type="datetime-local"
-                value={publishedAt}
-                onChange={(e) => setPublishedAt(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-            </div>
-          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">

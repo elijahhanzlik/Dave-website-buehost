@@ -10,7 +10,6 @@ export default function NewExhibitPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [status, setStatus] = useState<"draft" | "published">("draft");
-  const [publishedAt, setPublishedAt] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -36,9 +35,7 @@ export default function NewExhibitPage() {
           content,
           status,
           published_at:
-            status === "published"
-              ? publishedAt || new Date().toISOString()
-              : null,
+            status === "published" ? new Date().toISOString() : null,
         }),
       });
 
@@ -108,19 +105,6 @@ export default function NewExhibitPage() {
               <option value="published">Published</option>
             </select>
           </div>
-          {status === "published" && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Publish Date
-              </label>
-              <input
-                type="datetime-local"
-                value={publishedAt}
-                onChange={(e) => setPublishedAt(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-            </div>
-          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
