@@ -35,11 +35,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { data: inserted, error } = await supabase
+  const inquiryId = crypto.randomUUID();
+
+  const { error } = await supabase
     .from("inquiries")
-    .insert(parsed.data)
-    .select("id")
-    .single();
+    .insert({ id: inquiryId, ...parsed.data });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     await sendInquiryNotification(parsed.data);
   } catch (err) {
     console.error("[inquiries] failed to send notification email", {
-      inquiryId: inserted?.id,
+      inquiryId,
       timestamp: new Date().toISOString(),
       error: err instanceof Error ? err.message : String(err),
     });
