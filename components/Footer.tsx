@@ -14,9 +14,7 @@ export default function Footer() {
               David Schaldach
             </Link>
             <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-              He was a Certified Arborist, now he&apos;s branching out.
-              <br />
-              Studio artist based in Boulder, CO.
+              Certified Arborist and Studio artist based in Boulder, CO.
             </p>
           </div>
 
@@ -45,13 +43,12 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Get in Touch */}
+          {/* Keep in Touch */}
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-primary">
-              Get in Touch
+              Keep in Touch
             </h3>
             <div className="mt-4 space-y-3 text-sm text-text-secondary">
-              <p>Boulder, CO</p>
               <Link
                 href="/contact"
                 className="inline-block text-gold-dark transition-colors hover:text-gold"
