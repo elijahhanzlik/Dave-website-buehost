@@ -3,11 +3,11 @@ import Link from "next/link";
 import { formatDate } from "@/lib/formatters";
 
 export const metadata: Metadata = {
-  title: "Exhibits — David Schaldach",
-  description: "Documentation of David Schaldach's art exhibits.",
+  title: "Events & Services — David Schaldach",
+  description: "Upcoming events and services offered by David Schaldach.",
 };
 
-interface Exhibit {
+interface EventItem {
   id: string;
   title: string;
   slug: string;
@@ -17,13 +17,13 @@ interface Exhibit {
   created_at: string;
 }
 
-async function getExhibits(): Promise<Exhibit[]> {
+async function getEvents(): Promise<EventItem[]> {
   try {
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();
     if (!supabase) return [];
     const { data } = await supabase
-      .from("exhibits")
+      .from("events")
       .select("id, title, slug, content, status, published_at, created_at")
       .eq("status", "published")
       .order("created_at", { ascending: false });
@@ -34,8 +34,8 @@ async function getExhibits(): Promise<Exhibit[]> {
   }
 }
 
-export default async function ExhibitsPage() {
-  const exhibits = await getExhibits();
+export default async function EventsPage() {
+  const events = await getEvents();
 
   return (
     <div className="pt-24 pb-20">
@@ -47,13 +47,13 @@ export default async function ExhibitsPage() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(245,240,232,0.1),transparent_50%)]" />
           </div>
           <div className="absolute inset-0 flex items-center justify-center">
-            <h1 className="font-display text-4xl font-bold text-white sm:text-5xl md:text-6xl">
-              Exhibits
+            <h1 className="px-4 text-center font-display text-4xl font-bold text-white sm:text-5xl md:text-6xl">
+              Events &amp; Services
             </h1>
           </div>
         </div>
 
-        {exhibits.length === 0 ? (
+        {events.length === 0 ? (
           <div className="mt-20 flex flex-col items-center text-center">
             <div className="rounded-2xl bg-sage p-12 max-w-lg w-full">
               <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
@@ -67,41 +67,41 @@ export default async function ExhibitsPage() {
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"
+                    d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
                   />
                 </svg>
               </div>
               <h2 className="font-display text-2xl font-semibold text-primary-dark sm:text-3xl">
-                No Exhibits Yet
+                Nothing Scheduled Yet
               </h2>
               <p className="mt-4 text-lg text-text-secondary">
-                Check back soon for upcoming shows.
+                Check back soon for upcoming events and services.
               </p>
             </div>
           </div>
         ) : (
           <ul className="mt-12 divide-y divide-sage">
-            {exhibits.map((exhibit) => (
-              <li key={exhibit.id}>
+            {events.map((event) => (
+              <li key={event.id}>
                 <Link
-                  href={`/exhibits/${exhibit.slug}`}
+                  href={`/events/${event.slug}`}
                   className="group block py-8 first:pt-0"
                 >
-                  {exhibit.published_at && (
+                  {event.published_at && (
                     <p className="text-xs font-medium uppercase tracking-[0.1em] text-text-muted">
-                      {formatDate(exhibit.published_at)}
+                      {formatDate(event.published_at)}
                     </p>
                   )}
                   <h2 className="mt-2 font-display text-2xl font-semibold text-primary-dark transition-colors group-hover:text-primary">
-                    {exhibit.title}
+                    {event.title}
                   </h2>
-                  {exhibit.content && (
+                  {event.content && (
                     <p className="mt-3 line-clamp-3 break-words text-base leading-relaxed text-text-secondary">
-                      {exhibit.content}
+                      {event.content}
                     </p>
                   )}
                   <span className="mt-4 inline-block text-sm font-medium text-gold-dark transition-colors group-hover:text-gold">
-                    View exhibit &rarr;
+                    View details &rarr;
                   </span>
                 </Link>
               </li>

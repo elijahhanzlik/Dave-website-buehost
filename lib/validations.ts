@@ -62,13 +62,25 @@ export const exhibitSchema = z.object({
     .min(1, "Slug is required")
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Invalid slug format"),
   content: z.string().optional(),
-  content_blocks: z.array(contentBlockSchema).default([]),
-  cover_image: z.string().optional().or(z.literal("")),
   status: z.enum(["draft", "published"]).default("draft"),
   published_at: z.string().datetime().optional().nullable(),
 });
 
 export type ExhibitInput = z.infer<typeof exhibitSchema>;
+
+// ----- Events & Services -----
+export const eventSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  slug: z
+    .string()
+    .min(1, "Slug is required")
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Invalid slug format"),
+  content: z.string().optional(),
+  status: z.enum(["draft", "published"]).default("draft"),
+  published_at: z.string().datetime().optional().nullable(),
+});
+
+export type EventInput = z.infer<typeof eventSchema>;
 
 // ----- Inquiries -----
 export const inquirySchema = z.object({
