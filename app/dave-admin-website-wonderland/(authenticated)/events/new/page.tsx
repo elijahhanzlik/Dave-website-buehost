@@ -11,7 +11,8 @@ export default function NewEventPage() {
   const [slug, setSlug] = useState("");
   const [content, setContent] = useState("");
   const [status, setStatus] = useState<"draft" | "published">("draft");
-  const [publishedAt, setPublishedAt] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -37,10 +38,8 @@ export default function NewEventPage() {
           slug: slug || slugify(title),
           content,
           status,
-          published_at:
-            status === "published"
-              ? publishedAt || new Date().toISOString()
-              : null,
+          start_date: startDate || null,
+          end_date: endDate || null,
         }),
       });
 
@@ -124,19 +123,28 @@ export default function NewEventPage() {
               <option value="published">Published</option>
             </select>
           </div>
-          {status === "published" && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Publish Date
-              </label>
-              <input
-                type="datetime-local"
-                value={publishedAt}
-                onChange={(e) => setPublishedAt(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-            </div>
-          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Start Date
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              End Date
+            </label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
         </div>
       </div>
 

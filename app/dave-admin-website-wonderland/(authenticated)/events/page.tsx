@@ -4,14 +4,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, Edit2, Trash2 } from "lucide-react";
-import { formatDate } from "@/lib/formatters";
+import { formatDateRange } from "@/lib/formatters";
 
 interface EventItem {
   id: string;
   title: string;
   slug: string;
   status: "draft" | "published";
-  published_at: string | null;
+  start_date: string | null;
+  end_date: string | null;
   created_at: string;
 }
 
@@ -75,8 +76,8 @@ export default function EventsListPage() {
                 <th className="w-28 px-4 py-3 font-medium text-gray-600">
                   Status
                 </th>
-                <th className="w-32 px-4 py-3 font-medium text-gray-600 hidden md:table-cell">
-                  Date
+                <th className="w-44 px-4 py-3 font-medium text-gray-600 hidden md:table-cell">
+                  Dates
                 </th>
                 <th className="w-24 px-4 py-3 font-medium text-gray-600">
                   Actions
@@ -105,9 +106,7 @@ export default function EventsListPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-gray-500 text-xs hidden md:table-cell">
-                    {event.published_at
-                      ? formatDate(event.published_at)
-                      : formatDate(event.created_at)}
+                    {formatDateRange(event.start_date, event.end_date) || "—"}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1 justify-center">

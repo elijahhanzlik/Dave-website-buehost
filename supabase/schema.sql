@@ -148,7 +148,8 @@ create table public.events (
   slug         text not null unique,
   content      text,
   status       text not null default 'draft' check (status in ('draft', 'published')),
-  published_at timestamptz,
+  start_date   date,  -- when the event/service began
+  end_date     date,  -- when it ended; public list is ordered by this, newest first
   created_at   timestamptz not null default now()
 );
 

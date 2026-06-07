@@ -11,7 +11,8 @@ interface EventItem {
   slug: string;
   content: string | null;
   status: "draft" | "published";
-  published_at: string | null;
+  start_date: string | null;
+  end_date: string | null;
 }
 
 export default function EditEventPage() {
@@ -26,7 +27,8 @@ export default function EditEventPage() {
   const [slug, setSlug] = useState("");
   const [content, setContent] = useState("");
   const [status, setStatus] = useState<"draft" | "published">("draft");
-  const [publishedAt, setPublishedAt] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   useEffect(() => {
     fetch(`/api/events/${params.id}`)
@@ -40,11 +42,8 @@ export default function EditEventPage() {
         setSlug(data.slug);
         setContent(data.content ?? "");
         setStatus(data.status);
-        setPublishedAt(
-          data.published_at
-            ? new Date(data.published_at).toISOString().slice(0, 16)
-            : "",
-        );
+        setStartDate(data.start_date ?? "");
+        setEndDate(data.end_date ?? "");
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -71,12 +70,8 @@ export default function EditEventPage() {
           slug,
           content,
           status,
-          published_at:
-            status === "published"
-              ? publishedAt
-                ? new Date(publishedAt).toISOString()
-                : new Date().toISOString()
-              : null,
+          start_date: startDate || null,
+          end_date: endDate || null,
         }),
       });
 
@@ -177,19 +172,28 @@ export default function EditEventPage() {
               <option value="published">Published</option>
             </select>
           </div>
-          {status === "published" && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Publish Date
-              </label>
-              <input
-                type="datetime-local"
-                value={publishedAt}
-                onChange={(e) => setPublishedAt(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-            </div>
-          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Start Date
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              End Date
+            </label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
         </div>
       </div>
 

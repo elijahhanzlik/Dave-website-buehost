@@ -84,7 +84,8 @@ export const eventSchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Invalid slug format"),
   content: z.string().optional(),
   status: z.enum(["draft", "published"]).default("draft"),
-  published_at: z.string().datetime().optional().nullable(),
+  start_date: dateOnly,
+  end_date: dateOnly,
 });
 
 export type EventInput = z.infer<typeof eventSchema>;

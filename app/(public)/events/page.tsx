@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { formatDate } from "@/lib/formatters";
+import { formatDateRange } from "@/lib/formatters";
 
 export const metadata: Metadata = {
   title: "Events & Services — David Schaldach",
@@ -13,7 +13,8 @@ interface EventItem {
   slug: string;
   content: string | null;
   status: string;
-  published_at: string | null;
+  start_date: string | null;
+  end_date: string | null;
   created_at: string;
 }
 
@@ -24,9 +25,9 @@ async function getEvents(): Promise<EventItem[]> {
     if (!supabase) return [];
     const { data } = await supabase
       .from("events")
-      .select("id, title, slug, content, status, published_at, created_at")
+      .select("id, title, slug, content, status, start_date, end_date, created_at")
       .eq("status", "published")
-      .order("created_at", { ascending: false });
+      .order("end_date", { ascending: false, nullsFirst: false });
 
     return data ?? [];
   } catch {
@@ -87,9 +88,9 @@ export default async function EventsPage() {
                   href={`/events/${event.slug}`}
                   className="group block py-8 first:pt-0"
                 >
-                  {event.published_at && (
+                  {formatDateRange(event.start_date, event.end_date) && (
                     <p className="text-xs font-medium uppercase tracking-[0.1em] text-text-muted">
-                      {formatDate(event.published_at)}
+                      {formatDateRange(event.start_date, event.end_date)}
                     </p>
                   )}
                   <h2 className="mt-2 font-display text-2xl font-semibold text-primary-dark transition-colors group-hover:text-primary">

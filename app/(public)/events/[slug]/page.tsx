@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { formatDate } from "@/lib/formatters";
+import { formatDateRange } from "@/lib/formatters";
 import type { Metadata } from "next";
 
 interface EventItem {
@@ -9,7 +9,8 @@ interface EventItem {
   slug: string;
   content: string | null;
   status: string;
-  published_at: string | null;
+  start_date: string | null;
+  end_date: string | null;
   created_at: string;
 }
 
@@ -88,9 +89,9 @@ export default async function EventPage({
         </Link>
 
         <header className="mt-8">
-          {event.published_at && (
+          {formatDateRange(event.start_date, event.end_date) && (
             <p className="text-sm font-medium uppercase tracking-[0.1em] text-text-muted">
-              {formatDate(event.published_at)}
+              {formatDateRange(event.start_date, event.end_date)}
             </p>
           )}
           <h1 className="mt-3 font-display text-3xl font-bold text-primary-dark sm:text-4xl md:text-5xl">
