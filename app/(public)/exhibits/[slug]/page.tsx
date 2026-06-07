@@ -11,7 +11,6 @@ interface Exhibit {
   status: string;
   start_date: string | null;
   end_date: string | null;
-  created_at: string;
 }
 
 async function getExhibit(slug: string): Promise<Exhibit | null> {
@@ -21,7 +20,7 @@ async function getExhibit(slug: string): Promise<Exhibit | null> {
     if (!supabase) return null;
     const { data } = await supabase
       .from("exhibits")
-      .select("*")
+      .select("id, title, slug, content, status, start_date, end_date")
       .eq("slug", slug)
       .eq("status", "published")
       .single();
@@ -101,9 +100,9 @@ export default async function ExhibitPage({
 
         <div className="mt-10 border-t border-sage pt-10">
           {exhibit.content ? (
-            <div className="whitespace-pre-wrap break-words text-lg leading-relaxed text-text-secondary">
+            <p className="whitespace-pre-wrap text-lg leading-relaxed text-text-secondary">
               {exhibit.content}
-            </div>
+            </p>
           ) : (
             <p className="text-text-muted">No content available.</p>
           )}

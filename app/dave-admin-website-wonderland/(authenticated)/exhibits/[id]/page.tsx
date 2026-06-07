@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Loader2, Save } from "lucide-react";
-import { slugify } from "@/lib/formatters";
+import { formatApiError, slugify } from "@/lib/formatters";
 
 interface Exhibit {
   id: string;
@@ -24,7 +24,6 @@ export default function EditExhibitPage() {
   const [saved, setSaved] = useState(false);
 
   const [title, setTitle] = useState("");
-  const [slug, setSlug] = useState("");
   const [content, setContent] = useState("");
   const [status, setStatus] = useState<"draft" | "published">("draft");
   const [startDate, setStartDate] = useState("");
@@ -39,7 +38,6 @@ export default function EditExhibitPage() {
       .then((data: Exhibit) => {
         setExhibit(data);
         setTitle(data.title);
-        setSlug(data.slug);
         setContent(data.content ?? "");
         setStatus(data.status);
         setStartDate(data.start_date ?? "");
@@ -51,9 +49,6 @@ export default function EditExhibitPage() {
 
   const handleTitleChange = (val: string) => {
     setTitle(val);
-    if (slug === slugify(exhibit?.title ?? "")) {
-      setSlug(slugify(val));
-    }
   };
 
   const handleSave = async () => {
@@ -67,7 +62,7 @@ export default function EditExhibitPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title,
-          slug,
+          slug: slugify(title),
           content,
           status,
           start_date: startDate || null,
@@ -77,7 +72,7 @@ export default function EditExhibitPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error?.toString() ?? "Failed to save");
+        throw new Error(formatApiError(data.error, "Failed to save"));
       }
 
       setSaved(true);
@@ -110,7 +105,7 @@ export default function EditExhibitPage() {
           <h1 className="text-2xl font-display font-bold text-gray-900">
             {title || "Untitled Exhibit"}
           </h1>
-          <p className="text-sm text-gray-500 font-mono">/{slug}</p>
+          <p className="text-sm text-gray-500 font-mono">/{slugify(title)}</p>
         </div>
         <button
           onClick={handleSave}
@@ -132,31 +127,17 @@ export default function EditExhibitPage() {
         </div>
       )}
 
-      {/* Exhibit metadata */}
       <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-4 max-w-2xl">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Title *
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => handleTitleChange(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Slug
-            </label>
-            <input
-              type="text"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Title *
+          </label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => handleTitleChange(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+          />
         </div>
         <div className="flex flex-wrap items-end gap-4">
           <div>
@@ -195,20 +176,18 @@ export default function EditExhibitPage() {
             />
           </div>
         </div>
-      </div>
-
-      {/* Content */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4 max-w-2xl">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Content
-        </label>
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          rows={16}
-          placeholder="Write the exhibit body..."
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-sans leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/50"
-        />
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Content
+          </label>
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            rows={12}
+            placeholder="Describe the exhibit..."
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+          />
+        </div>
       </div>
     </div>
   );

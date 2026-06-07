@@ -15,7 +15,6 @@ interface Exhibit {
   status: string;
   start_date: string | null;
   end_date: string | null;
-  created_at: string;
 }
 
 async function getExhibits(): Promise<Exhibit[]> {
@@ -25,7 +24,7 @@ async function getExhibits(): Promise<Exhibit[]> {
     if (!supabase) return [];
     const { data } = await supabase
       .from("exhibits")
-      .select("id, title, slug, content, status, start_date, end_date, created_at")
+      .select("id, title, slug, content, status, start_date, end_date")
       .eq("status", "published")
       .order("end_date", { ascending: false, nullsFirst: false });
 
@@ -35,17 +34,50 @@ async function getExhibits(): Promise<Exhibit[]> {
   }
 }
 
+async function getBannerImage(): Promise<string | null> {
+  try {
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+    if (!supabase) return null;
+    const { data } = await supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", "exhibits_banner")
+      .maybeSingle();
+    return data?.value || null;
+  } catch {
+    return null;
+  }
+}
+
 export default async function ExhibitsPage() {
-  const exhibits = await getExhibits();
+  const [exhibits, bannerImage] = await Promise.all([
+    getExhibits(),
+    getBannerImage(),
+  ]);
 
   return (
     <div className="pt-24 pb-20">
-      <div className="mx-auto max-w-3xl px-6 lg:px-8">
-        {/* Hero banner */}
+      {/* Hero banner */}
+      <div className="relative mx-auto max-w-7xl overflow-hidden rounded-b-3xl px-6 lg:px-8">
         <div className="relative overflow-hidden rounded-2xl">
           <div className="h-44 w-full bg-gradient-to-br from-primary via-primary-light to-primary-dark sm:h-52 md:h-64">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(196,162,101,0.15),transparent_50%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(245,240,232,0.1),transparent_50%)]" />
+            {bannerImage ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={bannerImage}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/40" />
+              </>
+            ) : (
+              <>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(196,162,101,0.15),transparent_50%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(245,240,232,0.1),transparent_50%)]" />
+              </>
+            )}
           </div>
           <div className="absolute inset-0 flex items-center justify-center">
             <h1 className="font-display text-4xl font-bold text-white sm:text-5xl md:text-6xl">
@@ -53,7 +85,9 @@ export default async function ExhibitsPage() {
             </h1>
           </div>
         </div>
+      </div>
 
+      <div className="mx-auto max-w-3xl px-6 lg:px-8">
         {exhibits.length === 0 ? (
           <div className="mt-20 flex flex-col items-center text-center">
             <div className="rounded-2xl bg-sage p-12 max-w-lg w-full">
@@ -81,35 +115,32 @@ export default async function ExhibitsPage() {
             </div>
           </div>
         ) : (
-          <ul className="mt-12 divide-y divide-sage">
+          <div className="mt-12 divide-y divide-sage">
             {exhibits.map((exhibit) => (
-              <li key={exhibit.id}>
-                <Link
-                  href={`/exhibits/${exhibit.slug}`}
-                  className="group block py-8 first:pt-0"
-                >
-                  {formatDateRange(exhibit.start_date, exhibit.end_date) && (
-                    <p className="text-xs font-medium uppercase tracking-[0.1em] text-text-muted">
-                      {formatDateRange(exhibit.start_date, exhibit.end_date)}
-                    </p>
-                  )}
-                  <h2 className="mt-2 font-display text-2xl font-semibold text-primary-dark transition-colors group-hover:text-primary">
-                    {exhibit.title}
-                  </h2>
-                  {exhibit.content && (
-                    <p className="mt-3 line-clamp-3 break-words text-base leading-relaxed text-text-secondary">
-                      {exhibit.content}
-                    </p>
-                  )}
-                  <span className="mt-4 inline-block text-sm font-medium text-gold-dark transition-colors group-hover:text-gold">
-                    View exhibit &rarr;
-                  </span>
-                </Link>
-              </li>
+              <Link
+                key={exhibit.id}
+                href={`/exhibits/${exhibit.slug}`}
+                className="group block py-8 first:pt-0"
+              >
+                {formatDateRange(exhibit.start_date, exhibit.end_date) && (
+                  <p className="text-xs font-medium uppercase tracking-[0.1em] text-text-muted">
+                    {formatDateRange(exhibit.start_date, exhibit.end_date)}
+                  </p>
+                )}
+                <h2 className="mt-2 font-display text-xl font-bold text-primary-dark transition-colors group-hover:text-primary">
+                  {exhibit.title}
+                </h2>
+                {exhibit.content && (
+                  <p className="mt-3 text-base text-text-secondary whitespace-pre-line">
+                    {exhibit.content}
+                  </p>
+                )}
+              </Link>
             ))}
-          </ul>
+          </div>
         )}
       </div>
     </div>
   );
 }
+
