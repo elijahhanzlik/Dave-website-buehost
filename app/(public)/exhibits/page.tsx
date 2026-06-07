@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { formatDateRange } from "@/lib/formatters";
 
 export const metadata: Metadata = {
   title: "Exhibits — David Schaldach",
@@ -12,6 +13,8 @@ interface Exhibit {
   slug: string;
   content: string | null;
   status: string;
+  start_date: string | null;
+  end_date: string | null;
 }
 
 async function getExhibits(): Promise<Exhibit[]> {
@@ -21,9 +24,9 @@ async function getExhibits(): Promise<Exhibit[]> {
     if (!supabase) return [];
     const { data } = await supabase
       .from("exhibits")
-      .select("id, title, slug, content, status")
+      .select("id, title, slug, content, status, start_date, end_date")
       .eq("status", "published")
-      .order("sort_order", { ascending: true });
+      .order("end_date", { ascending: false, nullsFirst: false });
 
     return data ?? [];
   } catch {
@@ -119,7 +122,12 @@ export default async function ExhibitsPage() {
                 href={`/exhibits/${exhibit.slug}`}
                 className="group block py-8 first:pt-0"
               >
-                <h2 className="font-display text-xl font-bold text-primary-dark transition-colors group-hover:text-primary">
+                {formatDateRange(exhibit.start_date, exhibit.end_date) && (
+                  <p className="text-xs font-medium uppercase tracking-[0.1em] text-text-muted">
+                    {formatDateRange(exhibit.start_date, exhibit.end_date)}
+                  </p>
+                )}
+                <h2 className="mt-2 font-display text-xl font-bold text-primary-dark transition-colors group-hover:text-primary">
                   {exhibit.title}
                 </h2>
                 {exhibit.content && (

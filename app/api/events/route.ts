@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/supabase/admin";
-import { exhibitSchema } from "@/lib/validations";
+import { eventSchema } from "@/lib/validations";
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const showAll = request.nextUrl.searchParams.get("all") === "true";
 
   let query = supabase
-    .from("exhibits")
+    .from("events")
     .select("*")
     .order("end_date", { ascending: false, nullsFirst: false });
 
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const parsed = exhibitSchema.safeParse(body);
+  const parsed = eventSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: parsed.error.flatten() },
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { data, error } = await auth.supabase
-    .from("exhibits")
+    .from("events")
     .insert(parsed.data)
     .select()
     .single();

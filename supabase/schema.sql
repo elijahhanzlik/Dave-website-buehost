@@ -114,8 +114,8 @@ create table public.exhibits (
   content_blocks jsonb not null default '[]'::jsonb, -- DEPRECATED 2026-05: exhibits now use plain text content only
   cover_image  text, -- DEPRECATED 2026-05: exhibits now use plain text content only
   status       text not null default 'draft' check (status in ('draft', 'published')),
-  sort_order   integer not null default 0,
-  published_at timestamptz,
+  start_date   date,  -- when the exhibit run began
+  end_date     date,  -- when the exhibit run ended; public list is ordered by this, newest first
   created_at   timestamptz not null default now()
 );
 
@@ -138,6 +138,40 @@ create policy "Authenticated admin update on exhibits"
 
 create policy "Authenticated admin delete on exhibits"
   on public.exhibits for delete
+  to authenticated
+  using (true);
+
+-- ----- events & services -----
+create table public.events (
+  id           uuid primary key default uuid_generate_v4(),
+  title        text not null,
+  slug         text not null unique,
+  content      text,
+  status       text not null default 'draft' check (status in ('draft', 'published')),
+  start_date   date,  -- when the event/service began
+  end_date     date,  -- when it ended; public list is ordered by this, newest first
+  created_at   timestamptz not null default now()
+);
+
+alter table public.events enable row level security;
+
+create policy "Public read published events"
+  on public.events for select
+  using (status = 'published' or auth.role() = 'authenticated');
+
+create policy "Authenticated admin insert on events"
+  on public.events for insert
+  to authenticated
+  with check (true);
+
+create policy "Authenticated admin update on events"
+  on public.events for update
+  to authenticated
+  using (true)
+  with check (true);
+
+create policy "Authenticated admin delete on events"
+  on public.events for delete
   to authenticated
   using (true);
 
