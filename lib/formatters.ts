@@ -27,6 +27,38 @@ export function formatDate(date: string | Date): string {
 }
 
 /**
+ * Format a date-only string (`YYYY-MM-DD`) for display without timezone drift.
+ * `new Date("2025-01-30")` parses as UTC midnight, which renders as the
+ * previous day in negative-offset zones — so build a local date from the parts.
+ */
+export function formatDateOnly(date: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(date);
+  const d = m
+    ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+    : new Date(date);
+  if (Number.isNaN(d.getTime())) return "";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(d);
+}
+
+/**
+ * Format a start/end date range, e.g. "January 30, 2025 – February 28, 2025".
+ * Falls back gracefully when only one (or neither) date is present.
+ */
+export function formatDateRange(
+  start?: string | null,
+  end?: string | null,
+): string {
+  const s = start ? formatDateOnly(start) : "";
+  const e = end ? formatDateOnly(end) : "";
+  if (s && e) return `${s} – ${e}`;
+  return s || e;
+}
+
+/**
  * Format an ISO string as `YYYY-MM-DDTHH:mm` in the browser's local time —
  * the shape an `<input type="datetime-local">` expects. Slicing `toISOString()`
  * leaks UTC into the control and drifts the stored time on every round-trip.

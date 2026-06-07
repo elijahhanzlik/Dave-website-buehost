@@ -114,7 +114,8 @@ create table public.exhibits (
   content_blocks jsonb not null default '[]'::jsonb, -- DEPRECATED 2026-05: legacy block editor removed; column retained for old records, drop in a future cleanup migration
   cover_image  text,                                  -- DEPRECATED 2026-05: cover images removed from exhibit UI; column retained for old records, drop in a future cleanup migration
   status       text not null default 'draft' check (status in ('draft', 'published')),
-  published_at timestamptz,
+  start_date   date,  -- when the exhibit run began
+  end_date     date,  -- when the exhibit run ended; public list is ordered by this, newest first
   created_at   timestamptz not null default now()
 );
 
