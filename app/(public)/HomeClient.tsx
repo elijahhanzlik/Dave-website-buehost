@@ -382,7 +382,7 @@ export default function HomeClient({
                   About David
                 </h3>
                 <p className="mt-4 leading-relaxed text-white/75">
-                  Former Certified Arborist turned studio artist, David brings a
+                  Certified Arborist turned studio artist, David brings a
                   unique perspective shaped by years working intimately with
                   nature. Based in Boulder, Colorado, his work celebrates the
                   organic beauty found in the world around us.

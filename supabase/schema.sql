@@ -115,15 +115,16 @@ create table public.exhibits (
   cover_image  text, -- exhibit feature photo (public URL/path); powers the enriched detail hero + list card
   status       text not null default 'draft' check (status in ('draft', 'published')),
   sort_order   integer not null default 0,
-  published_at timestamptz,
   created_at   timestamptz not null default now(),
   -- Event details for the enriched exhibit-detail layout (added 2026-07). All
   -- freeform display strings; exhibits without them use the plain text view.
   event_dates   text, -- e.g. "Aug 1 – 31, 2026"
   event_time    text, -- e.g. "6–9:30 p.m."
   address       text, -- e.g. "4790 Broadway, Unit 101 · Boulder, CO 80304"
-  start_date    date, -- optional structured start (display uses event_dates)
-  end_date      date  -- optional structured end
+  -- Structured run dates also exist in the live table (used by the Events &
+  -- Services feature); exhibit display uses the freeform event_* fields above.
+  start_date    date,
+  end_date      date
 );
 
 alter table public.exhibits enable row level security;
@@ -145,6 +146,40 @@ create policy "Authenticated admin update on exhibits"
 
 create policy "Authenticated admin delete on exhibits"
   on public.exhibits for delete
+  to authenticated
+  using (true);
+
+-- ----- events & services -----
+create table public.events (
+  id           uuid primary key default uuid_generate_v4(),
+  title        text not null,
+  slug         text not null unique,
+  content      text,
+  status       text not null default 'draft' check (status in ('draft', 'published')),
+  start_date   date,  -- when the event/service began
+  end_date     date,  -- when it ended; public list is ordered by this, newest first
+  created_at   timestamptz not null default now()
+);
+
+alter table public.events enable row level security;
+
+create policy "Public read published events"
+  on public.events for select
+  using (status = 'published' or auth.role() = 'authenticated');
+
+create policy "Authenticated admin insert on events"
+  on public.events for insert
+  to authenticated
+  with check (true);
+
+create policy "Authenticated admin update on events"
+  on public.events for update
+  to authenticated
+  using (true)
+  with check (true);
+
+create policy "Authenticated admin delete on events"
+  on public.events for delete
   to authenticated
   using (true);
 

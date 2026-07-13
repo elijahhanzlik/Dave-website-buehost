@@ -7,6 +7,7 @@ import {
   Image,
   BookOpen,
   MapPin,
+  CalendarDays,
   MessageSquare,
   Settings,
   ExternalLink,
@@ -28,6 +29,7 @@ const navItems = [
   { href: `${ADMIN_BASE}/blog`, label: "Blogs", icon: BookOpen },
   { href: `${ADMIN_BASE}/about`, label: "About", icon: User },
   { href: `${ADMIN_BASE}/exhibits`, label: "Exhibits", icon: MapPin },
+  { href: `${ADMIN_BASE}/events`, label: "Events & Services", icon: CalendarDays },
   { href: `${ADMIN_BASE}/inquiries`, label: "Inquiries", icon: MessageSquare },
   { href: `${ADMIN_BASE}/settings`, label: "Settings", icon: Settings },
 ];

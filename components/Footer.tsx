@@ -14,7 +14,7 @@ export default function Footer() {
               David Schaldach
             </Link>
             <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-              Certified Arborist and Studio artist based in Boulder, CO.
+              Studio artist based in Boulder, CO.
             </p>
           </div>
 
@@ -27,6 +27,7 @@ export default function Footer() {
               {[
                 { href: "/works", label: "Gallery" },
                 { href: "/exhibits", label: "Exhibits" },
+                { href: "/events", label: "Events & Services" },
                 { href: "/about", label: "About" },
                 { href: "/blog", label: "Blog" },
                 { href: "/contact", label: "Contact" },

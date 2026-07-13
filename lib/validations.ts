@@ -55,6 +55,12 @@ export const pageSchema = z.object({
 export type PageInput = z.infer<typeof pageSchema>;
 
 // ----- Exhibits -----
+const dateOnly = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD")
+  .optional()
+  .nullable();
+
 export const exhibitSchema = z.object({
   title: z.string().min(1, "Title is required"),
   slug: z
@@ -72,6 +78,21 @@ export const exhibitSchema = z.object({
 });
 
 export type ExhibitInput = z.infer<typeof exhibitSchema>;
+
+// ----- Events & Services -----
+export const eventSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  slug: z
+    .string()
+    .min(1, "Slug is required")
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Invalid slug format"),
+  content: z.string().optional(),
+  status: z.enum(["draft", "published"]).default("draft"),
+  start_date: dateOnly,
+  end_date: dateOnly,
+});
+
+export type EventInput = z.infer<typeof eventSchema>;
 
 // ----- Inquiries -----
 export const inquirySchema = z.object({
