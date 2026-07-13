@@ -63,7 +63,6 @@ export const exhibitSchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Invalid slug format"),
   content: z.string().optional(),
   status: z.enum(["draft", "published"]).default("draft"),
-  published_at: z.string().datetime().optional().nullable(),
   // Event details for the enriched exhibit-detail layout (all optional —
   // exhibits without them fall back to the plain title + text view).
   event_dates: z.string().optional().nullable(),

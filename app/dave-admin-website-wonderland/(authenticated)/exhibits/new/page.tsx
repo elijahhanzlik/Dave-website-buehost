@@ -39,8 +39,6 @@ export default function NewExhibitPage() {
           slug: slugify(title),
           content,
           status,
-          published_at:
-            status === "published" ? new Date().toISOString() : null,
           event_dates: eventDates || null,
           event_time: eventTime || null,
           address: address || null,
