@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import { formatDateRange } from "@/lib/formatters";
+import { ArrowLeft, ArrowRight, MapPin } from "lucide-react";
 import type { Metadata } from "next";
+import { mapsUrl } from "@/lib/formatters";
 
 interface Exhibit {
   id: string;
@@ -9,8 +9,10 @@ interface Exhibit {
   slug: string;
   content: string | null;
   status: string;
-  start_date: string | null;
-  end_date: string | null;
+  event_dates: string | null;
+  event_time: string | null;
+  address: string | null;
+  cover_image: string | null;
 }
 
 async function getExhibit(slug: string): Promise<Exhibit | null> {
@@ -20,7 +22,9 @@ async function getExhibit(slug: string): Promise<Exhibit | null> {
     if (!supabase) return null;
     const { data } = await supabase
       .from("exhibits")
-      .select("id, title, slug, content, status, start_date, end_date")
+      // select * so the new event columns are optional — the page still renders
+      // (text fallback) even before the 002 migration adds those columns.
+      .select("*")
       .eq("slug", slug)
       .eq("status", "published")
       .single();
@@ -76,6 +80,132 @@ export default async function ExhibitPage({
     );
   }
 
+  const hasEventDetails =
+    !!exhibit.event_dates || !!exhibit.event_time || !!exhibit.address;
+
+  // Split "Street · City, ST ZIP" into two display lines when possible.
+  const [addressStreet, ...addressRest] = (exhibit.address ?? "")
+    .split("·")
+    .map((s) => s.trim());
+  const addressCity = addressRest.join(", ");
+
+  // --- Rich layout: feature image hero + event details (matches mockup) ---
+  if (exhibit.cover_image) {
+    return (
+      <div className="pb-20 pt-16">
+        {/*
+          Full-bleed hero image with title overlay.
+          Mobile: fixed-height band + object-cover — the whole framed piece
+          already reads well in the tall 46vh band on narrow screens.
+          Desktop (md+): the <img> becomes a static in-flow block that shows the
+          full framed artwork at its natural aspect ratio (object-contain), but
+          capped at 60vh so the hero never dominates the viewport and the event
+          details card stays visible with little/no scroll. Wide panoramas fill
+          the width under the cap (no letterbox); tall/near-square pieces are
+          contained and centered, with the primary-dark mat reading as an
+          intentional gallery backdrop behind them. The scrim + title stay
+          absolutely positioned over the bottom of the band.
+        */}
+        <div className="relative h-[46vh] min-h-[320px] w-full overflow-hidden md:h-auto md:min-h-0 md:bg-primary-dark">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={exhibit.cover_image}
+            alt={exhibit.title}
+            className="absolute inset-0 h-full w-full object-cover md:static md:block md:h-auto md:max-h-[60vh] md:object-contain"
+          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10" />
+          <div className="absolute inset-0 flex flex-col justify-end">
+            <div className="mx-auto w-full max-w-5xl px-6 pb-8 lg:px-8">
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold">
+                New Exhibit
+              </p>
+              <h1 className="mt-2 font-display text-4xl font-bold text-white sm:text-5xl md:text-6xl">
+                {exhibit.title}
+              </h1>
+            </div>
+          </div>
+        </div>
+
+        <article className="mx-auto max-w-3xl px-6 lg:px-8">
+          {/* Event details card */}
+          {hasEventDetails && (
+            <div className="mt-10 rounded-3xl bg-sage px-6 py-10 text-center sm:px-10">
+              {(exhibit.event_dates || exhibit.event_time) && (
+                <>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/70">
+                    Dates
+                  </p>
+                  {exhibit.event_dates && (
+                    <p className="mt-2 font-display text-2xl font-bold text-primary-dark sm:text-3xl">
+                      {exhibit.event_dates}
+                    </p>
+                  )}
+                  {exhibit.event_time && (
+                    <p className="mt-1 text-sm uppercase tracking-wide text-text-secondary">
+                      {exhibit.event_time}
+                    </p>
+                  )}
+                </>
+              )}
+
+              {exhibit.address && (
+                <>
+                  {(exhibit.event_dates || exhibit.event_time) && (
+                    <div className="mx-auto my-7 h-px w-16 bg-primary/20" />
+                  )}
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/70">
+                    Location
+                  </p>
+                  <p className="mt-2 font-display text-2xl font-bold text-primary-dark sm:text-3xl">
+                    {addressStreet}
+                  </p>
+                  {addressCity && (
+                    <p className="mt-1 text-base text-text-secondary">
+                      {addressCity}
+                    </p>
+                  )}
+                  <a
+                    href={mapsUrl(exhibit.address)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-medium uppercase tracking-[0.12em] text-white transition-colors hover:bg-primary-dark"
+                  >
+                    <MapPin size={16} />
+                    Get Directions
+                    <ArrowRight
+                      size={16}
+                      className="transition-transform group-hover:translate-x-1"
+                    />
+                  </a>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Optional description */}
+          {exhibit.content && (
+            <div className="mt-12">
+              <p className="whitespace-pre-wrap text-lg leading-relaxed text-text-secondary">
+                {exhibit.content}
+              </p>
+            </div>
+          )}
+
+          <div className="mt-16 border-t border-sage pt-8">
+            <Link
+              href="/exhibits"
+              className="inline-flex items-center gap-2 text-sm font-medium text-gold-dark transition-colors hover:text-gold"
+            >
+              <ArrowLeft size={16} />
+              Back to all exhibits
+            </Link>
+          </div>
+        </article>
+      </div>
+    );
+  }
+
+  // --- Fallback layout: plain title + text (existing behavior) ---
   return (
     <div className="pt-24 pb-20">
       <article className="mx-auto max-w-3xl px-6 lg:px-8">
@@ -88,12 +218,7 @@ export default async function ExhibitPage({
         </Link>
 
         <header className="mt-8">
-          {formatDateRange(exhibit.start_date, exhibit.end_date) && (
-            <p className="text-sm font-medium uppercase tracking-[0.1em] text-text-muted">
-              {formatDateRange(exhibit.start_date, exhibit.end_date)}
-            </p>
-          )}
-          <h1 className="mt-3 font-display text-3xl font-bold text-primary-dark sm:text-4xl md:text-5xl">
+          <h1 className="font-display text-3xl font-bold text-primary-dark sm:text-4xl md:text-5xl">
             {exhibit.title}
           </h1>
         </header>

@@ -26,18 +26,56 @@ interface HeroCrop {
   zoom: number;
 }
 
+interface HomeBadge {
+  title: string;
+  dates: string | null;
+  time: string | null;
+  address: string | null;
+}
+
 export default function HomeClient({
   latestPosts,
   heroImageUrl,
   heroCrop,
   featuredArtworks,
+  homeBadge,
 }: {
   latestPosts: BlogPost[];
   heroImageUrl?: string | null;
   heroCrop?: HeroCrop | null;
   featuredArtworks: FeaturedArtwork[];
+  homeBadge?: HomeBadge | null;
 }) {
   const parallaxRef = useRef<HTMLDivElement>(null);
+
+  // Standalone "NEW EXHIBIT" badge — rendered in both the desktop green panel
+  // and the mobile hero. `dark` tunes the palette for the light green panel
+  // vs. the photo-backed mobile hero.
+  const renderBadge = (dark: boolean) =>
+    homeBadge && (
+      <div
+        className={`mt-8 w-full max-w-xs rounded-2xl border px-6 py-4 text-center backdrop-blur-sm ${
+          dark
+            ? "border-white/10 bg-black/20"
+            : "border-white/20 bg-black/25"
+        }`}
+      >
+        <p className="text-[22px] font-semibold uppercase tracking-[0.2em] text-[#E07A2F]">
+          New Exhibit
+        </p>
+        <p className="mt-1.5 font-display text-xl font-bold text-white">
+          {homeBadge.title}
+        </p>
+        {(homeBadge.dates || homeBadge.time) && (
+          <p className="mt-1 text-sm text-white/70">
+            {[homeBadge.dates, homeBadge.time].filter(Boolean).join(" · ")}
+          </p>
+        )}
+        {homeBadge.address && (
+          <p className="mt-0.5 text-xs text-white/50">{homeBadge.address}</p>
+        )}
+      </div>
+    );
 
   useEffect(() => {
     let ticking = false;
@@ -75,6 +113,14 @@ export default function HomeClient({
             >
               Studio Artist &middot; Boulder, CO
             </p>
+
+            {/* Standalone "NEW EXHIBIT" badge */}
+            <div
+              className="flex justify-center animate-fade-in-up"
+              style={{ animationDelay: "0.25s", opacity: 0 }}
+            >
+              {renderBadge(true)}
+            </div>
 
             {/* Nav links centered in green panel */}
             <nav
@@ -202,6 +248,12 @@ export default function HomeClient({
               >
                 Studio Artist &middot; Boulder, CO
               </p>
+              <div
+                className="flex justify-center animate-fade-in-up"
+                style={{ animationDelay: "0.25s", opacity: 0 }}
+              >
+                {renderBadge(false)}
+              </div>
               <div
                 className="mt-10 flex flex-col gap-4 sm:flex-row animate-fade-in-up"
                 style={{ animationDelay: "0.4s", opacity: 0 }}

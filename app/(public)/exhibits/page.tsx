@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { formatDateRange } from "@/lib/formatters";
 
 export const metadata: Metadata = {
   title: "Exhibits — David Schaldach",
@@ -13,8 +12,8 @@ interface Exhibit {
   slug: string;
   content: string | null;
   status: string;
-  start_date: string | null;
-  end_date: string | null;
+  event_dates: string | null;
+  cover_image: string | null;
 }
 
 async function getExhibits(): Promise<Exhibit[]> {
@@ -24,9 +23,11 @@ async function getExhibits(): Promise<Exhibit[]> {
     if (!supabase) return [];
     const { data } = await supabase
       .from("exhibits")
-      .select("id, title, slug, content, status, start_date, end_date")
+      // select * so the new event columns are optional — exhibits still render
+      // (text fallback) even before the 002 migration adds those columns.
+      .select("*")
       .eq("status", "published")
-      .order("end_date", { ascending: false, nullsFirst: false });
+      .order("sort_order", { ascending: true });
 
     return data ?? [];
   } catch {
@@ -122,14 +123,24 @@ export default async function ExhibitsPage() {
                 href={`/exhibits/${exhibit.slug}`}
                 className="group block py-8 first:pt-0"
               >
-                {formatDateRange(exhibit.start_date, exhibit.end_date) && (
-                  <p className="text-xs font-medium uppercase tracking-[0.1em] text-text-muted">
-                    {formatDateRange(exhibit.start_date, exhibit.end_date)}
-                  </p>
+                {exhibit.cover_image && (
+                  <div className="mb-5 overflow-hidden rounded-2xl">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={exhibit.cover_image}
+                      alt={exhibit.title}
+                      className="aspect-[4/3] w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  </div>
                 )}
-                <h2 className="mt-2 font-display text-xl font-bold text-primary-dark transition-colors group-hover:text-primary">
+                <h2 className="font-display text-xl font-bold text-primary-dark transition-colors group-hover:text-primary">
                   {exhibit.title}
                 </h2>
+                {exhibit.event_dates && (
+                  <p className="mt-1 text-sm font-medium uppercase tracking-[0.1em] text-gold-dark">
+                    {exhibit.event_dates}
+                  </p>
+                )}
                 {exhibit.content && (
                   <p className="mt-3 text-base text-text-secondary whitespace-pre-line">
                     {exhibit.content}

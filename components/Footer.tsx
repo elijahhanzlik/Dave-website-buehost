@@ -44,13 +44,12 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Get in Touch */}
+          {/* Keep in Touch */}
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-primary">
-              Get in Touch
+              Keep in Touch
             </h3>
             <div className="mt-4 space-y-3 text-sm text-text-secondary">
-              <p>Boulder, CO</p>
               <Link
                 href="/contact"
                 className="inline-block text-gold-dark transition-colors hover:text-gold"

@@ -4,15 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, Edit2, Trash2 } from "lucide-react";
-import { formatDateRange } from "@/lib/formatters";
 
 interface Exhibit {
   id: string;
   title: string;
   slug: string;
   status: "draft" | "published";
-  start_date: string | null;
-  end_date: string | null;
+  event_dates: string | null;
   created_at: string;
 }
 
@@ -104,7 +102,7 @@ export default function ExhibitsListPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-gray-500 text-xs hidden md:table-cell">
-                    {formatDateRange(exhibit.start_date, exhibit.end_date) || "—"}
+                    {exhibit.event_dates || "—"}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1 justify-center">

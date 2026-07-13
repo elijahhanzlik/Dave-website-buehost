@@ -16,16 +16,17 @@ export default function ArtworkCard({ artwork }: { artwork: Artwork }) {
       href={`/works/${artwork.id}`}
       className="group relative block overflow-hidden rounded-xl"
     >
-      {/* Image / Placeholder */}
-      <div className="aspect-[4/5] w-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary-dark/30">
+      {/* Image / Placeholder — natural aspect ratio, no crop */}
+      <div className="relative w-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary-dark/30">
         {hasImage ? (
           <img
             src={artwork.images[0]}
             alt={artwork.title}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+            loading="lazy"
+            className="block h-auto w-full object-contain transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sage to-primary/10">
+          <div className="flex aspect-[4/5] w-full items-center justify-center bg-gradient-to-br from-sage to-primary/10">
             <svg
               className="h-16 w-16 text-primary/20"
               fill="none"
@@ -41,17 +42,17 @@ export default function ArtworkCard({ artwork }: { artwork: Artwork }) {
             </svg>
           </div>
         )}
-      </div>
 
-      {/* Hover overlay */}
-      <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-        <div className="w-full p-5">
-          <h3 className="font-display text-lg font-semibold text-white">
-            {artwork.title}
-          </h3>
-          {artwork.category && (
-            <p className="mt-1 text-sm text-white/70">{artwork.category}</p>
-          )}
+        {/* Hover overlay — covers the image only */}
+        <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <div className="w-full p-5">
+            <h3 className="font-display text-lg font-semibold text-white">
+              {artwork.title}
+            </h3>
+            {artwork.category && (
+              <p className="mt-1 text-sm text-white/70">{artwork.category}</p>
+            )}
+          </div>
         </div>
       </div>
 

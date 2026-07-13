@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from("exhibits")
     .select("*")
-    .order("end_date", { ascending: false, nullsFirst: false });
+    .order("sort_order", { ascending: true });
 
   if (!showAll) {
     query = query.eq("status", "published");

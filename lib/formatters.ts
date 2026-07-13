@@ -17,6 +17,18 @@ export function slugify(text: string): string {
     .replace(/^-|-$/g, "");
 }
 
+/**
+ * Build a Google Maps directions/search URL from a free-form address string.
+ * Normalizes the `·` separator we use for display back into a comma so the
+ * query geocodes cleanly.
+ */
+export function mapsUrl(address: string): string {
+  const query = encodeURIComponent(
+    address.replace(/·/g, ",").replace(/\s+/g, " ").trim(),
+  );
+  return `https://www.google.com/maps/search/?api=1&query=${query}`;
+}
+
 /** Format a date string for display. */
 export function formatDate(date: string | Date): string {
   return new Intl.DateTimeFormat("en-US", {

@@ -4,14 +4,17 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Save } from "lucide-react";
 import { formatApiError, slugify } from "@/lib/formatters";
+import ImageUploader from "@/components/ImageUploader";
 
 export default function NewExhibitPage() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [status, setStatus] = useState<"draft" | "published">("draft");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [eventDates, setEventDates] = useState("");
+  const [eventTime, setEventTime] = useState("");
+  const [address, setAddress] = useState("");
+  const [featureImage, setFeatureImage] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -36,8 +39,10 @@ export default function NewExhibitPage() {
           slug: slugify(title),
           content,
           status,
-          start_date: startDate || null,
-          end_date: endDate || null,
+          event_dates: eventDates || null,
+          event_time: eventTime || null,
+          address: address || null,
+          cover_image: featureImage[0] || null,
         }),
       });
 
@@ -107,28 +112,6 @@ export default function NewExhibitPage() {
               <option value="published">Published</option>
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Start Date
-            </label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              End Date
-            </label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
-          </div>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -141,6 +124,65 @@ export default function NewExhibitPage() {
             placeholder="Describe the exhibit..."
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
+        </div>
+
+        {/* Event details — power the enriched public detail layout */}
+        <div className="border-t border-gray-100 pt-4 space-y-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+            Event Details (optional)
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Dates
+              </label>
+              <input
+                type="text"
+                value={eventDates}
+                onChange={(e) => setEventDates(e.target.value)}
+                placeholder="Aug 1 – 31, 2026"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Time
+              </label>
+              <input
+                type="text"
+                value={eventTime}
+                onChange={(e) => setEventTime(e.target.value)}
+                placeholder="6–9:30 p.m."
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Address
+            </label>
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="4790 Broadway, Unit 101 · Boulder, CO 80304"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+            <p className="mt-1 text-xs text-gray-400">
+              Use &ldquo; · &rdquo; to separate the street from the city (it
+              splits onto two lines and powers &ldquo;Get Directions&rdquo;).
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Feature Image
+            </label>
+            <ImageUploader
+              images={featureImage}
+              onChange={setFeatureImage}
+              multiple={false}
+            />
+          </div>
         </div>
       </div>
     </div>

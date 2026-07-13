@@ -112,11 +112,19 @@ create table public.exhibits (
   slug         text not null unique,
   content      text,
   content_blocks jsonb not null default '[]'::jsonb, -- DEPRECATED 2026-05: exhibits now use plain text content only
-  cover_image  text, -- DEPRECATED 2026-05: exhibits now use plain text content only
+  cover_image  text, -- exhibit feature photo (public URL/path); powers the enriched detail hero + list card
   status       text not null default 'draft' check (status in ('draft', 'published')),
-  start_date   date,  -- when the exhibit run began
-  end_date     date,  -- when the exhibit run ended; public list is ordered by this, newest first
-  created_at   timestamptz not null default now()
+  sort_order   integer not null default 0,
+  created_at   timestamptz not null default now(),
+  -- Event details for the enriched exhibit-detail layout (added 2026-07). All
+  -- freeform display strings; exhibits without them use the plain text view.
+  event_dates   text, -- e.g. "Aug 1 – 31, 2026"
+  event_time    text, -- e.g. "6–9:30 p.m."
+  address       text, -- e.g. "4790 Broadway, Unit 101 · Boulder, CO 80304"
+  -- Structured run dates also exist in the live table (used by the Events &
+  -- Services feature); exhibit display uses the freeform event_* fields above.
+  start_date    date,
+  end_date      date
 );
 
 alter table public.exhibits enable row level security;
