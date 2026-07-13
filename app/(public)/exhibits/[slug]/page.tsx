@@ -93,15 +93,27 @@ export default async function ExhibitPage({
   if (exhibit.cover_image) {
     return (
       <div className="pb-20 pt-16">
-        {/* Full-bleed hero image with title overlay */}
-        <div className="relative h-[46vh] min-h-[320px] w-full overflow-hidden">
+        {/*
+          Full-bleed hero image with title overlay.
+          Mobile: fixed-height band + object-cover — the whole framed piece
+          already reads well in the tall 46vh band on narrow screens.
+          Desktop (md+): the <img> becomes a static in-flow block that shows the
+          full framed artwork at its natural aspect ratio (object-contain), but
+          capped at 60vh so the hero never dominates the viewport and the event
+          details card stays visible with little/no scroll. Wide panoramas fill
+          the width under the cap (no letterbox); tall/near-square pieces are
+          contained and centered, with the primary-dark mat reading as an
+          intentional gallery backdrop behind them. The scrim + title stay
+          absolutely positioned over the bottom of the band.
+        */}
+        <div className="relative h-[46vh] min-h-[320px] w-full overflow-hidden md:h-auto md:min-h-0 md:bg-primary-dark">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={exhibit.cover_image}
             alt={exhibit.title}
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover md:static md:block md:h-auto md:max-h-[60vh] md:object-contain"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10" />
           <div className="absolute inset-0 flex flex-col justify-end">
             <div className="mx-auto w-full max-w-5xl px-6 pb-8 lg:px-8">
               <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold">
