@@ -59,9 +59,9 @@ export default function WorksGallery({
       )}
 
       <div className="mt-12">
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+        <div className="columns-2 gap-4 md:columns-3">
           {filtered.map((artwork) => (
-            <div key={artwork.id}>
+            <div key={artwork.id} className="mb-4 w-full break-inside-avoid">
               <ArtworkCard artwork={artwork} />
             </div>
           ))}
