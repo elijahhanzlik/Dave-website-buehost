@@ -64,6 +64,12 @@ export const exhibitSchema = z.object({
   content: z.string().optional(),
   status: z.enum(["draft", "published"]).default("draft"),
   published_at: z.string().datetime().optional().nullable(),
+  // Event details for the enriched exhibit-detail layout (all optional —
+  // exhibits without them fall back to the plain title + text view).
+  event_dates: z.string().optional().nullable(),
+  event_time: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  cover_image: z.string().optional().nullable(),
 });
 
 export type ExhibitInput = z.infer<typeof exhibitSchema>;

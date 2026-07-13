@@ -22,6 +22,19 @@ const DEFAULT_KEYS = [
   "linkedin_url",
 ];
 
+// Keys managed by dedicated sections below — kept out of the general list.
+const SPECIAL_KEYS = new Set([
+  "hero_image",
+  "hero_crop",
+  "about_banner",
+  "contact_photo",
+  "exhibits_banner",
+  "home_exhibit_title",
+  "home_exhibit_dates",
+  "home_exhibit_time",
+  "home_exhibit_address",
+]);
+
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Setting[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +54,14 @@ export default function SettingsPage() {
 
   // Exhibits banner state
   const [exhibitsBanner, setExhibitsBanner] = useState<string[]>([]);
+
+  // Home "NEW EXHIBIT" badge state (standalone, decoupled from exhibits table)
+  const [homeExhibit, setHomeExhibit] = useState({
+    title: "",
+    dates: "",
+    time: "",
+    address: "",
+  });
 
   useEffect(() => {
     fetch("/api/settings")
@@ -88,6 +109,16 @@ export default function SettingsPage() {
           if (exhibitsBannerSetting && exhibitsBannerSetting.value) {
             setExhibitsBanner([exhibitsBannerSetting.value]);
           }
+
+          // Load home exhibit badge from settings
+          const badgeVal = (k: string) =>
+            existing.find((s) => s.key === k)?.value ?? "";
+          setHomeExhibit({
+            title: badgeVal("home_exhibit_title"),
+            dates: badgeVal("home_exhibit_dates"),
+            time: badgeVal("home_exhibit_time"),
+            address: badgeVal("home_exhibit_address"),
+          });
         }
       })
       .finally(() => setLoading(false));
@@ -108,9 +139,9 @@ export default function SettingsPage() {
   };
 
   const handleSave = async () => {
-    // Merge hero settings into the settings list
+    // Merge specially-managed settings into the general settings list
     const allSettings = settings.filter(
-      (s) => s.key.trim() !== "" && s.key !== "hero_image" && s.key !== "hero_crop" && s.key !== "about_banner" && s.key !== "contact_photo" && s.key !== "exhibits_banner",
+      (s) => s.key.trim() !== "" && !SPECIAL_KEYS.has(s.key),
     );
     if (heroImage[0]) {
       allSettings.push({ key: "hero_image", value: heroImage[0] });
@@ -128,6 +159,11 @@ export default function SettingsPage() {
     if (exhibitsBanner[0]) {
       allSettings.push({ key: "exhibits_banner", value: exhibitsBanner[0] });
     }
+    // Home exhibit badge — pushed even when blank so fields can be cleared.
+    allSettings.push({ key: "home_exhibit_title", value: homeExhibit.title });
+    allSettings.push({ key: "home_exhibit_dates", value: homeExhibit.dates });
+    allSettings.push({ key: "home_exhibit_time", value: homeExhibit.time });
+    allSettings.push({ key: "home_exhibit_address", value: homeExhibit.address });
 
     setSaving(true);
     setError("");
@@ -174,10 +210,8 @@ export default function SettingsPage() {
     );
   }
 
-  // Filter out hero keys from the general settings display
-  const generalSettings = settings.filter(
-    (s) => s.key !== "hero_image" && s.key !== "hero_crop" && s.key !== "about_banner" && s.key !== "contact_photo" && s.key !== "exhibits_banner",
-  );
+  // Filter out specially-managed keys from the general settings display
+  const generalSettings = settings.filter((s) => !SPECIAL_KEYS.has(s.key));
 
   return (
     <div className="space-y-8 max-w-3xl">
@@ -278,6 +312,79 @@ export default function SettingsPage() {
           onChange={setExhibitsBanner}
           multiple={false}
         />
+      </div>
+
+      {/* ===== HOME EXHIBIT BADGE SECTION ===== */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+        <h2 className="text-lg font-display font-semibold text-gray-900">
+          Home &ldquo;New Exhibit&rdquo; Badge
+        </h2>
+        <p className="text-sm text-gray-500">
+          The badge card shown on the homepage hero. Leave the title empty to
+          hide the badge. This is standalone &mdash; it is not linked to the
+          Exhibits section.
+        </p>
+
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Title
+            </label>
+            <input
+              type="text"
+              value={homeExhibit.title}
+              onChange={(e) =>
+                setHomeExhibit((p) => ({ ...p, title: e.target.value }))
+              }
+              placeholder="Logan's Espresso Cafe"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Dates
+              </label>
+              <input
+                type="text"
+                value={homeExhibit.dates}
+                onChange={(e) =>
+                  setHomeExhibit((p) => ({ ...p, dates: e.target.value }))
+                }
+                placeholder="Aug 1 – 31, 2026"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Time
+              </label>
+              <input
+                type="text"
+                value={homeExhibit.time}
+                onChange={(e) =>
+                  setHomeExhibit((p) => ({ ...p, time: e.target.value }))
+                }
+                placeholder="6–9:30 p.m."
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Address
+            </label>
+            <input
+              type="text"
+              value={homeExhibit.address}
+              onChange={(e) =>
+                setHomeExhibit((p) => ({ ...p, address: e.target.value }))
+              }
+              placeholder="4790 Broadway, Unit 101 · Boulder, CO 80304"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
+        </div>
       </div>
 
       {/* ===== GENERAL SETTINGS ===== */}

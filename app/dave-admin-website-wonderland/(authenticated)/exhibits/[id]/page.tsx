@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Loader2, Save } from "lucide-react";
 import { formatApiError, slugify } from "@/lib/formatters";
+import ImageUploader from "@/components/ImageUploader";
 
 interface Exhibit {
   id: string;
@@ -11,6 +12,10 @@ interface Exhibit {
   slug: string;
   content: string | null;
   status: "draft" | "published";
+  event_dates: string | null;
+  event_time: string | null;
+  address: string | null;
+  cover_image: string | null;
 }
 
 export default function EditExhibitPage() {
@@ -24,6 +29,10 @@ export default function EditExhibitPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [status, setStatus] = useState<"draft" | "published">("draft");
+  const [eventDates, setEventDates] = useState("");
+  const [eventTime, setEventTime] = useState("");
+  const [address, setAddress] = useState("");
+  const [featureImage, setFeatureImage] = useState<string[]>([]);
 
   useEffect(() => {
     fetch(`/api/exhibits/${params.id}`)
@@ -36,6 +45,10 @@ export default function EditExhibitPage() {
         setTitle(data.title);
         setContent(data.content ?? "");
         setStatus(data.status);
+        setEventDates(data.event_dates ?? "");
+        setEventTime(data.event_time ?? "");
+        setAddress(data.address ?? "");
+        setFeatureImage(data.cover_image ? [data.cover_image] : []);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -61,6 +74,10 @@ export default function EditExhibitPage() {
           status,
           published_at:
             status === "published" ? new Date().toISOString() : null,
+          event_dates: eventDates || null,
+          event_time: eventTime || null,
+          address: address || null,
+          cover_image: featureImage[0] || null,
         }),
       });
 
@@ -159,6 +176,65 @@ export default function EditExhibitPage() {
             placeholder="Describe the exhibit..."
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
+        </div>
+
+        {/* Event details — power the enriched public detail layout */}
+        <div className="border-t border-gray-100 pt-4 space-y-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+            Event Details (optional)
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Dates
+              </label>
+              <input
+                type="text"
+                value={eventDates}
+                onChange={(e) => setEventDates(e.target.value)}
+                placeholder="Aug 1 – 31, 2026"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Time
+              </label>
+              <input
+                type="text"
+                value={eventTime}
+                onChange={(e) => setEventTime(e.target.value)}
+                placeholder="6–9:30 p.m."
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Address
+            </label>
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="4790 Broadway, Unit 101 · Boulder, CO 80304"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+            <p className="mt-1 text-xs text-gray-400">
+              Use &ldquo; · &rdquo; to separate the street from the city (it
+              splits onto two lines and powers &ldquo;Get Directions&rdquo;).
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Feature Image
+            </label>
+            <ImageUploader
+              images={featureImage}
+              onChange={setFeatureImage}
+              multiple={false}
+            />
+          </div>
         </div>
       </div>
     </div>

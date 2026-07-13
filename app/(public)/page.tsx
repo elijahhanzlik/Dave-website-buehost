@@ -40,6 +40,51 @@ interface HeroSettings {
   crop: { x: number; y: number; zoom: number } | null;
 }
 
+interface HomeBadge {
+  title: string;
+  dates: string | null;
+  time: string | null;
+  address: string | null;
+}
+
+/**
+ * The homepage "NEW EXHIBIT" badge. Its own standalone item backed by
+ * site_settings keys — intentionally decoupled from the exhibits table.
+ * Returns null (badge hidden) unless at least a title is set.
+ */
+async function getHomeBadge(): Promise<HomeBadge | null> {
+  try {
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+    if (!supabase) return null;
+
+    const { data } = await supabase
+      .from("site_settings")
+      .select("key, value")
+      .in("key", [
+        "home_exhibit_title",
+        "home_exhibit_dates",
+        "home_exhibit_time",
+        "home_exhibit_address",
+      ]);
+
+    if (!data) return null;
+    const get = (k: string) => data.find((s) => s.key === k)?.value?.trim() || null;
+    const title = get("home_exhibit_title");
+    if (!title) return null;
+
+    return {
+      title,
+      dates: get("home_exhibit_dates"),
+      time: get("home_exhibit_time"),
+      address: get("home_exhibit_address"),
+    };
+  } catch {
+    // Supabase not configured
+    return null;
+  }
+}
+
 async function getHeroSettings(): Promise<HeroSettings> {
   try {
     const { createClient } = await import("@/lib/supabase/server");
@@ -115,10 +160,11 @@ async function getLatestPosts() {
 }
 
 export default async function HomePage() {
-  const [latestPosts, hero, featuredArtworks] = await Promise.all([
+  const [latestPosts, hero, featuredArtworks, homeBadge] = await Promise.all([
     getLatestPosts(),
     getHeroSettings(),
     getFeaturedArtworks(),
+    getHomeBadge(),
   ]);
 
   return (
@@ -127,6 +173,7 @@ export default async function HomePage() {
       heroImageUrl={hero.imageUrl}
       heroCrop={hero.crop}
       featuredArtworks={featuredArtworks}
+      homeBadge={homeBadge}
     />
   );
 }
