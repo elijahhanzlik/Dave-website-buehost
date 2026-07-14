@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
+import { getArtworks } from "@/lib/supabase/public";
+
+// Prerender each artwork detail page at build time + ISR (5 min).
+export const revalidate = 300;
 
 interface Artwork {
   id: string;
@@ -76,20 +80,13 @@ const PLACEHOLDER_ARTWORKS: Artwork[] = [
 ];
 
 async function getAllArtworks(): Promise<Artwork[]> {
-  try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    if (!supabase) return PLACEHOLDER_ARTWORKS;
-    const { data } = await supabase
-      .from("artworks")
-      .select("*")
-      .order("sort_order", { ascending: true });
+  const rows = await getArtworks();
+  return rows.length > 0 ? rows : PLACEHOLDER_ARTWORKS;
+}
 
-    if (data && data.length > 0) return data;
-  } catch {
-    // Supabase not configured
-  }
-  return PLACEHOLDER_ARTWORKS;
+export async function generateStaticParams() {
+  const artworks = await getAllArtworks();
+  return artworks.map((a) => ({ id: a.id }));
 }
 
 export async function generateMetadata({

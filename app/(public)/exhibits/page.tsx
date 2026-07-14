@@ -1,61 +1,25 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  getPublishedExhibits,
+  getSettings,
+  settingValue,
+} from "@/lib/supabase/public";
+
+// Prerender + ISR (5 min) instead of a per-request dynamic DB read.
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Exhibits — David Schaldach",
   description: "Documentation of David Schaldach's art exhibits.",
 };
 
-interface Exhibit {
-  id: string;
-  title: string;
-  slug: string;
-  content: string | null;
-  status: string;
-  event_dates: string | null;
-  cover_image: string | null;
-}
-
-async function getExhibits(): Promise<Exhibit[]> {
-  try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    if (!supabase) return [];
-    const { data } = await supabase
-      .from("exhibits")
-      // select * so the new event columns are optional — exhibits still render
-      // (text fallback) even before the 002 migration adds those columns.
-      .select("*")
-      .eq("status", "published")
-      .order("sort_order", { ascending: true });
-
-    return data ?? [];
-  } catch {
-    return [];
-  }
-}
-
-async function getBannerImage(): Promise<string | null> {
-  try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    if (!supabase) return null;
-    const { data } = await supabase
-      .from("site_settings")
-      .select("value")
-      .eq("key", "exhibits_banner")
-      .maybeSingle();
-    return data?.value || null;
-  } catch {
-    return null;
-  }
-}
-
 export default async function ExhibitsPage() {
-  const [exhibits, bannerImage] = await Promise.all([
-    getExhibits(),
-    getBannerImage(),
+  const [exhibits, settings] = await Promise.all([
+    getPublishedExhibits(),
+    getSettings(),
   ]);
+  const bannerImage = settingValue(settings, "exhibits_banner");
 
   return (
     <div className="pt-24 pb-20">

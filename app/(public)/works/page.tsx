@@ -1,4 +1,8 @@
 import WorksGallery from "@/components/WorksGallery";
+import { getArtworks } from "@/lib/supabase/public";
+
+// Prerender + ISR (5 min) instead of a per-request dynamic DB read.
+export const revalidate = 300;
 
 interface Artwork {
   id: string;
@@ -67,30 +71,14 @@ const PLACEHOLDER_ARTWORKS: Artwork[] = [
   },
 ];
 
-async function getArtworks(): Promise<Artwork[]> {
-  try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    if (!supabase) return PLACEHOLDER_ARTWORKS;
-    const { data } = await supabase
-      .from("artworks")
-      .select("*")
-      .order("sort_order", { ascending: true });
-
-    if (data && data.length > 0) return data;
-  } catch {
-    // Supabase not configured
-  }
-  return PLACEHOLDER_ARTWORKS;
-}
-
 function getCategories(artworks: Artwork[]): string[] {
   const cats = new Set(artworks.map((a) => a.category).filter(Boolean) as string[]);
   return Array.from(cats);
 }
 
 export default async function WorksPage() {
-  const artworks = await getArtworks();
+  const rows = await getArtworks();
+  const artworks = rows.length > 0 ? rows : PLACEHOLDER_ARTWORKS;
   const categories = getCategories(artworks);
 
   return (

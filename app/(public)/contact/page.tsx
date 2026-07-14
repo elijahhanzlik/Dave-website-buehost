@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import ContactForm from "./ContactForm";
 import { MapPin, Mail } from "lucide-react";
+import { getSettings, settingValue } from "@/lib/supabase/public";
+
+// Contact reads the published contact_photo setting — prerender + ISR (5 min).
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Contact — David Schaldach",
@@ -8,21 +12,8 @@ export const metadata: Metadata = {
 };
 
 async function getContactPhoto(): Promise<string | null> {
-  try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    if (!supabase) return null;
-
-    const { data } = await supabase
-      .from("site_settings")
-      .select("value")
-      .eq("key", "contact_photo")
-      .single();
-
-    return data?.value || null;
-  } catch {
-    return null;
-  }
+  const settings = await getSettings();
+  return settingValue(settings, "contact_photo");
 }
 
 export default async function ContactPage() {

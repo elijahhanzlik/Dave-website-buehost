@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { blocksToPreview, formatDate } from "@/lib/formatters";
+import { getPublishedPosts } from "@/lib/supabase/public";
+
+// Prerender + ISR (5 min) instead of a per-request dynamic DB read.
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Blog — David Schaldach",
@@ -55,26 +59,9 @@ const PLACEHOLDER_POSTS: BlogPost[] = [
   },
 ];
 
-async function getBlogPosts(): Promise<BlogPost[]> {
-  try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    if (!supabase) return PLACEHOLDER_POSTS;
-    const { data } = await supabase
-      .from("blog_posts")
-      .select("*")
-      .eq("status", "published")
-      .order("published_at", { ascending: false });
-
-    if (data && data.length > 0) return data;
-  } catch {
-    // Supabase not configured
-  }
-  return PLACEHOLDER_POSTS;
-}
-
 export default async function BlogPage() {
-  const posts = await getBlogPosts();
+  const rows = await getPublishedPosts();
+  const posts = rows.length > 0 ? rows : PLACEHOLDER_POSTS;
 
   return (
     <div className="pt-24 pb-20">

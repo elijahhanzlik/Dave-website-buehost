@@ -2,6 +2,10 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { formatDateRange } from "@/lib/formatters";
 import type { Metadata } from "next";
+import { getPublishedEvent, getPublishedEvents } from "@/lib/supabase/public";
+
+// Prerender each published event at build time + ISR (5 min).
+export const revalidate = 300;
 
 interface EventItem {
   id: string;
@@ -15,21 +19,12 @@ interface EventItem {
 }
 
 async function getEvent(slug: string): Promise<EventItem | null> {
-  try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    if (!supabase) return null;
-    const { data } = await supabase
-      .from("events")
-      .select("*")
-      .eq("slug", slug)
-      .eq("status", "published")
-      .single();
+  return getPublishedEvent(slug);
+}
 
-    return data;
-  } catch {
-    return null;
-  }
+export async function generateStaticParams() {
+  const events = await getPublishedEvents();
+  return events.map((e) => ({ slug: e.slug }));
 }
 
 export async function generateMetadata({

@@ -1,6 +1,17 @@
 import HomeClient from "./HomeClient";
+import {
+  getArtworks,
+  getPublishedPosts,
+  getSettings,
+  settingValue,
+  type SiteSetting,
+} from "@/lib/supabase/public";
 
-// Placeholder data — replaced by Supabase fetch when connected
+// Prerender the homepage and refresh its cached data every 5 minutes (ISR)
+// instead of hitting Supabase on every request.
+export const revalidate = 300;
+
+// Placeholder data — used when Supabase is unconfigured or empty
 const PLACEHOLDER_BLOG_POSTS = [
   {
     id: "1",
@@ -48,124 +59,67 @@ interface HomeBadge {
 }
 
 /**
- * The homepage "NEW EXHIBIT" badge. Its own standalone item backed by
- * site_settings keys — intentionally decoupled from the exhibits table.
+ * The homepage "NEW EXHIBIT" badge, derived from site_settings keys.
  * Returns null (badge hidden) unless at least a title is set.
  */
-async function getHomeBadge(): Promise<HomeBadge | null> {
-  try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    if (!supabase) return null;
-
-    const { data } = await supabase
-      .from("site_settings")
-      .select("key, value")
-      .in("key", [
-        "home_exhibit_title",
-        "home_exhibit_dates",
-        "home_exhibit_time",
-        "home_exhibit_address",
-      ]);
-
-    if (!data) return null;
-    const get = (k: string) => data.find((s) => s.key === k)?.value?.trim() || null;
-    const title = get("home_exhibit_title");
-    if (!title) return null;
-
-    return {
-      title,
-      dates: get("home_exhibit_dates"),
-      time: get("home_exhibit_time"),
-      address: get("home_exhibit_address"),
-    };
-  } catch {
-    // Supabase not configured
-    return null;
-  }
+function readHomeBadge(settings: SiteSetting[]): HomeBadge | null {
+  const title = settingValue(settings, "home_exhibit_title")?.trim() || null;
+  if (!title) return null;
+  return {
+    title,
+    dates: settingValue(settings, "home_exhibit_dates")?.trim() || null,
+    time: settingValue(settings, "home_exhibit_time")?.trim() || null,
+    address: settingValue(settings, "home_exhibit_address")?.trim() || null,
+  };
 }
 
-async function getHeroSettings(): Promise<HeroSettings> {
-  try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    if (!supabase) return { imageUrl: null, crop: null };
-
-    const { data } = await supabase
-      .from("site_settings")
-      .select("key, value")
-      .in("key", ["hero_image", "hero_crop"]);
-
-    if (data) {
-      const imageUrl = data.find((s) => s.key === "hero_image")?.value ?? null;
-      const cropRaw = data.find((s) => s.key === "hero_crop")?.value;
-      let crop = null;
-      if (cropRaw) {
-        try {
-          crop = JSON.parse(cropRaw);
-        } catch {
-          // ignore
-        }
-      }
-      return { imageUrl, crop };
+function readHeroSettings(settings: SiteSetting[]): HeroSettings {
+  const imageUrl = settingValue(settings, "hero_image");
+  const cropRaw = settingValue(settings, "hero_crop");
+  let crop = null;
+  if (cropRaw) {
+    try {
+      crop = JSON.parse(cropRaw);
+    } catch {
+      // ignore malformed crop
     }
-  } catch {
-    // Supabase not configured
   }
-  return { imageUrl: null, crop: null };
-}
-
-async function getFeaturedArtworks(): Promise<FeaturedArtwork[]> {
-  try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    if (!supabase) return PLACEHOLDER_FEATURED;
-    const { data } = await supabase
-      .from("artworks")
-      .select("id, title, images, category")
-      .order("sort_order", { ascending: true })
-      .limit(3);
-
-    if (data && data.length > 0) return data;
-  } catch {
-    // Supabase not configured
-  }
-  return PLACEHOLDER_FEATURED;
-}
-
-async function getLatestPosts() {
-  try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    if (!supabase) return PLACEHOLDER_BLOG_POSTS;
-    const { data } = await supabase
-      .from("blog_posts")
-      .select("id, title, slug, content, cover_image, published_at")
-      .eq("status", "published")
-      .order("published_at", { ascending: false })
-      .limit(2);
-
-    if (data && data.length > 0) {
-      return data.map((post) => ({
-        ...post,
-        excerpt: post.content
-          ? post.content.replace(/[#*_>\-\[\]()]/g, "").slice(0, 150) + "..."
-          : "",
-      }));
-    }
-  } catch {
-    // Supabase not configured — use placeholders
-  }
-  return PLACEHOLDER_BLOG_POSTS;
+  return { imageUrl, crop };
 }
 
 export default async function HomePage() {
-  const [latestPosts, hero, featuredArtworks, homeBadge] = await Promise.all([
-    getLatestPosts(),
-    getHeroSettings(),
-    getFeaturedArtworks(),
-    getHomeBadge(),
+  const [posts, artworks, settings] = await Promise.all([
+    getPublishedPosts(),
+    getArtworks(),
+    getSettings(),
   ]);
+
+  const latestPosts =
+    posts.length > 0
+      ? posts.slice(0, 2).map((post) => ({
+          id: post.id,
+          title: post.title,
+          slug: post.slug,
+          cover_image: post.cover_image,
+          published_at: post.published_at ?? "",
+          excerpt: post.content
+            ? post.content.replace(/[#*_>\-\[\]()]/g, "").slice(0, 150) + "..."
+            : "",
+        }))
+      : PLACEHOLDER_BLOG_POSTS;
+
+  const featuredArtworks: FeaturedArtwork[] =
+    artworks.length > 0
+      ? artworks.slice(0, 3).map((a) => ({
+          id: a.id,
+          title: a.title,
+          images: a.images,
+          category: a.category ?? null,
+        }))
+      : PLACEHOLDER_FEATURED;
+
+  const hero = readHeroSettings(settings);
+  const homeBadge = readHomeBadge(settings);
 
   return (
     <HomeClient

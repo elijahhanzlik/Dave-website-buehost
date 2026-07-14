@@ -1,4 +1,4 @@
-import Link from "next/link";
+import InstantLink from "@/components/InstantLink";
 
 interface Artwork {
   id: string;
@@ -12,8 +12,9 @@ export default function ArtworkCard({ artwork }: { artwork: Artwork }) {
   const hasImage = artwork.images.length > 0;
 
   return (
-    <Link
+    <InstantLink
       href={`/works/${artwork.id}`}
+      prefetchImage={hasImage ? artwork.images[0] : null}
       className="group relative block overflow-hidden rounded-xl"
     >
       {/* Image / Placeholder — natural aspect ratio, no crop */}
@@ -65,6 +66,6 @@ export default function ArtworkCard({ artwork }: { artwork: Artwork }) {
           <p className="text-sm text-text-muted">{artwork.category}</p>
         )}
       </div>
-    </Link>
+    </InstantLink>
   );
 }
