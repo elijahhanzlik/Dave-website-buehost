@@ -3,6 +3,10 @@ import { ArrowLeft } from "lucide-react";
 import { blocksToPreview, formatDate } from "@/lib/formatters";
 import EditorJsRenderer from "@/components/admin/blog-renderer/EditorJsRenderer";
 import type { Metadata } from "next";
+import { getPublishedPost, getPublishedPosts } from "@/lib/supabase/public";
+
+// Prerender each published post at build time + ISR (5 min).
+export const revalidate = 300;
 
 interface BlogPost {
   id: string;
@@ -73,22 +77,19 @@ Trees have taught me more about art than any classroom or workshop.`,
 ];
 
 async function getPost(slug: string): Promise<BlogPost | null> {
-  try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    if (!supabase) return PLACEHOLDER_POSTS.find((p) => p.slug === slug) ?? null;
-    const { data } = await supabase
-      .from("blog_posts")
-      .select("*")
-      .eq("slug", slug)
-      .eq("status", "published")
-      .single();
-
-    if (data) return data;
-  } catch {
-    // Supabase not configured
-  }
+  const post = await getPublishedPost(slug);
+  if (post) return post;
+  // Fall back to placeholders (covers unconfigured Supabase + preview content).
   return PLACEHOLDER_POSTS.find((p) => p.slug === slug) ?? null;
+}
+
+export async function generateStaticParams() {
+  const posts = await getPublishedPosts();
+  const slugs =
+    posts.length > 0
+      ? posts.map((p) => p.slug)
+      : PLACEHOLDER_POSTS.map((p) => p.slug);
+  return slugs.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({

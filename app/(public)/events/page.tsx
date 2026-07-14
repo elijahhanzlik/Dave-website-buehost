@@ -1,42 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { formatDateRange } from "@/lib/formatters";
+import { getPublishedEvents } from "@/lib/supabase/public";
+
+// Prerender + ISR (5 min) instead of a per-request dynamic DB read.
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Events & Services — David Schaldach",
   description: "Upcoming events and services offered by David Schaldach.",
 };
 
-interface EventItem {
-  id: string;
-  title: string;
-  slug: string;
-  content: string | null;
-  status: string;
-  start_date: string | null;
-  end_date: string | null;
-  created_at: string;
-}
-
-async function getEvents(): Promise<EventItem[]> {
-  try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    if (!supabase) return [];
-    const { data } = await supabase
-      .from("events")
-      .select("id, title, slug, content, status, start_date, end_date, created_at")
-      .eq("status", "published")
-      .order("end_date", { ascending: false, nullsFirst: false });
-
-    return data ?? [];
-  } catch {
-    return [];
-  }
-}
-
 export default async function EventsPage() {
-  const events = await getEvents();
+  const events = await getPublishedEvents();
 
   return (
     <div className="pt-24 pb-20">

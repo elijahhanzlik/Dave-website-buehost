@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import InstantLink from "@/components/InstantLink";
 
 interface BlogPost {
   id: string;
@@ -304,9 +305,10 @@ export default function HomeClient({
             {featuredArtworks.map((artwork) => {
               const hasImage = artwork.images.length > 0;
               return (
-                <Link
+                <InstantLink
                   key={artwork.id}
                   href={`/works/${artwork.id}`}
+                  prefetchImage={hasImage ? artwork.images[0] : null}
                   className="group relative block overflow-hidden rounded-xl"
                 >
                   <div className="aspect-[4/5] w-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary-dark/30">
@@ -344,7 +346,7 @@ export default function HomeClient({
                       )}
                     </div>
                   </div>
-                </Link>
+                </InstantLink>
               );
             })}
           </div>

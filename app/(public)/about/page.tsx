@@ -1,4 +1,8 @@
 import type { Metadata } from "next";
+import { getSettings, settingValue } from "@/lib/supabase/public";
+
+// About reads published site_settings (about_*) — prerender + ISR (5 min).
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "About — David Schaldach",
@@ -27,38 +31,18 @@ async function getAboutSettings(): Promise<AboutSettings> {
     banner: null,
   };
 
-  try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    if (!supabase) return defaults;
-
-    const { data } = await supabase
-      .from("site_settings")
-      .select("key, value")
-      .in("key", [
-        "about_photo",
-        "about_bio",
-        "about_tagline",
-        "about_location",
-        "about_background",
-        "about_focus",
-        "about_banner",
-      ]);
-
-    if (data && data.length > 0) {
-      const get = (key: string) => data.find((s) => s.key === key)?.value || null;
-      return {
-        photo: get("about_photo"),
-        bio: get("about_bio"),
-        tagline: get("about_tagline"),
-        location: get("about_location") || defaults.location,
-        background: get("about_background") || defaults.background,
-        focus: get("about_focus") || defaults.focus,
-        banner: get("about_banner"),
-      };
-    }
-  } catch {
-    // Supabase not configured
+  const settings = await getSettings();
+  if (settings.length > 0) {
+    const get = (key: string) => settingValue(settings, key);
+    return {
+      photo: get("about_photo"),
+      bio: get("about_bio"),
+      tagline: get("about_tagline"),
+      location: get("about_location") || defaults.location,
+      background: get("about_background") || defaults.background,
+      focus: get("about_focus") || defaults.focus,
+      banner: get("about_banner"),
+    };
   }
   return defaults;
 }

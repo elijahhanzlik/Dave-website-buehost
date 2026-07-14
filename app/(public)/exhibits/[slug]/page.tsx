@@ -2,6 +2,13 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight, MapPin } from "lucide-react";
 import type { Metadata } from "next";
 import { mapsUrl } from "@/lib/formatters";
+import {
+  getPublishedExhibit,
+  getPublishedExhibits,
+} from "@/lib/supabase/public";
+
+// Prerender each published exhibit at build time + ISR (5 min).
+export const revalidate = 300;
 
 interface Exhibit {
   id: string;
@@ -16,23 +23,12 @@ interface Exhibit {
 }
 
 async function getExhibit(slug: string): Promise<Exhibit | null> {
-  try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    if (!supabase) return null;
-    const { data } = await supabase
-      .from("exhibits")
-      // select * so the new event columns are optional — the page still renders
-      // (text fallback) even before the 002 migration adds those columns.
-      .select("*")
-      .eq("slug", slug)
-      .eq("status", "published")
-      .single();
+  return getPublishedExhibit(slug);
+}
 
-    return data;
-  } catch {
-    return null;
-  }
+export async function generateStaticParams() {
+  const exhibits = await getPublishedExhibits();
+  return exhibits.map((e) => ({ slug: e.slug }));
 }
 
 export async function generateMetadata({

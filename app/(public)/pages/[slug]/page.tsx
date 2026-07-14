@@ -1,35 +1,19 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
+import { getPage, getPages } from "@/lib/supabase/public";
+
+// Prerender each CMS page at build time + ISR (5 min).
+export const revalidate = 300;
 
 interface ContentBlock {
   type: "text" | "image" | "gallery" | "hero";
   data: Record<string, unknown>;
 }
 
-interface PageData {
-  id: string;
-  slug: string;
-  title: string;
-  content_blocks: ContentBlock[];
-}
-
-async function getPage(slug: string): Promise<PageData | null> {
-  try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    if (!supabase) return null;
-
-    const { data } = await supabase
-      .from("pages")
-      .select("*")
-      .eq("slug", slug)
-      .single();
-
-    return data;
-  } catch {
-    return null;
-  }
+export async function generateStaticParams() {
+  const pages = await getPages();
+  return pages.map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({
@@ -146,7 +130,7 @@ function BlockRenderer({ block }: { block: ContentBlock }) {
       if (!url) return null;
 
       let figureClass = "my-8";
-      let imgClass = "rounded-2xl";
+      const imgClass = "rounded-2xl";
 
       if (pos.x === "left") {
         figureClass = "float-left mr-8 mb-4 max-w-[50%]";
