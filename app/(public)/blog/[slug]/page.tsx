@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { blocksToPreview, formatDate } from "@/lib/formatters";
@@ -203,9 +204,14 @@ export default async function BlogPostPage({
 
         {post.cover_image && (
           <div className="mt-8 overflow-hidden rounded-2xl">
-            <img
+            {/* Above-the-fold article cover: natural ratio, priority-loaded. */}
+            <Image
               src={post.cover_image}
               alt={post.title}
+              width={0}
+              height={0}
+              priority
+              sizes="(min-width: 1024px) 1152px, 100vw"
               className="w-full object-cover"
             />
           </div>

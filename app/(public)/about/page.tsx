@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { getSettings, settingValue } from "@/lib/supabase/public";
+import { BLUR_DATA_URL } from "@/lib/image";
 
 // About reads published site_settings (about_*) — prerender + ISR (5 min).
 export const revalidate = 300;
@@ -55,12 +57,17 @@ export default async function AboutPage() {
       {/* Hero banner */}
       <div className="relative mx-auto max-w-7xl overflow-hidden rounded-b-3xl px-6 lg:px-8">
         <div className="relative overflow-hidden rounded-2xl">
-          <div className="h-44 w-full sm:h-52 md:h-64">
+          <div className="relative h-44 w-full sm:h-52 md:h-64">
             {about.banner ? (
-              <img
+              <Image
                 src={about.banner}
                 alt="About banner"
-                className="h-full w-full object-cover"
+                fill
+                priority
+                sizes="(min-width: 1280px) 1280px, 100vw"
+                placeholder="blur"
+                blurDataURL={BLUR_DATA_URL}
+                className="object-cover"
               />
             ) : (
               <div className="h-full w-full bg-gradient-to-br from-primary via-primary-light to-primary-dark">
@@ -84,9 +91,14 @@ export default async function AboutPage() {
           {/* Profile photo */}
           {about.photo && (
             <div className="shrink-0">
-              <img
+              <Image
                 src={about.photo}
                 alt="David Schaldach"
+                width={256}
+                height={256}
+                sizes="(min-width: 768px) 256px, 192px"
+                placeholder="blur"
+                blurDataURL={BLUR_DATA_URL}
                 className="w-48 h-48 md:w-64 md:h-64 object-cover rounded-2xl shadow-lg"
               />
             </div>

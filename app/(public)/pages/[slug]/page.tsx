@@ -1,7 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import { getPage, getPages } from "@/lib/supabase/public";
+import { BLUR_DATA_URL } from "@/lib/image";
 
 // Prerender each CMS page at build time + ISR (5 min).
 export const revalidate = 300;
@@ -142,7 +144,14 @@ function BlockRenderer({ block }: { block: ContentBlock }) {
 
       return (
         <figure className={figureClass}>
-          <img src={url} alt={caption ?? ""} className={`w-full ${imgClass}`} />
+          <Image
+            src={url}
+            alt={caption ?? ""}
+            width={0}
+            height={0}
+            sizes="(min-width: 768px) 50vw, 100vw"
+            className={`w-full ${imgClass}`}
+          />
           {caption && (
             <figcaption className="mt-2 text-center text-sm text-text-muted">
               {caption}
@@ -157,12 +166,17 @@ function BlockRenderer({ block }: { block: ContentBlock }) {
       return (
         <div className="my-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
           {images.map((url, i) => (
-            <img
-              key={i}
-              src={url}
-              alt={`Gallery image ${i + 1}`}
-              className="aspect-square w-full rounded-xl object-cover"
-            />
+            <div key={i} className="relative aspect-square overflow-hidden rounded-xl">
+              <Image
+                src={url}
+                alt={`Gallery image ${i + 1}`}
+                fill
+                sizes="(min-width: 640px) 33vw, 50vw"
+                placeholder="blur"
+                blurDataURL={BLUR_DATA_URL}
+                className="object-cover"
+              />
+            </div>
           ))}
         </div>
       );
@@ -171,11 +185,19 @@ function BlockRenderer({ block }: { block: ContentBlock }) {
       const url = block.data.url as string;
       const overlayText = block.data.overlay_text as string;
       return (
-        <div className="relative my-8 overflow-hidden rounded-2xl">
+        <div className="relative my-8 h-64 overflow-hidden rounded-2xl sm:h-80 md:h-96">
           {url ? (
-            <img src={url} alt="" className="h-64 w-full object-cover sm:h-80 md:h-96" />
+            <Image
+              src={url}
+              alt=""
+              fill
+              sizes="(min-width: 768px) 768px, 100vw"
+              placeholder="blur"
+              blurDataURL={BLUR_DATA_URL}
+              className="object-cover"
+            />
           ) : (
-            <div className="h-64 w-full bg-gradient-to-br from-primary via-primary-light to-primary-dark sm:h-80 md:h-96" />
+            <div className="h-full w-full bg-gradient-to-br from-primary via-primary-light to-primary-dark" />
           )}
           {overlayText && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/30">

@@ -140,6 +140,10 @@ function LinkToolBlock({ data }: { data: Record<string, unknown> }) {
       className="not-prose my-6 flex gap-4 rounded-xl border border-sage bg-white/60 p-4 no-underline hover:bg-white"
     >
       {typeof image === "string" && image && (
+        // Scraped OpenGraph thumbnail from an arbitrary external site — not a
+        // Supabase host, so it can't go through next/image (remotePatterns
+        // would reject it at runtime). Intentionally a raw <img>.
+        // eslint-disable-next-line @next/next/no-img-element
         <img src={image} alt="" className="h-20 w-20 rounded-lg object-cover" />
       )}
       <div className="flex-1">

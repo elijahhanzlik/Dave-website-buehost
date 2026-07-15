@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, MapPin } from "lucide-react";
 import type { Metadata } from "next";
@@ -103,10 +104,19 @@ export default async function ExhibitPage({
           absolutely positioned over the bottom of the band.
         */}
         <div className="relative h-[46vh] min-h-[320px] w-full overflow-hidden md:h-auto md:min-h-0 md:bg-primary-dark">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          {/*
+            width/height 0 keeps this bespoke responsive framing (mobile cover
+            band → desktop static, contained, capped at 60vh) intact — next/image
+            can't express the static-in-flow desktop case via `fill`, so we let
+            the className drive layout while the optimizer serves a sized file.
+          */}
+          <Image
             src={exhibit.cover_image}
             alt={exhibit.title}
+            width={0}
+            height={0}
+            priority
+            sizes="(min-width: 768px) 1024px, 100vw"
             className="absolute inset-0 h-full w-full object-cover md:static md:block md:h-auto md:max-h-[60vh] md:object-contain"
           />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10" />
