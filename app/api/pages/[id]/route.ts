@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/supabase/admin";
 import { pageSchema } from "@/lib/validations";
@@ -49,6 +50,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+  revalidateTag("pages", { expire: 0 });
   return NextResponse.json(data);
 }
 
@@ -64,5 +66,6 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+  revalidateTag("pages", { expire: 0 });
   return NextResponse.json({ success: true });
 }

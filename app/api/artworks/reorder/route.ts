@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/supabase/admin";
 import { z } from "zod";
 
@@ -39,5 +40,6 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: failed.error.message }, { status: 500 });
   }
 
+  revalidateTag("artworks", { expire: 0 });
   return NextResponse.json({ success: true });
 }
