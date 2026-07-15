@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/supabase/admin";
 import { siteSettingSchema } from "@/lib/validations";
@@ -64,6 +65,7 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    revalidateTag("site_settings", { expire: 0 });
     return NextResponse.json({ success: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal server error";
