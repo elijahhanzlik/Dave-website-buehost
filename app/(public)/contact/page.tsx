@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import ContactForm from "./ContactForm";
 import { MapPin, Mail } from "lucide-react";
 import { getSettings, settingValue } from "@/lib/supabase/public";
@@ -60,9 +61,12 @@ export default async function ContactPage() {
             {/* Photo or decorative card */}
             {contactPhoto ? (
               <div className="mt-12 overflow-hidden rounded-2xl">
-                <img
+                <Image
                   src={contactPhoto}
                   alt="David Schaldach"
+                  width={0}
+                  height={0}
+                  sizes="(min-width: 1024px) 50vw, 100vw"
                   className="w-full object-cover"
                 />
               </div>

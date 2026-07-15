@@ -1,3 +1,4 @@
+import Image from "next/image";
 import InstantLink from "@/components/InstantLink";
 
 interface Artwork {
@@ -8,7 +9,13 @@ interface Artwork {
   category?: string | null;
 }
 
-export default function ArtworkCard({ artwork }: { artwork: Artwork }) {
+export default function ArtworkCard({
+  artwork,
+  priority = false,
+}: {
+  artwork: Artwork;
+  priority?: boolean;
+}) {
   const hasImage = artwork.images.length > 0;
 
   return (
@@ -20,10 +27,16 @@ export default function ArtworkCard({ artwork }: { artwork: Artwork }) {
       {/* Image / Placeholder — natural aspect ratio, no crop */}
       <div className="relative w-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary-dark/30">
         {hasImage ? (
-          <img
+          // Natural-ratio masonry: width/height 0 lets the browser use the
+          // image's own aspect ratio (h-auto) — no crop — while next/image still
+          // serves a resized, format-optimized file per `sizes`.
+          <Image
             src={artwork.images[0]}
             alt={artwork.title}
-            loading="lazy"
+            width={0}
+            height={0}
+            priority={priority}
+            sizes="(min-width: 768px) 400px, 50vw"
             className="block h-auto w-full object-contain transition-transform duration-500 group-hover:scale-105"
           />
         ) : (

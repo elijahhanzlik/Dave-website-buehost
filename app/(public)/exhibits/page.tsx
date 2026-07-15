@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import {
   getPublishedExhibits,
   getSettings,
   settingValue,
 } from "@/lib/supabase/public";
+import { BLUR_DATA_URL } from "@/lib/image";
 
 // Prerender + ISR (5 min) instead of a per-request dynamic DB read.
 export const revalidate = 300;
@@ -26,14 +28,18 @@ export default async function ExhibitsPage() {
       {/* Hero banner */}
       <div className="relative mx-auto max-w-7xl overflow-hidden rounded-b-3xl px-6 lg:px-8">
         <div className="relative overflow-hidden rounded-2xl">
-          <div className="h-44 w-full bg-gradient-to-br from-primary via-primary-light to-primary-dark sm:h-52 md:h-64">
+          <div className="relative h-44 w-full bg-gradient-to-br from-primary via-primary-light to-primary-dark sm:h-52 md:h-64">
             {bannerImage ? (
               <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={bannerImage}
                   alt=""
-                  className="absolute inset-0 h-full w-full object-cover"
+                  fill
+                  priority
+                  sizes="(min-width: 1280px) 1280px, 100vw"
+                  placeholder="blur"
+                  blurDataURL={BLUR_DATA_URL}
+                  className="object-cover"
                 />
                 <div className="absolute inset-0 bg-black/40" />
               </>
@@ -88,12 +94,15 @@ export default async function ExhibitsPage() {
                 className="group block py-8 first:pt-0"
               >
                 {exhibit.cover_image && (
-                  <div className="mb-5 overflow-hidden rounded-2xl">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                  <div className="relative mb-5 aspect-[4/3] overflow-hidden rounded-2xl">
+                    <Image
                       src={exhibit.cover_image}
                       alt={exhibit.title}
-                      className="aspect-[4/3] w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      fill
+                      sizes="(min-width: 768px) 768px, 100vw"
+                      placeholder="blur"
+                      blurDataURL={BLUR_DATA_URL}
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                   </div>
                 )}

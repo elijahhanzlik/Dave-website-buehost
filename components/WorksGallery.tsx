@@ -60,9 +60,11 @@ export default function WorksGallery({
 
       <div className="mt-12">
         <div className="columns-2 gap-4 md:columns-3">
-          {filtered.map((artwork) => (
+          {filtered.map((artwork, i) => (
             <div key={artwork.id} className="mb-4 w-full break-inside-avoid">
-              <ArtworkCard artwork={artwork} />
+              {/* Eager-load the first row (above the fold) so the gallery's
+                  LCP image isn't lazy; the rest lazy-load. */}
+              <ArtworkCard artwork={artwork} priority={i < 4} />
             </div>
           ))}
         </div>

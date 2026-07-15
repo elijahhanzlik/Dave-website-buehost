@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { blocksToPreview, formatDate } from "@/lib/formatters";
 import { getPublishedPosts } from "@/lib/supabase/public";
+import { BLUR_DATA_URL } from "@/lib/image";
 
 // Prerender + ISR (5 min) instead of a per-request dynamic DB read.
 export const revalidate = 300;
@@ -83,12 +85,16 @@ export default async function BlogPage() {
               className="group overflow-hidden rounded-xl bg-white shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
             >
               {/* Cover image / placeholder */}
-              <div className="aspect-[16/10] w-full overflow-hidden">
+              <div className="relative aspect-[16/10] w-full overflow-hidden">
                 {post.cover_image ? (
-                  <img
+                  <Image
                     src={post.cover_image}
                     alt={post.title}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    fill
+                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                    placeholder="blur"
+                    blurDataURL={BLUR_DATA_URL}
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/10 to-sage">

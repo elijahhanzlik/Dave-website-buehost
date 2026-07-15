@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import InstantLink from "@/components/InstantLink";
+import { BLUR_DATA_URL } from "@/lib/image";
 
 interface BlogPost {
   id: string;
@@ -183,10 +185,15 @@ export default function HomeClient({
               className="absolute inset-0 will-change-transform"
             >
               {heroImageUrl ? (
-                <img
+                <Image
                   src={heroImageUrl}
                   alt="David Schaldach among the trees"
-                  className="h-full w-full object-contain"
+                  fill
+                  priority
+                  sizes="(min-width: 768px) 60vw, 100vw"
+                  placeholder="blur"
+                  blurDataURL={BLUR_DATA_URL}
+                  className="object-contain"
                 />
               ) : (
                 <div
@@ -311,12 +318,16 @@ export default function HomeClient({
                   prefetchImage={hasImage ? artwork.images[0] : null}
                   className="group relative block overflow-hidden rounded-xl"
                 >
-                  <div className="aspect-[4/5] w-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary-dark/30">
+                  <div className="relative aspect-[4/5] w-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary-dark/30">
                     {hasImage ? (
-                      <img
+                      <Image
                         src={artwork.images[0]}
                         alt={artwork.title}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        fill
+                        sizes="(min-width: 640px) 33vw, 100vw"
+                        placeholder="blur"
+                        blurDataURL={BLUR_DATA_URL}
+                        className="object-cover transition-transform duration-500 group-hover:scale-110"
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sage to-primary/10">

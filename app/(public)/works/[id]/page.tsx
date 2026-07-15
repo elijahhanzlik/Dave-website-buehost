@@ -1,7 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import { getArtworks } from "@/lib/supabase/public";
+import { BLUR_DATA_URL } from "@/lib/image";
 
 // Prerender each artwork detail page at build time + ISR (5 min).
 export const revalidate = 300;
@@ -159,9 +161,15 @@ export default async function ArtworkDetailPage({
         {/* Image viewer */}
         <div className="mt-8 overflow-hidden rounded-2xl">
           {hasImage ? (
-            <img
+            // Natural-ratio, capped height (object-contain) — width/height 0
+            // preserves the image's own aspect ratio while optimizing delivery.
+            <Image
               src={artwork.images[0]}
               alt={artwork.title}
+              width={0}
+              height={0}
+              priority
+              sizes="(min-width: 1024px) 1024px, 100vw"
               className="w-full object-contain max-h-[70vh]"
             />
           ) : (
@@ -189,12 +197,16 @@ export default async function ArtworkDetailPage({
             {artwork.images.slice(1).map((img, idx) => (
               <div
                 key={idx}
-                className="aspect-square overflow-hidden rounded-lg"
+                className="relative aspect-square overflow-hidden rounded-lg"
               >
-                <img
+                <Image
                   src={img}
                   alt={`${artwork.title} — ${idx + 2}`}
-                  className="h-full w-full object-cover"
+                  fill
+                  sizes="(min-width: 1024px) 256px, 25vw"
+                  placeholder="blur"
+                  blurDataURL={BLUR_DATA_URL}
+                  className="object-cover"
                 />
               </div>
             ))}
