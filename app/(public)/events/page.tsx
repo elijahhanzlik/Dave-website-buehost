@@ -65,14 +65,14 @@ export default async function EventsPage() {
                     own inline link, and an anchor inside an anchor is invalid. */}
                 <div className="group py-8 first:pt-0">
                   <Link href={`/events/${event.slug}`} className="block">
+                    <h2 className="font-display text-2xl font-semibold text-primary-dark transition-colors group-hover:text-primary">
+                      {event.title}
+                    </h2>
                     {formatDateRange(event.start_date, event.end_date) && (
-                      <p className="text-xs font-medium uppercase tracking-[0.1em] text-gold-dark">
+                      <p className="mt-1 text-xs font-medium uppercase tracking-[0.1em] text-gold-dark">
                         {formatDateRange(event.start_date, event.end_date)}
                       </p>
                     )}
-                    <h2 className="mt-2 font-display text-2xl font-semibold text-primary-dark transition-colors group-hover:text-primary">
-                      {event.title}
-                    </h2>
                   </Link>
                   {event.content && (
                     <p className="mt-3 break-words text-base leading-relaxed text-text-secondary">

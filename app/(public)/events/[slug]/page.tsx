@@ -85,14 +85,14 @@ export default async function EventPage({
         </Link>
 
         <header className="mt-8">
+          <h1 className="font-display text-3xl font-bold text-primary-dark sm:text-4xl md:text-5xl">
+            {event.title}
+          </h1>
           {formatDateRange(event.start_date, event.end_date) && (
-            <p className="text-sm font-medium uppercase tracking-[0.1em] text-gold-dark">
+            <p className="mt-3 text-sm font-medium uppercase tracking-[0.1em] text-gold-dark">
               {formatDateRange(event.start_date, event.end_date)}
             </p>
           )}
-          <h1 className="mt-3 font-display text-3xl font-bold text-primary-dark sm:text-4xl md:text-5xl">
-            {event.title}
-          </h1>
         </header>
 
         <div className="mt-10 border-t border-sage pt-10">
