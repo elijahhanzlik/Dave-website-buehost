@@ -1,16 +1,21 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { GripVertical, Plus, Star, Trash2 } from "lucide-react";
+import RichTitle, { stripRichTitle } from "@/components/RichTitle";
 import {
-  Plus,
-  GripVertical,
-  Edit2,
-  Trash2,
-  Star,
-  StarOff,
-} from "lucide-react";
+  ActionButton,
+  Button,
+  Card,
+  ConfirmDialog,
+  EmptyState,
+  PageHeader,
+  Pill,
+  Spinner,
+} from "@/components/admin/ui";
+
+const ADMIN_BASE = "/dave-admin-website-wonderland";
 
 interface Artwork {
   id: string;
@@ -27,6 +32,7 @@ export default function WorksListPage() {
   const router = useRouter();
   const [works, setWorks] = useState<Artwork[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pendingDelete, setPendingDelete] = useState<Artwork | null>(null);
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
 
@@ -61,13 +67,23 @@ export default function WorksListPage() {
     dragItem.current = null;
     dragOverItem.current = null;
 
-    await fetch("/api/artworks/reorder", {
+    const res = await fetch("/api/artworks/reorder", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         items: updated.map((w) => ({ id: w.id, sort_order: w.sort_order })),
       }),
     });
+
+    // The order above is optimistic. If the server refused it, re-read rather
+    // than leave the grid showing an order the Gallery page does not have.
+    if (!res.ok) {
+      fetch("/api/artworks")
+        .then((r) => r.json())
+        .then((data) => {
+          if (Array.isArray(data)) setWorks(data);
+        });
+    }
   };
 
   const toggleFeatured = async (work: Artwork) => {
@@ -85,135 +101,142 @@ export default function WorksListPage() {
     });
   };
 
-  const deleteWork = async (id: string) => {
-    if (!confirm("Delete this work?")) return;
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const id = pendingDelete.id;
+    setPendingDelete(null);
     setWorks((prev) => prev.filter((w) => w.id !== id));
     await fetch(`/api/artworks/${id}`, { method: "DELETE" });
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
-  }
+  if (loading) return <Spinner label="Getting your artwork…" />;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-bold text-gray-900">
-          Works
-        </h1>
-        <Link
-          href="/dave-admin-website-wonderland/works/new"
-          className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-primary-dark transition-colors"
-        >
-          <Plus size={16} /> Add Work
-        </Link>
-      </div>
+    <div>
+      <PageHeader
+        eyebrow="Your work"
+        title="Gallery"
+        subtitle={
+          works.length
+            ? `${works.length} piece${works.length === 1 ? "" : "s"}, in the order visitors see them. Drag a card by its handle to move a piece.`
+            : "The artwork on your Gallery page."
+        }
+        action={
+          <ActionButton
+            href={`${ADMIN_BASE}/works/new`}
+            label="Add a piece"
+            hint="Photos, a title and a category."
+            icon={<Plus size={20} />}
+            align="end"
+          />
+        }
+      />
 
       {works.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">
-          <p>No works yet. Create your first one!</p>
-        </div>
+        <EmptyState
+          title="No artwork yet"
+          hint="Add your first piece and it appears on your Gallery page straight away."
+          action={
+            <Button href={`${ADMIN_BASE}/works/new`} size="lg">
+              <Plus size={20} /> Add a piece
+            </Button>
+          }
+        />
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="w-10 px-3 py-3" />
-                <th
-                  className="w-12 px-3 py-3 font-medium text-gray-600 text-center"
-                  title="Position on the public gallery"
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {works.map((work, index) => (
+            <Card
+              key={work.id}
+              draggable
+              onDragStart={() => handleDragStart(index)}
+              onDragEnter={() => handleDragEnter(index)}
+              onDragEnd={handleDragEnd}
+              onDragOver={(e) => e.preventDefault()}
+              className="relative overflow-hidden"
+            >
+              <div className="relative aspect-square bg-sage">
+                {work.images[0] ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={work.images[0]}
+                    alt={stripRichTitle(work.title)}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-sm text-admin-muted">
+                    No photo yet
+                  </div>
+                )}
+
+                {work.is_featured && (
+                  <Pill tone="new" className="absolute left-3.5 top-3.5">
+                    On the homepage
+                  </Pill>
+                )}
+
+                <span
+                  className="absolute right-3.5 top-3.5 inline-flex cursor-grab items-center gap-1 rounded-full bg-admin-ink/55 px-3 py-1.5 text-[12px] font-bold text-cream active:cursor-grabbing"
+                  title="Drag to move this piece"
                 >
-                  #
-                </th>
-                <th className="w-16 px-3 py-3" />
-                <th className="text-left px-3 py-3 font-medium text-gray-600">
-                  Title
-                </th>
-                <th className="text-left px-3 py-3 font-medium text-gray-600 hidden sm:table-cell">
-                  Category
-                </th>
-                <th className="w-20 px-3 py-3 font-medium text-gray-600">
-                  Featured
-                </th>
-                <th className="w-24 px-3 py-3 font-medium text-gray-600">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {works.map((work, index) => (
-                <tr
-                  key={work.id}
-                  draggable
-                  onDragStart={() => handleDragStart(index)}
-                  onDragEnter={() => handleDragEnter(index)}
-                  onDragEnd={handleDragEnd}
-                  onDragOver={(e) => e.preventDefault()}
-                  className="border-b border-gray-100 hover:bg-gray-50 cursor-grab active:cursor-grabbing"
-                >
-                  <td className="px-3 py-2 text-gray-400">
-                    <GripVertical size={16} />
-                  </td>
-                  <td className="px-3 py-2 text-center">
-                    <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium tabular-nums">
-                      {index + 1}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2">
-                    {work.images[0] ? (
-                      <img
-                        src={work.images[0]}
-                        alt={work.title}
-                        className="w-10 h-10 object-cover rounded"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 bg-gray-100 rounded" />
-                    )}
-                  </td>
-                  <td className="px-3 py-2 font-medium">{work.title}</td>
-                  <td className="px-3 py-2 text-gray-500 hidden sm:table-cell">
-                    {work.category || "—"}
-                  </td>
-                  <td className="px-3 py-2 text-center">
-                    <button
-                      onClick={() => toggleFeatured(work)}
-                      className="text-gray-400 hover:text-gold transition-colors"
-                    >
-                      {work.is_featured ? (
-                        <Star size={16} className="fill-gold text-gold" />
-                      ) : (
-                        <StarOff size={16} />
-                      )}
-                    </button>
-                  </td>
-                  <td className="px-3 py-2">
-                    <div className="flex items-center gap-1 justify-center">
-                      <button
-                        onClick={() =>
-                          router.push(`/dave-admin-website-wonderland/works/${work.id}`)
-                        }
-                        className="p-1.5 rounded hover:bg-gray-100 text-gray-500"
-                      >
-                        <Edit2 size={14} />
-                      </button>
-                      <button
-                        onClick={() => deleteWork(work.id)}
-                        className="p-1.5 rounded hover:bg-red-50 text-gray-500 hover:text-red-600"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  <GripVertical size={14} />
+                  {index + 1}
+                </span>
+              </div>
+
+              <div className="p-5">
+                <h2 className="font-display text-[19px] font-bold leading-tight text-admin-ink">
+                  <RichTitle text={work.title} />
+                </h2>
+                <p className="mt-1.5 text-[11.5px] font-bold uppercase tracking-[0.14em] text-gold-dark">
+                  {work.category || "No category"}
+                </p>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button
+                    variant="secondary"
+                    onClick={() => router.push(`${ADMIN_BASE}/works/${work.id}`)}
+                    className="flex-1"
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant={work.is_featured ? "gold" : "secondary"}
+                    onClick={() => toggleFeatured(work)}
+                    aria-pressed={work.is_featured}
+                    title={
+                      work.is_featured
+                        ? "Take this off the homepage"
+                        : "Also show this on the homepage"
+                    }
+                  >
+                    <Star
+                      size={17}
+                      className={work.is_featured ? "fill-current" : ""}
+                    />
+                    <span className="sr-only sm:not-sr-only">Homepage</span>
+                  </Button>
+                  <Button
+                    variant="danger"
+                    onClick={() => setPendingDelete(work)}
+                  >
+                    <Trash2 size={17} />
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title={`Delete “${stripRichTitle(pendingDelete?.title ?? "")}”?`}
+        body="This takes the piece off your Gallery page for good, along with its photos and description. It cannot be undone."
+        confirmLabel="Yes, delete it"
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

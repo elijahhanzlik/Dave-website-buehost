@@ -34,7 +34,9 @@ export default async function AuthenticatedAdminLayout({
   return (
     <>
       <AdminNav unreadCount={count ?? 0} />
-      <main className="flex-1 overflow-auto p-6 lg:p-8">{children}</main>
+      <main className="min-w-0 flex-1 overflow-auto px-5 pb-12 pt-20 lg:px-10 lg:py-9">
+        {children}
+      </main>
     </>
   );
 }

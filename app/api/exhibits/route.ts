@@ -14,7 +14,9 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from("exhibits")
     .select("*")
-    .order("sort_order", { ascending: true });
+    .order("sort_order", { ascending: true })
+    // Tie-break so the admin list order matches the public page exactly.
+    .order("created_at", { ascending: true });
 
   if (!showAll) {
     query = query.eq("status", "published");

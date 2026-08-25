@@ -1,9 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Edit2, Trash2 } from "lucide-react";
+import { GripVertical, Plus, Trash2 } from "lucide-react";
+import {
+  ActionButton,
+  Button,
+  Card,
+  ConfirmDialog,
+  EmptyState,
+  PageHeader,
+  Spinner,
+  StatusPill,
+} from "@/components/admin/ui";
+
+const ADMIN_BASE = "/dave-admin-website-wonderland";
 
 interface Exhibit {
   id: string;
@@ -11,6 +22,7 @@ interface Exhibit {
   slug: string;
   status: "draft" | "published";
   event_dates: string | null;
+  sort_order: number;
   created_at: string;
 }
 
@@ -18,6 +30,9 @@ export default function ExhibitsListPage() {
   const router = useRouter();
   const [exhibits, setExhibits] = useState<Exhibit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pendingDelete, setPendingDelete] = useState<Exhibit | null>(null);
+  const dragItem = useRef<number | null>(null);
+  const dragOverItem = useRef<number | null>(null);
 
   useEffect(() => {
     fetch("/api/exhibits?all=true")
@@ -28,106 +43,154 @@ export default function ExhibitsListPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const deleteExhibit = async (id: string) => {
-    if (!confirm("Delete this exhibit?")) return;
+  const handleDragStart = (index: number) => {
+    dragItem.current = index;
+  };
+
+  const handleDragEnter = (index: number) => {
+    dragOverItem.current = index;
+  };
+
+  const handleDragEnd = async () => {
+    if (dragItem.current === null || dragOverItem.current === null) return;
+    if (dragItem.current === dragOverItem.current) return;
+
+    const reordered = [...exhibits];
+    const [removed] = reordered.splice(dragItem.current, 1);
+    reordered.splice(dragOverItem.current, 0, removed);
+
+    const updated = reordered.map((e, i) => ({ ...e, sort_order: i }));
+    setExhibits(updated);
+
+    dragItem.current = null;
+    dragOverItem.current = null;
+
+    const res = await fetch("/api/exhibits/reorder", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        items: updated.map((e) => ({ id: e.id, sort_order: e.sort_order })),
+      }),
+    });
+
+    // The optimistic order above is only a guess until the server confirms it.
+    // On failure, re-read the authoritative order rather than leave the UI lying.
+    if (!res.ok) {
+      fetch("/api/exhibits?all=true")
+        .then((r) => r.json())
+        .then((data) => {
+          if (Array.isArray(data)) setExhibits(data);
+        });
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const id = pendingDelete.id;
+    setPendingDelete(null);
     setExhibits((prev) => prev.filter((e) => e.id !== id));
     await fetch(`/api/exhibits/${id}`, { method: "DELETE" });
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
-  }
+  if (loading) return <Spinner label="Getting your exhibits…" />;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-bold text-gray-900">Exhibits</h1>
-        <Link
-          href="/dave-admin-website-wonderland/exhibits/new"
-          className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-primary-dark transition-colors"
-        >
-          <Plus size={16} /> New Exhibit
-        </Link>
-      </div>
+    <div>
+      <PageHeader
+        eyebrow="Where your work is hanging"
+        title="Exhibits"
+        subtitle={
+          exhibits.length
+            ? "Listed in the order visitors see them. Drag a card by its handle to move an exhibit up or down."
+            : "Shows, cafés and galleries where people can see your work in person."
+        }
+        action={
+          <ActionButton
+            href={`${ADMIN_BASE}/exhibits/new`}
+            label="Add an exhibit"
+            hint="The place, the dates and the hours."
+            icon={<Plus size={20} />}
+            align="end"
+          />
+        }
+      />
 
       {exhibits.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">
-          <p>No exhibits yet.</p>
-        </div>
+        <EmptyState
+          title="No exhibits yet"
+          hint="Add the first place your work is hanging and it appears on your Exhibits page."
+          action={
+            <Button href={`${ADMIN_BASE}/exhibits/new`} size="lg">
+              <Plus size={20} /> Add an exhibit
+            </Button>
+          }
+        />
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  Title
-                </th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600 hidden sm:table-cell">
-                  Slug
-                </th>
-                <th className="w-28 px-4 py-3 font-medium text-gray-600">
-                  Status
-                </th>
-                <th className="w-44 px-4 py-3 font-medium text-gray-600 hidden md:table-cell">
-                  Dates
-                </th>
-                <th className="w-24 px-4 py-3 font-medium text-gray-600">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {exhibits.map((exhibit) => (
-                <tr
-                  key={exhibit.id}
-                  className="border-b border-gray-100 hover:bg-gray-50"
+        <div className="flex flex-col gap-3.5">
+          {exhibits.map((exhibit, index) => (
+            <Card
+              key={exhibit.id}
+              draggable
+              onDragStart={() => handleDragStart(index)}
+              onDragEnter={() => handleDragEnter(index)}
+              onDragEnd={handleDragEnd}
+              onDragOver={(e) => e.preventDefault()}
+              className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center"
+            >
+              <span
+                className="inline-flex w-fit cursor-grab items-center gap-1.5 rounded-full bg-sage px-3 py-1.5 text-[12.5px] font-bold text-primary active:cursor-grabbing"
+                title="Drag to move this exhibit"
+              >
+                <GripVertical size={14} />
+                {index + 1}
+              </span>
+
+              <div className="min-w-0 flex-1">
+                <h2 className="font-display text-[19px] font-bold leading-tight text-admin-ink">
+                  {exhibit.title}
+                </h2>
+                <div className="mt-2.5 flex flex-wrap items-center gap-2.5">
+                  <StatusPill status={exhibit.status} />
+                  <span className="text-[13.5px] text-admin-muted">
+                    {exhibit.event_dates || "No dates set"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex shrink-0 gap-2.5">
+                <Button
+                  variant="secondary"
+                  onClick={() =>
+                    router.push(`${ADMIN_BASE}/exhibits/${exhibit.id}`)
+                  }
+                  className="flex-1 sm:flex-none"
                 >
-                  <td className="px-4 py-3 font-medium">{exhibit.title}</td>
-                  <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">
-                    {exhibit.slug}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <span
-                      className={`inline-block text-xs px-2 py-0.5 rounded-full ${
-                        exhibit.status === "published"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {exhibit.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-500 text-xs hidden md:table-cell">
-                    {exhibit.event_dates || "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1 justify-center">
-                      <button
-                        onClick={() =>
-                          router.push(`/dave-admin-website-wonderland/exhibits/${exhibit.id}`)
-                        }
-                        className="p-1.5 rounded hover:bg-gray-100 text-gray-500"
-                      >
-                        <Edit2 size={14} />
-                      </button>
-                      <button
-                        onClick={() => deleteExhibit(exhibit.id)}
-                        className="p-1.5 rounded hover:bg-red-50 text-gray-500 hover:text-red-600"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  Edit
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={() => setPendingDelete(exhibit)}
+                >
+                  <Trash2 size={17} /> Delete
+                </Button>
+              </div>
+            </Card>
+          ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title={`Delete “${pendingDelete?.title ?? ""}”?`}
+        body={
+          pendingDelete?.status === "published"
+            ? "This exhibit is on your website right now. Deleting it takes it down for good and it cannot be undone."
+            : "This draft has never been published. Deleting it cannot be undone."
+        }
+        confirmLabel="Yes, delete it"
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

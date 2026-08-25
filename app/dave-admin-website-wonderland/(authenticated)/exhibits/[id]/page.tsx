@@ -2,37 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Loader2, Save } from "lucide-react";
-import { formatApiError, slugify } from "@/lib/formatters";
-import ImageUploader from "@/components/ImageUploader";
+import ExhibitForm from "@/components/admin/ExhibitForm";
+import type { ExhibitData } from "@/components/admin/ExhibitForm";
+import {
+  Button,
+  EmptyState,
+  PageHeader,
+  Spinner,
+} from "@/components/admin/ui";
 
-interface Exhibit {
-  id: string;
-  title: string;
-  slug: string;
-  content: string | null;
-  status: "draft" | "published";
-  event_dates: string | null;
-  event_time: string | null;
-  address: string | null;
-  cover_image: string | null;
-}
+const ADMIN_BASE = "/dave-admin-website-wonderland";
 
 export default function EditExhibitPage() {
   const params = useParams();
-  const [exhibit, setExhibit] = useState<Exhibit | null>(null);
+  const [exhibit, setExhibit] = useState<ExhibitData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [saved, setSaved] = useState(false);
-
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [status, setStatus] = useState<"draft" | "published">("draft");
-  const [eventDates, setEventDates] = useState("");
-  const [eventTime, setEventTime] = useState("");
-  const [address, setAddress] = useState("");
-  const [featureImage, setFeatureImage] = useState<string[]>([]);
 
   useEffect(() => {
     fetch(`/api/exhibits/${params.id}`)
@@ -40,201 +24,39 @@ export default function EditExhibitPage() {
         if (!r.ok) throw new Error("Not found");
         return r.json();
       })
-      .then((data: Exhibit) => {
-        setExhibit(data);
-        setTitle(data.title);
-        setContent(data.content ?? "");
-        setStatus(data.status);
-        setEventDates(data.event_dates ?? "");
-        setEventTime(data.event_time ?? "");
-        setAddress(data.address ?? "");
-        setFeatureImage(data.cover_image ? [data.cover_image] : []);
-      })
-      .catch((e) => setError(e.message))
+      .then(setExhibit)
+      .catch(() => setExhibit(null))
       .finally(() => setLoading(false));
   }, [params.id]);
 
-  const handleTitleChange = (val: string) => {
-    setTitle(val);
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    setError("");
-    setSaved(false);
-
-    try {
-      const res = await fetch(`/api/exhibits/${params.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          slug: slugify(title),
-          content,
-          status,
-          event_dates: eventDates || null,
-          event_time: eventTime || null,
-          address: address || null,
-          cover_image: featureImage[0] || null,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(formatApiError(data.error, "Failed to save"));
-      }
-
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
-  }
+  if (loading) return <Spinner label="Getting this exhibit…" />;
 
   if (!exhibit) {
     return (
-      <div className="text-center py-12 text-red-500">Exhibit not found</div>
+      <EmptyState
+        title="That exhibit is not here"
+        hint="It may have been deleted. Everything still listed is on the previous screen."
+        action={
+          <Button href={`${ADMIN_BASE}/exhibits`} size="lg">
+            Back to my exhibits
+          </Button>
+        }
+      />
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-display font-bold text-gray-900">
-            {title || "Untitled Exhibit"}
-          </h1>
-          <p className="text-sm text-gray-500 font-mono">/{slugify(title)}</p>
-        </div>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="inline-flex items-center gap-2 bg-primary text-white px-4 py-1.5 rounded-lg text-sm hover:bg-primary-dark disabled:opacity-50"
-        >
-          {saving ? (
-            <Loader2 size={14} className="animate-spin" />
-          ) : (
-            <Save size={14} />
-          )}
-          {saved ? "Saved!" : "Save"}
-        </button>
-      </div>
-
-      {error && (
-        <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm">
-          {error}
-        </div>
-      )}
-
-      <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-4 max-w-2xl">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Title *
-          </label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => handleTitleChange(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-          />
-        </div>
-        <div className="flex flex-wrap items-end gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Status
-            </label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as "draft" | "published")}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            >
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Content
-          </label>
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            rows={12}
-            placeholder="Describe the exhibit..."
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-          />
-        </div>
-
-        {/* Event details — power the enriched public detail layout */}
-        <div className="border-t border-gray-100 pt-4 space-y-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-            Event Details (optional)
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Dates
-              </label>
-              <input
-                type="text"
-                value={eventDates}
-                onChange={(e) => setEventDates(e.target.value)}
-                placeholder="Aug 1 – 31, 2026"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Time
-              </label>
-              <input
-                type="text"
-                value={eventTime}
-                onChange={(e) => setEventTime(e.target.value)}
-                placeholder="6–9:30 p.m."
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Address
-            </label>
-            <input
-              type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="4790 Broadway, Unit 101 · Boulder, CO 80304"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
-            <p className="mt-1 text-xs text-gray-400">
-              Use &ldquo; · &rdquo; to separate the street from the city (it
-              splits onto two lines and powers &ldquo;Get Directions&rdquo;).
-            </p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Feature Image
-            </label>
-            <ImageUploader
-              images={featureImage}
-              onChange={setFeatureImage}
-              multiple={false}
-            />
-          </div>
-        </div>
-      </div>
+    <div>
+      <PageHeader
+        eyebrow="Editing an exhibit"
+        title={exhibit.title || "Untitled exhibit"}
+        subtitle={
+          exhibit.status === "published"
+            ? "This exhibit is on your website. Saving replaces what visitors see right now."
+            : "This exhibit is a draft. Nobody can see it until you change that below."
+        }
+      />
+      <ExhibitForm initialData={exhibit} />
     </div>
   );
 }

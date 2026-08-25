@@ -1,8 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Save } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import ImageUploader from "@/components/ImageUploader";
+import {
+  ActionButton,
+  Card,
+  Field,
+  PageHeader,
+  Spinner,
+  inputClass,
+  textareaClass,
+} from "@/components/admin/ui";
 
 export default function AdminAboutPage() {
   const [loading, setLoading] = useState(true);
@@ -22,7 +31,9 @@ export default function AdminAboutPage() {
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          const get = (key: string) => data.find((s: { key: string; value: string }) => s.key === key)?.value ?? "";
+          const get = (key: string) =>
+            data.find((s: { key: string; value: string }) => s.key === key)
+              ?.value ?? "";
           setProfilePhoto(get("about_photo") ? [get("about_photo")] : []);
           setBio(get("about_bio") || "");
           setTagline(get("about_tagline") || "");
@@ -60,12 +71,14 @@ export default function AdminAboutPage() {
         try {
           const data = await res.json();
           msg = data.error?.toString() ?? msg;
-        } catch { /* */ }
+        } catch {
+          /* */
+        }
         throw new Error(msg);
       }
 
       setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      setTimeout(() => setSaved(false), 2500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
     } finally {
@@ -73,154 +86,173 @@ export default function AdminAboutPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
-  }
+  if (loading) return <Spinner label="Getting your About page…" />;
 
   return (
-    <div className="space-y-8 max-w-3xl">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-bold text-gray-900">
-          About Page
-        </h1>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-primary-dark disabled:opacity-50"
-        >
-          {saving ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <Save size={16} />
-          )}
-          {saved ? "Saved!" : "Save"}
-        </button>
-      </div>
+    <div>
+      <PageHeader
+        eyebrow="About"
+        title="Your About page"
+        subtitle="Your photo, who you are and the three small cards underneath. Everything here is public the moment you save."
+      />
 
       {error && (
-        <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm">
-          {error}
-        </div>
+        <Card className="mb-6 border-admin-danger/30 bg-admin-danger/5 px-5 py-4">
+          <p className="text-[15px] font-semibold text-admin-danger">
+            That did not save.
+          </p>
+          <p className="mt-1 text-sm text-admin-muted">{error}</p>
+        </Card>
       )}
 
-      {/* Profile Photo */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-        <h2 className="text-lg font-display font-semibold text-gray-900">
-          Profile Photo
-        </h2>
-        <ImageUploader
-          images={profilePhoto}
-          onChange={setProfilePhoto}
-          multiple={false}
-        />
-      </div>
-
-      {/* Bio */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-        <h2 className="text-lg font-display font-semibold text-gray-900">
-          Bio
-        </h2>
-        <textarea
-          value={bio}
-          onChange={(e) => setBio(e.target.value)}
-          rows={8}
-          placeholder="Write your bio here..."
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-        />
-      </div>
-
-      {/* Tagline */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-        <h2 className="text-lg font-display font-semibold text-gray-900">
-          Tagline
-        </h2>
-        <input
-          type="text"
-          value={tagline}
-          onChange={(e) => setTagline(e.target.value)}
-          placeholder="e.g., A unique perspective shaped by nature"
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-        />
-      </div>
-
-      {/* Info Cards */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-        <h2 className="text-lg font-display font-semibold text-gray-900">
-          Info Cards
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card className="h-fit p-7">
+          <Field
+            label="Your photo"
+            hint="Shown beside your bio at the top of the About page."
+          >
+            <ImageUploader
+              images={profilePhoto}
+              onChange={setProfilePhoto}
+              multiple={false}
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Background</label>
-            <input
-              type="text"
-              value={background}
-              onChange={(e) => setBackground(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Focus</label>
-            <input
-              type="text"
-              value={focus}
-              onChange={(e) => setFocus(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
-          </div>
-        </div>
-      </div>
+          </Field>
 
-      {/* Preview */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-        <p className="text-xs text-gray-400 uppercase tracking-wide">Preview</p>
-        <div className="flex flex-col sm:flex-row gap-6">
-          {profilePhoto[0] && (
-            <div className="shrink-0">
+          <Field
+            label="Tagline"
+            hint="One line, set in italics above your bio."
+            htmlFor="about-tagline"
+          >
+            <input
+              id="about-tagline"
+              type="text"
+              value={tagline}
+              onChange={(e) => setTagline(e.target.value)}
+              placeholder="e.g. A unique perspective shaped by nature"
+              className={inputClass}
+            />
+          </Field>
+
+          <Field
+            label="Your bio"
+            hint="Your story, in your own words. Leave a blank line between paragraphs."
+            htmlFor="about-bio"
+          >
+            <textarea
+              id="about-bio"
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              rows={10}
+              placeholder="Write your bio here…"
+              className={textareaClass}
+            />
+          </Field>
+
+          <p className="text-[15px] font-semibold text-admin-ink">
+            The three cards
+          </p>
+          <p className="mb-4 mt-1 text-[13px] leading-snug text-admin-muted">
+            The small boxes under your bio. Short answers work best.
+          </p>
+          <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-3">
+            <Field label="Based in" htmlFor="about-location">
+              <input
+                id="about-location"
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Background" htmlFor="about-background">
+              <input
+                id="about-background"
+                type="text"
+                value={background}
+                onChange={(e) => setBackground(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Focus" htmlFor="about-focus">
+              <input
+                id="about-focus"
+                type="text"
+                value={focus}
+                onChange={(e) => setFocus(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          </div>
+        </Card>
+
+        <Card className="h-fit p-7">
+          <p className="text-[11.5px] font-bold uppercase tracking-[0.14em] text-gold-dark">
+            What visitors will see
+          </p>
+
+          <div className="mt-5 flex flex-col gap-6 sm:flex-row">
+            {profilePhoto[0] && (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={profilePhoto[0]}
-                alt="Profile"
-                className="w-40 h-40 object-cover rounded-2xl"
+                alt="You"
+                className="h-40 w-40 shrink-0 rounded-[20px] object-cover"
               />
+            )}
+            <div>
+              {tagline && (
+                <p className="font-display text-[19px] italic text-primary">
+                  {tagline}
+                </p>
+              )}
+              {bio ? (
+                <p className="mt-3 whitespace-pre-wrap text-[15px] leading-relaxed text-admin-muted">
+                  {bio}
+                </p>
+              ) : (
+                <p className="mt-3 text-[15px] italic text-admin-muted/60">
+                  No bio yet
+                </p>
+              )}
             </div>
-          )}
-          <div className="space-y-3">
-            {tagline && (
-              <p className="font-display text-lg italic text-primary">{tagline}</p>
-            )}
-            {bio ? (
-              <p className="text-sm text-gray-600 whitespace-pre-wrap">{bio}</p>
-            ) : (
-              <p className="text-sm text-gray-300 italic">No bio yet</p>
-            )}
           </div>
-        </div>
-        <div className="grid grid-cols-3 gap-4 mt-4">
-          <div className="rounded-xl bg-gray-50 p-4 text-center">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">Based in</p>
-            <p className="mt-1 font-display font-semibold">{location}</p>
+
+          <div className="mt-7 grid grid-cols-1 gap-3.5 sm:grid-cols-3">
+            {[
+              { label: "Based in", value: location },
+              { label: "Background", value: background },
+              { label: "Focus", value: focus },
+            ].map((card) => (
+              <div
+                key={card.label}
+                className="rounded-[16px] bg-sage p-4 text-center"
+              >
+                <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-gold-dark">
+                  {card.label}
+                </p>
+                <p className="mt-1.5 font-display text-[16px] font-bold text-admin-ink">
+                  {card.value}
+                </p>
+              </div>
+            ))}
           </div>
-          <div className="rounded-xl bg-gray-50 p-4 text-center">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">Background</p>
-            <p className="mt-1 font-display font-semibold">{background}</p>
-          </div>
-          <div className="rounded-xl bg-gray-50 p-4 text-center">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">Focus</p>
-            <p className="mt-1 font-display font-semibold">{focus}</p>
-          </div>
-        </div>
+        </Card>
+      </div>
+
+      <div className="mt-8">
+        <ActionButton
+          onClick={handleSave}
+          disabled={saving}
+          label={saving ? "Saving…" : saved ? "Saved" : "Save my About page"}
+          hint="Your changes go live straight away."
+          icon={
+            saving ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : saved ? (
+              <Check size={18} />
+            ) : undefined
+          }
+        />
       </div>
     </div>
   );

@@ -138,7 +138,10 @@ export const getPublishedExhibits = unstable_cache(
         // select * so the newer event columns stay optional (pre-migration safe)
         .select("*")
         .eq("status", "published")
-        .order("sort_order", { ascending: true });
+        .order("sort_order", { ascending: true })
+        // Tie-break: every row ships at sort_order 0 until an admin drags one,
+        // so without this the order is Postgres' arbitrary physical order.
+        .order("created_at", { ascending: true });
       return data ?? [];
     } catch {
       return [];

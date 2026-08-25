@@ -1,22 +1,37 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import {
-  Plus,
-  Trash2,
-  ChevronUp,
+  Check,
   ChevronDown,
-  Loader2,
-  Type,
+  ChevronUp,
   Image as ImageIcon,
   LayoutGrid,
+  Loader2,
   Maximize2,
-  Save,
+  Plus,
+  Trash2,
+  Type,
 } from "lucide-react";
+import { slugify } from "@/lib/formatters";
 import ImageUploader from "@/components/ImageUploader";
 import ImagePositionPicker from "@/components/admin/ImagePositionPicker";
 import type { ImagePosition } from "@/components/admin/ImagePositionPicker";
+import {
+  ActionButton,
+  Button,
+  Card,
+  ConfirmDialog,
+  EmptyState,
+  Field,
+  PageHeader,
+  Spinner,
+  inputClass,
+  textareaClass,
+} from "@/components/admin/ui";
+
+const ADMIN_BASE = "/dave-admin-website-wonderland";
 
 type BlockType = "text" | "image" | "gallery" | "hero";
 
@@ -32,12 +47,45 @@ interface PageData {
   content_blocks: ContentBlock[];
 }
 
-const blockTypeOptions: { type: BlockType; label: string; icon: React.ReactNode }[] = [
-  { type: "text", label: "Text", icon: <Type size={14} /> },
-  { type: "image", label: "Image", icon: <ImageIcon size={14} /> },
-  { type: "gallery", label: "Gallery", icon: <LayoutGrid size={14} /> },
-  { type: "hero", label: "Hero", icon: <Maximize2 size={14} /> },
+/** Each block says what it is for, not just what it is called. */
+const blockTypeOptions: {
+  type: BlockType;
+  label: string;
+  hint: string;
+  icon: React.ReactNode;
+}[] = [
+  {
+    type: "text",
+    label: "Some writing",
+    hint: "A paragraph or two.",
+    icon: <Type size={20} />,
+  },
+  {
+    type: "image",
+    label: "One picture",
+    hint: "With a caption, and text wrapping around it if you like.",
+    icon: <ImageIcon size={20} />,
+  },
+  {
+    type: "gallery",
+    label: "A row of pictures",
+    hint: "Several photos side by side.",
+    icon: <LayoutGrid size={20} />,
+  },
+  {
+    type: "hero",
+    label: "A wide banner",
+    hint: "A full-width photo with words over it.",
+    icon: <Maximize2 size={20} />,
+  },
 ];
+
+const BLOCK_LABEL: Record<BlockType, string> = {
+  text: "Writing",
+  image: "Picture",
+  gallery: "Row of pictures",
+  hero: "Banner",
+};
 
 function emptyBlockData(type: BlockType): Record<string, unknown> {
   switch (type) {
@@ -54,15 +102,17 @@ function emptyBlockData(type: BlockType): Record<string, unknown> {
 
 export default function EditPagePage() {
   const params = useParams();
-  const router = useRouter();
   const [page, setPage] = useState<PageData | null>(null);
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
+  const [title, setTitle] = useState("");
+  const [slug, setSlug] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const [pendingRemove, setPendingRemove] = useState<number | null>(null);
 
   useEffect(() => {
     fetch(`/api/pages/${params.id}`)
@@ -73,8 +123,10 @@ export default function EditPagePage() {
       .then((data: PageData) => {
         setPage(data);
         setBlocks(data.content_blocks);
+        setTitle(data.title);
+        setSlug(data.slug);
       })
-      .catch((e) => setError(e.message))
+      .catch(() => setPage(null))
       .finally(() => setLoading(false));
   }, [params.id]);
 
@@ -83,28 +135,35 @@ export default function EditPagePage() {
     setShowAddMenu(false);
   };
 
-  const removeBlock = (index: number) => {
-    setBlocks(blocks.filter((_, i) => i !== index));
+  const confirmRemove = () => {
+    if (pendingRemove === null) return;
+    setBlocks(blocks.filter((_, i) => i !== pendingRemove));
+    setPendingRemove(null);
   };
 
   const moveBlock = (index: number, direction: -1 | 1) => {
     const newIndex = index + direction;
     if (newIndex < 0 || newIndex >= blocks.length) return;
     const newBlocks = [...blocks];
-    [newBlocks[index], newBlocks[newIndex]] = [newBlocks[newIndex], newBlocks[index]];
+    [newBlocks[index], newBlocks[newIndex]] = [
+      newBlocks[newIndex],
+      newBlocks[index],
+    ];
     setBlocks(newBlocks);
   };
 
   const updateBlockData = useCallback(
     (index: number, data: Record<string, unknown>) => {
-      setBlocks((prev) =>
-        prev.map((b, i) => (i === index ? { ...b, data } : b)),
-      );
+      setBlocks((prev) => prev.map((b, i) => (i === index ? { ...b, data } : b)));
     },
     [],
   );
 
   const handleSave = async () => {
+    if (!title.trim()) {
+      setError("A page needs a name before it can be saved.");
+      return;
+    }
     setSaving(true);
     setError("");
     setSaved(false);
@@ -113,7 +172,11 @@ export default function EditPagePage() {
       const res = await fetch(`/api/pages/${params.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content_blocks: blocks }),
+        body: JSON.stringify({
+          title,
+          slug: slug || slugify(title),
+          content_blocks: blocks,
+        }),
       });
 
       if (!res.ok) {
@@ -122,7 +185,7 @@ export default function EditPagePage() {
       }
 
       setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      setTimeout(() => setSaved(false), 2500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
     } finally {
@@ -130,144 +193,214 @@ export default function EditPagePage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
-  }
+  if (loading) return <Spinner label="Getting this page…" />;
 
   if (!page) {
     return (
-      <div className="text-center py-12 text-red-500">Page not found</div>
+      <EmptyState
+        title="That page is not here"
+        hint="It may have been deleted. Everything still on your website is on the previous screen."
+        action={
+          <Button href={`${ADMIN_BASE}/pages`} size="lg">
+            Back to my pages
+          </Button>
+        }
+      />
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-display font-bold text-gray-900">
-            {page.title}
-          </h1>
-          <p className="text-sm text-gray-500 font-mono">/{page.slug}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setShowPreview(!showPreview)}
-            className="text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50"
-          >
-            {showPreview ? "Edit" : "Preview"}
-          </button>
-          <button
+    <div>
+      <PageHeader
+        eyebrow="Editing a page"
+        title={title || "Untitled page"}
+        subtitle="Build the page out of blocks, stacked top to bottom. Nothing changes on your website until you press save."
+        action={
+          <ActionButton
             onClick={handleSave}
             disabled={saving}
-            className="inline-flex items-center gap-2 bg-primary text-white px-4 py-1.5 rounded-lg text-sm hover:bg-primary-dark disabled:opacity-50"
-          >
-            {saving ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              <Save size={14} />
-            )}
-            {saved ? "Saved!" : "Save"}
-          </button>
-        </div>
-      </div>
+            align="end"
+            label={saving ? "Saving…" : saved ? "Saved" : "Save this page"}
+            hint="Your changes go live straight away."
+            icon={
+              saving ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : saved ? (
+                <Check size={18} />
+              ) : undefined
+            }
+          />
+        }
+      />
 
       {error && (
-        <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm">
-          {error}
-        </div>
+        <Card className="mb-6 border-admin-danger/30 bg-admin-danger/5 px-5 py-4">
+          <p className="text-[15px] font-semibold text-admin-danger">
+            That did not save.
+          </p>
+          <p className="mt-1 text-sm text-admin-muted">{error}</p>
+        </Card>
       )}
 
-      <div className={showPreview ? "grid grid-cols-1 lg:grid-cols-2 gap-6" : ""}>
-        {/* Editor */}
-        <div className={showPreview ? "" : "max-w-2xl"}>
-          {!showPreview && (
-            <div className="space-y-4">
-              {blocks.map((block, index) => (
-                <div
-                  key={index}
-                  className="bg-white rounded-lg border border-gray-200 p-4"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                      {block.type}
-                    </span>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => moveBlock(index, -1)}
-                        disabled={index === 0}
-                        className="p-1 rounded hover:bg-gray-100 disabled:opacity-30"
-                      >
-                        <ChevronUp size={14} />
-                      </button>
-                      <button
-                        onClick={() => moveBlock(index, 1)}
-                        disabled={index === blocks.length - 1}
-                        className="p-1 rounded hover:bg-gray-100 disabled:opacity-30"
-                      >
-                        <ChevronDown size={14} />
-                      </button>
-                      <button
-                        onClick={() => removeBlock(index)}
-                        className="p-1 rounded hover:bg-red-50 text-gray-500 hover:text-red-600"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <BlockEditor
-                    block={block}
-                    onChange={(data) => updateBlockData(index, data)}
-                  />
-                </div>
-              ))}
-
-              {/* Add block button */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowAddMenu(!showAddMenu)}
-                  className="w-full border-2 border-dashed border-gray-300 rounded-lg py-3 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors flex items-center justify-center gap-2"
-                >
-                  <Plus size={16} /> Add Block
-                </button>
-                {showAddMenu && (
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
-                    {blockTypeOptions.map((opt) => (
-                      <button
-                        key={opt.type}
-                        onClick={() => addBlock(opt.type)}
-                        className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 text-left"
-                      >
-                        {opt.icon}
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+      <Card className="mb-6 p-7">
+        <div className="grid grid-cols-1 gap-x-5 sm:grid-cols-2">
+          <Field
+            label="Page name"
+            hint="The heading at the top of the page."
+            htmlFor="page-title"
+          >
+            <input
+              id="page-title"
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className={inputClass}
+            />
+          </Field>
+          <Field
+            label="Web address"
+            hint="The end of the link people share. Changing it breaks any link already out there."
+            htmlFor="page-slug"
+          >
+            <div className="flex items-center gap-2">
+              <span className="shrink-0 font-mono text-[13px] text-admin-muted">
+                /
+              </span>
+              <input
+                id="page-slug"
+                type="text"
+                value={slug}
+                onChange={(e) => setSlug(slugify(e.target.value))}
+                className={inputClass}
+              />
             </div>
-          )}
+          </Field>
+        </div>
+      </Card>
+
+      <div className="mb-5 flex items-center justify-between gap-4">
+        <h2 className="font-display text-[21px] font-bold text-admin-ink">
+          What is on this page
+        </h2>
+        <Button
+          variant="secondary"
+          onClick={() => setShowPreview(!showPreview)}
+          aria-pressed={showPreview}
+        >
+          {showPreview ? "Hide the preview" : "Show me how it looks"}
+        </Button>
+      </div>
+
+      <div
+        className={
+          showPreview ? "grid grid-cols-1 gap-6 xl:grid-cols-2" : undefined
+        }
+      >
+        <div className={showPreview ? undefined : "max-w-3xl"}>
+          <div className="flex flex-col gap-4">
+            {blocks.map((block, index) => (
+              <Card key={index} className="p-6">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <span className="text-[11.5px] font-bold uppercase tracking-[0.14em] text-gold-dark">
+                    {index + 1}. {BLOCK_LABEL[block.type] ?? block.type}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => moveBlock(index, -1)}
+                      disabled={index === 0}
+                      aria-label="Move this block up"
+                      title="Move up"
+                    >
+                      <ChevronUp size={17} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => moveBlock(index, 1)}
+                      disabled={index === blocks.length - 1}
+                      aria-label="Move this block down"
+                      title="Move down"
+                    >
+                      <ChevronDown size={17} />
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => setPendingRemove(index)}
+                    >
+                      <Trash2 size={16} /> Remove
+                    </Button>
+                  </div>
+                </div>
+
+                <BlockEditor
+                  block={block}
+                  onChange={(data) => updateBlockData(index, data)}
+                />
+              </Card>
+            ))}
+
+            <div className="relative">
+              <button
+                onClick={() => setShowAddMenu(!showAddMenu)}
+                aria-expanded={showAddMenu}
+                className="flex w-full items-center justify-center gap-2.5 rounded-[20px] border-2 border-dashed border-admin-line py-5 text-[15px] font-semibold text-admin-muted transition-colors hover:border-primary/50 hover:text-primary"
+              >
+                <Plus size={19} /> Add something to this page
+              </button>
+              {showAddMenu && (
+                <Card className="absolute left-0 right-0 top-full z-20 mt-2 p-2 shadow-xl">
+                  {blockTypeOptions.map((opt) => (
+                    <button
+                      key={opt.type}
+                      onClick={() => addBlock(opt.type)}
+                      className="flex w-full items-start gap-3.5 rounded-[15px] px-4 py-3.5 text-left transition-colors hover:bg-sage"
+                    >
+                      <span className="mt-0.5 shrink-0 text-primary">
+                        {opt.icon}
+                      </span>
+                      <span>
+                        <span className="block text-[15.5px] font-semibold text-admin-ink">
+                          {opt.label}
+                        </span>
+                        <span className="mt-0.5 block text-[13px] text-admin-muted">
+                          {opt.hint}
+                        </span>
+                      </span>
+                    </button>
+                  ))}
+                </Card>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Preview */}
         {showPreview && (
-          <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-6">
-            <p className="text-xs text-gray-400 uppercase tracking-wide">
-              Live Preview
+          <Card className="h-fit p-7">
+            <p className="mb-5 text-[11.5px] font-bold uppercase tracking-[0.14em] text-gold-dark">
+              What visitors will see
             </p>
             {blocks.length === 0 ? (
-              <p className="text-sm text-gray-400">No content blocks</p>
+              <p className="text-[15px] text-admin-muted">
+                Nothing on this page yet.
+              </p>
             ) : (
               <PreviewRenderer blocks={blocks} />
             )}
-          </div>
+          </Card>
         )}
       </div>
+
+      <ConfirmDialog
+        open={pendingRemove !== null}
+        title={`Remove this ${pendingRemove !== null ? (BLOCK_LABEL[blocks[pendingRemove]?.type] ?? "block").toLowerCase() : "block"}?`}
+        body="It comes off the page along with anything written or uploaded into it. This happens when you press save."
+        confirmLabel="Yes, remove it"
+        onConfirm={confirmRemove}
+        onCancel={() => setPendingRemove(null)}
+      />
     </div>
   );
 }
@@ -285,40 +418,39 @@ function BlockEditor({
         <textarea
           value={(block.data.content as string) ?? ""}
           onChange={(e) => onChange({ ...block.data, content: e.target.value })}
-          rows={4}
-          placeholder="Enter text or markdown..."
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+          rows={5}
+          placeholder="Write here…"
+          className={textareaClass}
         />
       );
     case "image": {
-      const imgPosition: ImagePosition = (block.data.position as ImagePosition) ?? {
+      const imgPosition: ImagePosition = (block.data
+        .position as ImagePosition) ?? {
         x: "center",
         y: "middle",
       };
       return (
-        <div className="space-y-3">
+        <div className="flex flex-col gap-4">
           <ImageUploader
             images={block.data.url ? [block.data.url as string] : []}
-            onChange={(imgs) =>
-              onChange({ ...block.data, url: imgs[0] ?? "" })
-            }
+            onChange={(imgs) => onChange({ ...block.data, url: imgs[0] ?? "" })}
             multiple={false}
           />
           {typeof block.data.url === "string" && block.data.url !== "" && (
-            <ImagePositionPicker
-              imageUrl={block.data.url as string}
-              position={imgPosition}
-              onChange={(pos) => onChange({ ...block.data, position: pos })}
-            />
+            <div className="rounded-[16px] border border-admin-line bg-sage/50 p-4">
+              <ImagePositionPicker
+                imageUrl={block.data.url as string}
+                position={imgPosition}
+                onChange={(pos) => onChange({ ...block.data, position: pos })}
+              />
+            </div>
           )}
           <input
             type="text"
             value={(block.data.caption as string) ?? ""}
-            onChange={(e) =>
-              onChange({ ...block.data, caption: e.target.value })
-            }
+            onChange={(e) => onChange({ ...block.data, caption: e.target.value })}
             placeholder="Caption (optional)"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            className={inputClass}
           />
         </div>
       );
@@ -333,12 +465,10 @@ function BlockEditor({
       );
     case "hero":
       return (
-        <div className="space-y-3">
+        <div className="flex flex-col gap-4">
           <ImageUploader
             images={block.data.url ? [block.data.url as string] : []}
-            onChange={(imgs) =>
-              onChange({ ...block.data, url: imgs[0] ?? "" })
-            }
+            onChange={(imgs) => onChange({ ...block.data, url: imgs[0] ?? "" })}
             multiple={false}
           />
           <input
@@ -347,13 +477,17 @@ function BlockEditor({
             onChange={(e) =>
               onChange({ ...block.data, overlay_text: e.target.value })
             }
-            placeholder="Overlay text (optional)"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            placeholder="Words over the photo (optional)"
+            className={inputClass}
           />
         </div>
       );
     default:
-      return <p className="text-sm text-gray-400">Unknown block type</p>;
+      return (
+        <p className="text-sm text-admin-muted">
+          This block is not one this screen knows how to edit.
+        </p>
+      );
   }
 }
 
@@ -364,7 +498,9 @@ function BlockEditor({
  * bottom = after text.
  */
 function PreviewRenderer({ blocks }: { blocks: ContentBlock[] }) {
-  type Group = { kind: "float"; image: ContentBlock; text: ContentBlock | null } | { kind: "standalone"; block: ContentBlock };
+  type Group =
+    | { kind: "float"; image: ContentBlock; text: ContentBlock | null }
+    | { kind: "standalone"; block: ContentBlock };
 
   const groups: Group[] = [];
   const used = new Set<number>();
@@ -373,9 +509,13 @@ function PreviewRenderer({ blocks }: { blocks: ContentBlock[] }) {
     if (used.has(i)) continue;
 
     const block = blocks[i];
-    const pos = block.type === "image"
-      ? ((block.data.position as ImagePosition) ?? { x: "center", y: "middle" })
-      : null;
+    const pos =
+      block.type === "image"
+        ? ((block.data.position as ImagePosition) ?? {
+            x: "center",
+            y: "middle",
+          })
+        : null;
 
     const isFloated = pos && pos.x !== "center";
 
@@ -383,7 +523,6 @@ function PreviewRenderer({ blocks }: { blocks: ContentBlock[] }) {
       // Find the nearest text block to pair with
       let textIdx = -1;
       if (pos.y === "top" || pos.y === "middle") {
-        // Look for the next text block
         for (let j = i + 1; j < blocks.length; j++) {
           if (!used.has(j) && blocks[j].type === "text") {
             textIdx = j;
@@ -415,7 +554,7 @@ function PreviewRenderer({ blocks }: { blocks: ContentBlock[] }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       {groups.map((group, i) => {
         if (group.kind === "standalone") {
           return <BlockPreview key={i} block={group.block} />;
@@ -426,8 +565,6 @@ function PreviewRenderer({ blocks }: { blocks: ContentBlock[] }) {
           y: "middle",
         };
 
-        // For floated groups, render image + text in one clearfix container
-        // y=top/middle: image first, then text. y=bottom: text first, then image.
         const imageEl = <BlockPreview key="img" block={group.image} />;
         const textEl = group.text ? (
           <BlockPreview key="txt" block={group.text} />
@@ -457,9 +594,9 @@ function BlockPreview({ block }: { block: ContentBlock }) {
   switch (block.type) {
     case "text":
       return (
-        <div className="whitespace-pre-wrap text-sm">
+        <div className="whitespace-pre-wrap text-[15px] leading-relaxed text-admin-ink">
           {(block.data.content as string) || (
-            <span className="text-gray-300 italic">Empty text block</span>
+            <span className="italic text-admin-muted/60">Nothing written yet</span>
           )}
         </div>
       );
@@ -470,32 +607,41 @@ function BlockPreview({ block }: { block: ContentBlock }) {
       };
 
       let floatStyle: React.CSSProperties = {};
-      let figureClass = "rounded-lg max-w-[50%]";
+      let figureClass = "rounded-[14px] max-w-[50%]";
 
       if (pos.x === "left") {
-        floatStyle = { float: "left", marginRight: "1rem", marginBottom: "0.5rem" };
+        floatStyle = {
+          float: "left",
+          marginRight: "1rem",
+          marginBottom: "0.5rem",
+        };
       } else if (pos.x === "right") {
-        floatStyle = { float: "right", marginLeft: "1rem", marginBottom: "0.5rem" };
+        floatStyle = {
+          float: "right",
+          marginLeft: "1rem",
+          marginBottom: "0.5rem",
+        };
       } else {
         floatStyle = { display: "block", margin: "0 auto" };
-        figureClass = "rounded-lg max-w-[70%]";
+        figureClass = "rounded-[14px] max-w-[70%]";
       }
 
       return (
         <figure style={floatStyle} className={figureClass}>
           {block.data.url ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={block.data.url as string}
               alt={(block.data.caption as string) ?? ""}
-              className="w-full rounded-lg"
+              className="w-full rounded-[14px]"
             />
           ) : (
-            <div className="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-sm">
-              No image
+            <div className="flex h-32 w-full items-center justify-center rounded-[14px] bg-sage text-sm text-admin-muted">
+              No picture yet
             </div>
           )}
           {typeof block.data.caption === "string" && block.data.caption && (
-            <figcaption className="text-xs text-gray-500 mt-1 text-center">
+            <figcaption className="mt-1.5 text-center text-xs text-admin-muted">
               {block.data.caption}
             </figcaption>
           )}
@@ -505,39 +651,44 @@ function BlockPreview({ block }: { block: ContentBlock }) {
     case "gallery": {
       const images = (block.data.images as string[]) ?? [];
       return images.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
           {images.map((url, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               key={i}
               src={url}
-              alt={`Gallery ${i + 1}`}
-              className="w-full aspect-square object-cover rounded-lg"
+              alt={`Picture ${i + 1}`}
+              className="aspect-square w-full rounded-[14px] object-cover"
             />
           ))}
         </div>
       ) : (
-        <div className="text-sm text-gray-300 italic">Empty gallery</div>
+        <div className="text-[15px] italic text-admin-muted/60">
+          No pictures in this row yet
+        </div>
       );
     }
     case "hero":
       return (
-        <div className="relative rounded-lg overflow-hidden">
+        <div className="relative overflow-hidden rounded-[14px]">
           {block.data.url ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={block.data.url as string}
               alt=""
-              className="w-full h-40 object-cover"
+              className="h-40 w-full object-cover"
             />
           ) : (
-            <div className="w-full h-40 bg-gray-100" />
+            <div className="h-40 w-full bg-sage" />
           )}
-          {typeof block.data.overlay_text === "string" && block.data.overlay_text && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-              <span className="text-white font-display text-lg font-bold">
-                {block.data.overlay_text}
-              </span>
-            </div>
-          )}
+          {typeof block.data.overlay_text === "string" &&
+            block.data.overlay_text && (
+              <div className="absolute inset-0 flex items-center justify-center bg-admin-ink/35">
+                <span className="font-display text-[19px] font-bold text-cream">
+                  {block.data.overlay_text}
+                </span>
+              </div>
+            )}
         </div>
       );
     default:

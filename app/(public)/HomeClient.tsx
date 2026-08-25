@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import InstantLink from "@/components/InstantLink";
 import { BLUR_DATA_URL } from "@/lib/image";
+import RichTitle, { stripRichTitle } from "@/components/RichTitle";
 
 interface BlogPost {
   id: string;
@@ -51,7 +52,7 @@ export default function HomeClient({
 }) {
   const parallaxRef = useRef<HTMLDivElement>(null);
 
-  // Standalone "NEW EXHIBIT" badge — rendered in both the desktop green panel
+  // Standalone current-exhibit badge — rendered in both the desktop green panel
   // and the mobile hero. `dark` tunes the palette for the light green panel
   // vs. the photo-backed mobile hero.
   const renderBadge = (dark: boolean) =>
@@ -63,10 +64,7 @@ export default function HomeClient({
             : "border-white/20 bg-black/25"
         }`}
       >
-        <p className="text-[22px] font-semibold uppercase tracking-[0.2em] text-[#E07A2F]">
-          New Exhibit
-        </p>
-        <p className="mt-1.5 font-display text-xl font-bold text-white">
+        <p className="font-display text-xl font-bold text-white">
           {homeBadge.title}
         </p>
         {(homeBadge.dates || homeBadge.time) && (
@@ -117,7 +115,7 @@ export default function HomeClient({
               Studio Artist &middot; Boulder, CO
             </p>
 
-            {/* Standalone "NEW EXHIBIT" badge */}
+            {/* Standalone current-exhibit badge */}
             <div
               className="flex justify-center animate-fade-in-up"
               style={{ animationDelay: "0.25s", opacity: 0 }}
@@ -322,7 +320,7 @@ export default function HomeClient({
                     {hasImage ? (
                       <Image
                         src={artwork.images[0]}
-                        alt={artwork.title}
+                        alt={stripRichTitle(artwork.title)}
                         fill
                         sizes="(min-width: 640px) 33vw, 100vw"
                         placeholder="blur"
@@ -350,7 +348,7 @@ export default function HomeClient({
                   <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                     <div className="w-full p-5">
                       <h3 className="font-display text-lg font-semibold text-white">
-                        {artwork.title}
+                        <RichTitle text={artwork.title} />
                       </h3>
                       {artwork.category && (
                         <p className="mt-1 text-sm text-white/70">{artwork.category}</p>

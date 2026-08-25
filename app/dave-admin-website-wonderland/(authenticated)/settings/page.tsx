@@ -1,12 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Trash2, Save } from "lucide-react";
+import { Check, Loader2, Plus, Trash2 } from "lucide-react";
 import ImageUploader from "@/components/ImageUploader";
 import ImageCropEditor, {
   DEFAULT_CROP,
 } from "@/components/admin/ImageCropEditor";
 import type { CropSettings } from "@/components/admin/ImageCropEditor";
+import {
+  ActionButton,
+  Button,
+  Card,
+  ConfirmDialog,
+  Field,
+  PageHeader,
+  Spinner,
+  inputClass,
+} from "@/components/admin/ui";
 
 interface Setting {
   key: string;
@@ -35,33 +45,52 @@ const SPECIAL_KEYS = new Set([
   "home_exhibit_address",
 ]);
 
+/** The photos each have their own card, so their copy lives here. */
+const PHOTOS = [
+  {
+    id: "about_banner",
+    title: "The banner across your About page",
+    hint: "The wide picture behind “About David” at the top of that page.",
+  },
+  {
+    id: "contact_photo",
+    title: "The photo on your Contact page",
+    hint: "Shown beside the contact form. Without one, visitors see a quote card instead.",
+  },
+  {
+    id: "exhibits_banner",
+    title: "The banner across your Exhibits page",
+    hint: "Leave this empty and the page uses the plain green background.",
+  },
+] as const;
+
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Setting[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [pendingRemove, setPendingRemove] = useState<number | null>(null);
 
-  // Hero image state
   const [heroImage, setHeroImage] = useState<string[]>([]);
   const [heroCrop, setHeroCrop] = useState<CropSettings>(DEFAULT_CROP);
-
-  // About banner state
   const [aboutBanner, setAboutBanner] = useState<string[]>([]);
-
-  // Contact photo state
   const [contactPhoto, setContactPhoto] = useState<string[]>([]);
-
-  // Exhibits banner state
   const [exhibitsBanner, setExhibitsBanner] = useState<string[]>([]);
 
-  // Home "NEW EXHIBIT" badge state (standalone, decoupled from exhibits table)
+  // Home badge — standalone, not read from the exhibits table.
   const [homeExhibit, setHomeExhibit] = useState({
     title: "",
     dates: "",
     time: "",
     address: "",
   });
+
+  const photoState = {
+    about_banner: [aboutBanner, setAboutBanner],
+    contact_photo: [contactPhoto, setContactPhoto],
+    exhibits_banner: [exhibitsBanner, setExhibitsBanner],
+  } as const;
 
   useEffect(() => {
     fetch("/api/settings")
@@ -72,52 +101,30 @@ export default function SettingsPage() {
           const existingKeys = new Set(existing.map((s) => s.key));
           const merged = [...existing];
           for (const key of DEFAULT_KEYS) {
-            if (!existingKeys.has(key)) {
-              merged.push({ key, value: "" });
-            }
+            if (!existingKeys.has(key)) merged.push({ key, value: "" });
           }
           setSettings(merged);
 
-          // Load hero image from settings
-          const heroSetting = existing.find((s) => s.key === "hero_image");
-          if (heroSetting && heroSetting.value) {
-            setHeroImage([heroSetting.value]);
-          }
-          const cropSetting = existing.find((s) => s.key === "hero_crop");
-          if (cropSetting && cropSetting.value) {
+          const val = (k: string) =>
+            existing.find((s) => s.key === k)?.value ?? "";
+
+          if (val("hero_image")) setHeroImage([val("hero_image")]);
+          if (val("hero_crop")) {
             try {
-              setHeroCrop(JSON.parse(cropSetting.value));
+              setHeroCrop(JSON.parse(val("hero_crop")));
             } catch {
-              // ignore
+              // A malformed crop just means the default framing.
             }
           }
+          if (val("about_banner")) setAboutBanner([val("about_banner")]);
+          if (val("contact_photo")) setContactPhoto([val("contact_photo")]);
+          if (val("exhibits_banner")) setExhibitsBanner([val("exhibits_banner")]);
 
-          // Load about banner from settings
-          const aboutBannerSetting = existing.find((s) => s.key === "about_banner");
-          if (aboutBannerSetting && aboutBannerSetting.value) {
-            setAboutBanner([aboutBannerSetting.value]);
-          }
-
-          // Load contact photo from settings
-          const contactPhotoSetting = existing.find((s) => s.key === "contact_photo");
-          if (contactPhotoSetting && contactPhotoSetting.value) {
-            setContactPhoto([contactPhotoSetting.value]);
-          }
-
-          // Load exhibits banner from settings
-          const exhibitsBannerSetting = existing.find((s) => s.key === "exhibits_banner");
-          if (exhibitsBannerSetting && exhibitsBannerSetting.value) {
-            setExhibitsBanner([exhibitsBannerSetting.value]);
-          }
-
-          // Load home exhibit badge from settings
-          const badgeVal = (k: string) =>
-            existing.find((s) => s.key === k)?.value ?? "";
           setHomeExhibit({
-            title: badgeVal("home_exhibit_title"),
-            dates: badgeVal("home_exhibit_dates"),
-            time: badgeVal("home_exhibit_time"),
-            address: badgeVal("home_exhibit_address"),
+            title: val("home_exhibit_title"),
+            dates: val("home_exhibit_dates"),
+            time: val("home_exhibit_time"),
+            address: val("home_exhibit_address"),
           });
         }
       })
@@ -130,36 +137,27 @@ export default function SettingsPage() {
     );
   };
 
-  const addSetting = () => {
-    setSettings([...settings, { key: "", value: "" }]);
-  };
+  const addSetting = () => setSettings([...settings, { key: "", value: "" }]);
 
-  const removeSetting = (index: number) => {
-    setSettings(settings.filter((_, i) => i !== index));
+  const confirmRemove = () => {
+    if (pendingRemove === null) return;
+    setSettings(settings.filter((_, i) => i !== pendingRemove));
+    setPendingRemove(null);
   };
 
   const handleSave = async () => {
-    // Merge specially-managed settings into the general settings list
     const allSettings = settings.filter(
       (s) => s.key.trim() !== "" && !SPECIAL_KEYS.has(s.key),
     );
-    if (heroImage[0]) {
-      allSettings.push({ key: "hero_image", value: heroImage[0] });
-    }
-    allSettings.push({
-      key: "hero_crop",
-      value: JSON.stringify(heroCrop),
-    });
-    if (aboutBanner[0]) {
+    if (heroImage[0]) allSettings.push({ key: "hero_image", value: heroImage[0] });
+    allSettings.push({ key: "hero_crop", value: JSON.stringify(heroCrop) });
+    if (aboutBanner[0])
       allSettings.push({ key: "about_banner", value: aboutBanner[0] });
-    }
-    if (contactPhoto[0]) {
+    if (contactPhoto[0])
       allSettings.push({ key: "contact_photo", value: contactPhoto[0] });
-    }
-    if (exhibitsBanner[0]) {
+    if (exhibitsBanner[0])
       allSettings.push({ key: "exhibits_banner", value: exhibitsBanner[0] });
-    }
-    // Home exhibit badge — pushed even when blank so fields can be cleared.
+    // Pushed even when blank so the fields can be cleared.
     allSettings.push({ key: "home_exhibit_title", value: homeExhibit.title });
     allSettings.push({ key: "home_exhibit_dates", value: homeExhibit.dates });
     allSettings.push({ key: "home_exhibit_time", value: homeExhibit.time });
@@ -184,7 +182,6 @@ export default function SettingsPage() {
             const data = JSON.parse(text);
             msg = data.error?.toString() ?? msg;
           } catch {
-            // Show first 200 chars of non-JSON response for debugging
             msg = `Server error (${res.status}): ${text.slice(0, 200)}`;
           }
         } catch {
@@ -194,7 +191,7 @@ export default function SettingsPage() {
       }
 
       setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      setTimeout(() => setSaved(false), 2500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
     } finally {
@@ -202,251 +199,266 @@ export default function SettingsPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
-  }
+  if (loading) return <Spinner label="Getting your settings…" />;
 
-  // Filter out specially-managed keys from the general settings display
   const generalSettings = settings.filter((s) => !SPECIAL_KEYS.has(s.key));
 
+  const saveButton = (
+    <ActionButton
+      onClick={handleSave}
+      disabled={saving}
+      align="end"
+      label={saving ? "Saving…" : saved ? "Saved" : "Save everything"}
+      hint="All the changes on this screen go live at once."
+      icon={
+        saving ? (
+          <Loader2 size={18} className="animate-spin" />
+        ) : saved ? (
+          <Check size={18} />
+        ) : undefined
+      }
+    />
+  );
+
   return (
-    <div className="space-y-8 max-w-3xl">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-bold text-gray-900">
-          Settings
-        </h1>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-primary-dark disabled:opacity-50"
-        >
-          {saving ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <Save size={16} />
-          )}
-          {saved ? "Saved!" : "Save Settings"}
-        </button>
-      </div>
+    <div>
+      <PageHeader
+        eyebrow="Settings"
+        title="Photos and banners"
+        subtitle="The big pictures across your website, and the card on your homepage. Nothing changes until you press save."
+        action={saveButton}
+      />
 
       {error && (
-        <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm">
-          {error}
-        </div>
+        <Card className="mb-6 border-admin-danger/30 bg-admin-danger/5 px-5 py-4">
+          <p className="text-[15px] font-semibold text-admin-danger">
+            That did not save.
+          </p>
+          <p className="mt-1 text-sm text-admin-muted">{error}</p>
+        </Card>
       )}
 
-      {/* ===== HERO IMAGE SECTION ===== */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-        <h2 className="text-lg font-display font-semibold text-gray-900">
-          Hero Image
-        </h2>
-        <p className="text-sm text-gray-500">
-          The full-bleed background photo on the homepage. Use the crop tool to position the focal point.
-        </p>
+      <div className="flex flex-col gap-6">
+        {/* ------------------------------------------------ hero photo --- */}
+        <Card className="p-7">
+          <h2 className="font-display text-[21px] font-bold text-admin-ink">
+            The big photo on your homepage
+          </h2>
+          <p className="mb-5 mt-1.5 max-w-[60ch] text-[13.5px] leading-relaxed text-admin-muted">
+            The picture visitors see first, filling the whole screen. Drag it
+            inside the frame below to choose what stays in view on a phone as
+            well as a computer.
+          </p>
 
-        <ImageUploader
-          images={heroImage}
-          onChange={setHeroImage}
-          multiple={false}
-        />
-
-        {heroImage[0] && (
-          <ImageCropEditor
-            imageUrl={heroImage[0]}
-            crop={heroCrop}
-            onChange={setHeroCrop}
-            aspectRatio={16 / 9}
-            label="Position & Zoom"
+          <ImageUploader
+            images={heroImage}
+            onChange={setHeroImage}
+            multiple={false}
           />
-        )}
-      </div>
 
-      {/* ===== ABOUT BANNER IMAGE SECTION ===== */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-        <h2 className="text-lg font-display font-semibold text-gray-900">
-          About Page Banner
-        </h2>
-        <p className="text-sm text-gray-500">
-          Background image for the &ldquo;About David&rdquo; hero banner on the About page.
-        </p>
+          {heroImage[0] && (
+            <div className="mt-5 rounded-[16px] border border-admin-line bg-sage/50 p-4">
+              <ImageCropEditor
+                imageUrl={heroImage[0]}
+                crop={heroCrop}
+                onChange={setHeroCrop}
+                aspectRatio={16 / 9}
+                label="Move and zoom the photo"
+              />
+            </div>
+          )}
+        </Card>
 
-        <ImageUploader
-          images={aboutBanner}
-          onChange={setAboutBanner}
-          multiple={false}
-        />
-      </div>
+        {/* --------------------------------------------- other pictures -- */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {PHOTOS.map((photo) => {
+            const [images, setImages] = photoState[photo.id];
+            return (
+              <Card key={photo.id} className="p-7">
+                <h2 className="font-display text-[19px] font-bold leading-tight text-admin-ink">
+                  {photo.title}
+                </h2>
+                <p className="mb-4 mt-1.5 text-[13px] leading-snug text-admin-muted">
+                  {photo.hint}
+                </p>
+                <ImageUploader
+                  images={images}
+                  onChange={setImages}
+                  multiple={false}
+                />
+              </Card>
+            );
+          })}
+        </div>
 
-      {/* ===== CONTACT PHOTO SECTION ===== */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-        <h2 className="text-lg font-display font-semibold text-gray-900">
-          Contact Page Photo
-        </h2>
-        <p className="text-sm text-gray-500">
-          Photo displayed on the Contact page. Replaces the default quote card.
-        </p>
+        {/* ------------------------------------------------ home badge --- */}
+        <Card className="p-7">
+          <h2 className="font-display text-[21px] font-bold text-admin-ink">
+            The card on your homepage
+          </h2>
+          <p className="mb-6 mt-1.5 max-w-[62ch] text-[13.5px] leading-relaxed text-admin-muted">
+            The small panel over your homepage photo, usually pointing at
+            wherever your work is hanging now. You write it here by hand — it
+            does not read from your Exhibits page, so if you change one you
+            need to change the other. Clear the title to hide the card
+            altogether.
+          </p>
 
-        <ImageUploader
-          images={contactPhoto}
-          onChange={setContactPhoto}
-          multiple={false}
-        />
-      </div>
-
-      {/* ===== EXHIBITS BANNER SECTION ===== */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-        <h2 className="text-lg font-display font-semibold text-gray-900">
-          Exhibits Page Banner
-        </h2>
-        <p className="text-sm text-gray-500">
-          Background image for the hero banner on the Exhibits page. Leave
-          empty to use the default green gradient.
-        </p>
-
-        <ImageUploader
-          images={exhibitsBanner}
-          onChange={setExhibitsBanner}
-          multiple={false}
-        />
-      </div>
-
-      {/* ===== HOME EXHIBIT BADGE SECTION ===== */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-        <h2 className="text-lg font-display font-semibold text-gray-900">
-          Home &ldquo;New Exhibit&rdquo; Badge
-        </h2>
-        <p className="text-sm text-gray-500">
-          The badge card shown on the homepage hero. Leave the title empty to
-          hide the badge. This is standalone &mdash; it is not linked to the
-          Exhibits section.
-        </p>
-
-        <div className="space-y-3">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Title
-            </label>
+          <Field
+            label="Title"
+            hint="Usually the place. Leave this empty to hide the card."
+            htmlFor="badge-title"
+          >
             <input
+              id="badge-title"
               type="text"
               value={homeExhibit.title}
               onChange={(e) =>
                 setHomeExhibit((p) => ({ ...p, title: e.target.value }))
               }
               placeholder="Logan's Espresso Cafe"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className={inputClass}
             />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Dates
-              </label>
+          </Field>
+
+          <div className="grid grid-cols-1 gap-x-5 sm:grid-cols-2">
+            <Field
+              label="Dates"
+              hint="Written however you like."
+              htmlFor="badge-dates"
+            >
               <input
+                id="badge-dates"
                 type="text"
                 value={homeExhibit.dates}
                 onChange={(e) =>
                   setHomeExhibit((p) => ({ ...p, dates: e.target.value }))
                 }
                 placeholder="Aug 1 – 31, 2026"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className={inputClass}
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Time
-              </label>
+            </Field>
+            <Field
+              label="Hours"
+              hint="When people can turn up."
+              htmlFor="badge-time"
+            >
               <input
+                id="badge-time"
                 type="text"
                 value={homeExhibit.time}
                 onChange={(e) =>
                   setHomeExhibit((p) => ({ ...p, time: e.target.value }))
                 }
-                placeholder="6–9:30 p.m."
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                placeholder="7am – 9pm"
+                className={inputClass}
               />
-            </div>
+            </Field>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Address
-            </label>
+
+          <Field
+            label="Address"
+            hint="Put a · between the street and the city so it splits onto two lines."
+            htmlFor="badge-address"
+          >
             <input
+              id="badge-address"
               type="text"
               value={homeExhibit.address}
               onChange={(e) =>
                 setHomeExhibit((p) => ({ ...p, address: e.target.value }))
               }
               placeholder="4790 Broadway, Unit 101 · Boulder, CO 80304"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className={inputClass}
             />
-          </div>
-        </div>
-      </div>
+          </Field>
+        </Card>
 
-      {/* ===== GENERAL SETTINGS ===== */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-display font-semibold text-gray-900">
-          General Settings
-        </h2>
+        {/* -------------------------------------------------- key/value -- */}
+        <Card className="p-7">
+          <h2 className="font-display text-[21px] font-bold text-admin-ink">
+            Everything else
+          </h2>
+          <p className="mb-5 mt-1.5 max-w-[62ch] text-[13.5px] leading-relaxed text-admin-muted">
+            Small pieces of text used across the site — your site title, your
+            contact email, your social links. Change a value on the right;
+            leave the name on the left alone unless you know what it does.
+          </p>
 
-        <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
-          {generalSettings.map((setting, index) => {
-            // Find the real index in the full settings array
-            const realIndex = settings.findIndex(
-              (s) => s.key === setting.key && s.value === setting.value,
-            );
-            return (
-              <div key={index} className="flex items-center gap-3 px-4 py-3">
-                <div className="flex-1 min-w-0">
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Key
-                  </label>
-                  <input
-                    type="text"
-                    value={setting.key}
-                    onChange={(e) =>
-                      updateSetting(realIndex, "key", e.target.value)
-                    }
-                    placeholder="setting_key"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  />
-                </div>
-                <div className="flex-[2] min-w-0">
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Value
-                  </label>
-                  <input
-                    type="text"
-                    value={setting.value}
-                    onChange={(e) =>
-                      updateSetting(realIndex, "value", e.target.value)
-                    }
-                    placeholder="Value"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  />
-                </div>
-                <button
-                  onClick={() => removeSetting(realIndex)}
-                  className="p-1.5 rounded hover:bg-red-50 text-gray-400 hover:text-red-600 mt-5"
+          <div className="flex flex-col gap-3">
+            {generalSettings.map((setting, index) => {
+              const realIndex = settings.findIndex(
+                (s) => s.key === setting.key && s.value === setting.value,
+              );
+              return (
+                <div
+                  key={index}
+                  className="flex flex-col gap-3 rounded-[16px] border border-admin-line-soft p-4 sm:flex-row sm:items-center"
                 >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            );
-          })}
-        </div>
+                  <div className="min-w-0 sm:w-[15rem]">
+                    <label
+                      htmlFor={`setting-key-${index}`}
+                      className="mb-1 block text-[12px] font-semibold uppercase tracking-[0.08em] text-admin-muted"
+                    >
+                      Name
+                    </label>
+                    <input
+                      id={`setting-key-${index}`}
+                      type="text"
+                      value={setting.key}
+                      onChange={(e) =>
+                        updateSetting(realIndex, "key", e.target.value)
+                      }
+                      placeholder="setting_key"
+                      className={`${inputClass} min-h-[48px] font-mono text-[14px]`}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <label
+                      htmlFor={`setting-value-${index}`}
+                      className="mb-1 block text-[12px] font-semibold uppercase tracking-[0.08em] text-admin-muted"
+                    >
+                      Value
+                    </label>
+                    <input
+                      id={`setting-value-${index}`}
+                      type="text"
+                      value={setting.value}
+                      onChange={(e) =>
+                        updateSetting(realIndex, "value", e.target.value)
+                      }
+                      placeholder="Value"
+                      className={`${inputClass} min-h-[48px]`}
+                    />
+                  </div>
+                  <Button
+                    variant="danger"
+                    onClick={() => setPendingRemove(realIndex)}
+                    className="shrink-0 sm:mt-5"
+                  >
+                    <Trash2 size={17} /> Remove
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
 
-        <button
-          onClick={addSetting}
-          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-primary transition-colors"
-        >
-          <Plus size={16} /> Add Setting
-        </button>
+          <Button variant="secondary" onClick={addSetting} className="mt-4">
+            <Plus size={17} /> Add another
+          </Button>
+        </Card>
       </div>
+
+      <div className="mt-8">{saveButton}</div>
+
+      <ConfirmDialog
+        open={pendingRemove !== null}
+        title={`Remove “${pendingRemove !== null ? (settings[pendingRemove]?.key ?? "") : ""}”?`}
+        body="It disappears from this screen and stops being saved, so whatever uses it falls back to its built-in wording. The old value is kept in the database, not deleted."
+        confirmLabel="Yes, remove it"
+        onConfirm={confirmRemove}
+        onCancel={() => setPendingRemove(null)}
+      />
     </div>
   );
 }

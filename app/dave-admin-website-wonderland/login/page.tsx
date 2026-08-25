@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2 } from "lucide-react";
+import { ActionButton, Card, Field, inputClass } from "@/components/admin/ui";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -19,7 +20,9 @@ export default function AdminLoginPage() {
 
     const supabase = createClient();
     if (!supabase) {
-      setError("Supabase is not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env.local");
+      setError(
+        "Supabase is not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env.local",
+      );
       setLoading(false);
       return;
     }
@@ -39,31 +42,40 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <main className="flex items-center justify-center min-h-screen">
-      <div className="w-full max-w-sm mx-auto p-8">
-        <div className="text-center mb-8">
-          <h1 className="font-display text-2xl font-bold text-primary">
-            Admin Login
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Sign in to manage your portfolio
-          </p>
-        </div>
+    <main className="flex min-h-screen w-full flex-col lg:flex-row">
+      <div className="flex flex-col justify-end bg-primary-dark px-8 py-12 lg:flex-1 lg:px-16 lg:pb-[72px]">
+        <p className="text-[11.5px] font-bold uppercase tracking-[0.14em] text-gold">
+          Private
+        </p>
+        <h1 className="mt-3 font-display text-[38px] font-bold leading-[1.05] text-cream lg:text-[52px]">
+          Your website,
+          <br />
+          behind the scenes
+        </h1>
+        <p className="mt-5 max-w-[36ch] text-[17px] leading-relaxed text-cream/65">
+          Change your artwork, your writing and where your work is hanging.
+        </p>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="flex flex-col justify-center px-6 py-12 lg:w-[540px] lg:shrink-0 lg:px-16">
+        <h2 className="font-display text-[34px] font-bold text-admin-ink">
+          Sign in
+        </h2>
+        <p className="mb-8 mt-2.5 text-[15px] leading-relaxed text-admin-muted">
+          The email and password set up with your site.
+        </p>
+
+        <form onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm">
-              {error}
-            </div>
+            <Card className="mb-6 border-admin-danger/30 bg-admin-danger/5 px-5 py-4">
+              <p className="text-[15px] font-semibold text-admin-danger">
+                That did not sign you in.
+              </p>
+              <p className="mt-1 text-sm text-admin-muted">{error}</p>
+            </Card>
           )}
 
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Email
-            </label>
+          <Field label="Email" htmlFor="email">
             <input
               id="email"
               type="email"
@@ -71,17 +83,11 @@ export default function AdminLoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+              className={inputClass}
             />
-          </div>
+          </Field>
 
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Password
-            </label>
+          <Field label="Password" htmlFor="password">
             <input
               id="password"
               type="password"
@@ -89,18 +95,21 @@ export default function AdminLoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="current-password"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+              className={inputClass}
             />
-          </div>
+          </Field>
 
-          <button
+          <ActionButton
             type="submit"
             disabled={loading}
-            className="w-full bg-primary text-white py-2 rounded-lg text-sm font-medium hover:bg-primary-dark disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {loading && <Loader2 size={16} className="animate-spin" />}
-            Sign In
-          </button>
+            full
+            align="stretch"
+            label={loading ? "Signing in…" : "Sign in"}
+            hint="You will land on your dashboard."
+            icon={
+              loading ? <Loader2 size={18} className="animate-spin" /> : undefined
+            }
+          />
         </form>
       </div>
     </main>
