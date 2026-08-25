@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import { getArtworks } from "@/lib/supabase/public";
 import { BLUR_DATA_URL } from "@/lib/image";
+import RichTitle, { stripRichTitle } from "@/components/RichTitle";
 
 // Prerender each artwork detail page at build time + ISR (5 min).
 export const revalidate = 300;
@@ -102,7 +103,7 @@ export async function generateMetadata({
 
   return {
     title: artwork
-      ? `${artwork.title} — David Schaldach`
+      ? `${stripRichTitle(artwork.title)} — David Schaldach`
       : "Artwork — David Schaldach",
     description: artwork?.description?.slice(0, 160) ?? undefined,
   };
@@ -165,7 +166,7 @@ export default async function ArtworkDetailPage({
             // preserves the image's own aspect ratio while optimizing delivery.
             <Image
               src={artwork.images[0]}
-              alt={artwork.title}
+              alt={stripRichTitle(artwork.title)}
               width={0}
               height={0}
               priority
@@ -201,7 +202,7 @@ export default async function ArtworkDetailPage({
               >
                 <Image
                   src={img}
-                  alt={`${artwork.title} — ${idx + 2}`}
+                  alt={`${stripRichTitle(artwork.title)} — ${idx + 2}`}
                   fill
                   sizes="(min-width: 1024px) 256px, 25vw"
                   placeholder="blur"
@@ -221,7 +222,7 @@ export default async function ArtworkDetailPage({
             </p>
           )}
           <h1 className="mt-2 font-display text-3xl font-bold text-primary-dark sm:text-4xl">
-            {artwork.title}
+            <RichTitle text={artwork.title} />
           </h1>
           {artwork.description && (
             <p className="mt-4 max-w-2xl whitespace-pre-line text-lg leading-relaxed text-text-secondary">
@@ -246,7 +247,7 @@ export default async function ArtworkDetailPage({
                   Previous
                 </p>
                 <p className="font-display text-base font-medium">
-                  {prevArtwork.title}
+                  <RichTitle text={prevArtwork.title} />
                 </p>
               </div>
             </Link>
@@ -264,7 +265,7 @@ export default async function ArtworkDetailPage({
                   Next
                 </p>
                 <p className="font-display text-base font-medium">
-                  {nextArtwork.title}
+                  <RichTitle text={nextArtwork.title} />
                 </p>
               </div>
               <ArrowRight

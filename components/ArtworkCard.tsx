@@ -1,5 +1,6 @@
 import Image from "next/image";
 import InstantLink from "@/components/InstantLink";
+import RichTitle, { stripRichTitle } from "@/components/RichTitle";
 
 interface Artwork {
   id: string;
@@ -32,7 +33,7 @@ export default function ArtworkCard({
           // serves a resized, format-optimized file per `sizes`.
           <Image
             src={artwork.images[0]}
-            alt={artwork.title}
+            alt={stripRichTitle(artwork.title)}
             width={0}
             height={0}
             priority={priority}
@@ -61,7 +62,7 @@ export default function ArtworkCard({
         <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
           <div className="w-full p-5">
             <h3 className="font-display text-lg font-semibold text-white">
-              {artwork.title}
+              <RichTitle text={artwork.title} />
             </h3>
             {artwork.category && (
               <p className="mt-1 text-sm text-white/70">{artwork.category}</p>
@@ -73,7 +74,7 @@ export default function ArtworkCard({
       {/* Always-visible title on mobile */}
       <div className="mt-3 md:hidden">
         <h3 className="font-display text-base font-medium text-primary-dark">
-          {artwork.title}
+          <RichTitle text={artwork.title} />
         </h3>
         {artwork.category && (
           <p className="text-sm text-text-muted">{artwork.category}</p>

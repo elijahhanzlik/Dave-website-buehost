@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import InstantLink from "@/components/InstantLink";
 import { BLUR_DATA_URL } from "@/lib/image";
+import RichTitle, { stripRichTitle } from "@/components/RichTitle";
 
 interface BlogPost {
   id: string;
@@ -319,7 +320,7 @@ export default function HomeClient({
                     {hasImage ? (
                       <Image
                         src={artwork.images[0]}
-                        alt={artwork.title}
+                        alt={stripRichTitle(artwork.title)}
                         fill
                         sizes="(min-width: 640px) 33vw, 100vw"
                         placeholder="blur"
@@ -347,7 +348,7 @@ export default function HomeClient({
                   <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                     <div className="w-full p-5">
                       <h3 className="font-display text-lg font-semibold text-white">
-                        {artwork.title}
+                        <RichTitle text={artwork.title} />
                       </h3>
                       {artwork.category && (
                         <p className="mt-1 text-sm text-white/70">{artwork.category}</p>
