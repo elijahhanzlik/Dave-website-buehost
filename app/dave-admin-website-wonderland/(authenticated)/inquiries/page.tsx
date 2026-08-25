@@ -2,8 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Archive, Mail, MailOpen, Trash2 } from "lucide-react";
+import { Archive, ArrowLeft, Mail, MailOpen, Reply, Trash2 } from "lucide-react";
 import { formatDate, cn } from "@/lib/formatters";
+import {
+  Button,
+  Card,
+  ConfirmDialog,
+  EmptyState,
+  PageHeader,
+  Spinner,
+  StatusPill,
+} from "@/components/admin/ui";
 
 interface Inquiry {
   id: string;
@@ -19,6 +28,7 @@ export default function InquiriesPage() {
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [selected, setSelected] = useState<Inquiry | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pendingDelete, setPendingDelete] = useState<Inquiry | null>(null);
 
   useEffect(() => {
     fetch("/api/inquiries")
@@ -61,8 +71,10 @@ export default function InquiriesPage() {
     if (wasNew) router.refresh();
   };
 
-  const deleteInquiry = async (id: string) => {
-    if (!confirm("Delete this inquiry?")) return;
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const id = pendingDelete.id;
+    setPendingDelete(null);
     const wasNew = inquiries.find((i) => i.id === id)?.status === "new";
     setInquiries((prev) => prev.filter((i) => i.id !== id));
     if (selected?.id === id) setSelected(null);
@@ -70,127 +82,159 @@ export default function InquiriesPage() {
     if (wasNew) router.refresh();
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
-  }
+  if (loading) return <Spinner label="Getting your messages…" />;
 
-  const statusBadge = (status: string) => {
-    const styles: Record<string, string> = {
-      new: "bg-blue-100 text-blue-700",
-      read: "bg-gray-100 text-gray-600",
-      replied: "bg-green-100 text-green-700",
-      archived: "bg-yellow-100 text-yellow-700",
-    };
-    return (
-      <span
-        className={`text-xs px-2 py-0.5 rounded-full ${styles[status] ?? styles.read}`}
-      >
-        {status}
-      </span>
-    );
-  };
+  const unread = inquiries.filter((i) => i.status === "new").length;
+
+  const reader = selected && (
+    <div className="flex h-full flex-col">
+      <div className="flex flex-col gap-4 border-b border-admin-line p-6 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelected(null)}
+            className="-ml-4 mb-2 lg:hidden"
+          >
+            <ArrowLeft size={16} /> Back to messages
+          </Button>
+          <h2 className="font-display text-[23px] font-bold text-admin-ink">
+            {selected.name}
+          </h2>
+          <a
+            href={`mailto:${selected.email}`}
+            className="break-all text-[15px] text-primary hover:underline"
+          >
+            {selected.email}
+          </a>
+          <p className="mt-1.5 text-[13px] text-admin-muted">
+            Sent {formatDate(selected.created_at)}
+          </p>
+        </div>
+        <StatusPill status={selected.status} />
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-6">
+        <p className="whitespace-pre-wrap text-[15.5px] leading-relaxed text-admin-ink">
+          {selected.message}
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-2.5 border-t border-admin-line p-6">
+        <a
+          href={`mailto:${selected.email}`}
+          className="inline-flex min-h-[48px] items-center justify-center gap-2.5 rounded-full border-[1.5px] border-transparent bg-primary px-5 text-[15px] font-semibold text-cream transition-colors hover:bg-primary-dark"
+        >
+          <Reply size={17} /> Write back
+        </a>
+        {selected.status !== "archived" && (
+          <Button
+            variant="secondary"
+            onClick={() => archiveInquiry(selected.id)}
+          >
+            <Archive size={17} /> Archive
+          </Button>
+        )}
+        <Button variant="danger" onClick={() => setPendingDelete(selected)}>
+          <Trash2 size={17} /> Delete
+        </Button>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-display font-bold text-gray-900">
-        Inquiries
-      </h1>
+    <div>
+      <PageHeader
+        eyebrow="Your inbox"
+        title="Messages"
+        subtitle={
+          inquiries.length === 0
+            ? "Anything sent through the Contact form on your website arrives here."
+            : unread === 0
+              ? "Everything sent through your Contact form. Nothing waiting to be read."
+              : `Everything sent through your Contact form. ${unread} still to read.`
+        }
+      />
 
       {inquiries.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">
-          No inquiries yet.
-        </div>
+        <EmptyState
+          title="No messages yet"
+          hint="When somebody writes to you through the Contact form on your website, it lands here and you get an email."
+        />
       ) : (
-        <div className="flex gap-6 h-[calc(100vh-12rem)]">
-          {/* List panel */}
-          <div className="w-full lg:w-1/3 bg-white rounded-lg border border-gray-200 overflow-y-auto">
+        <div className="grid gap-5 lg:h-[calc(100vh-15rem)] lg:grid-cols-[minmax(0,22rem)_1fr]">
+          {/* The list hides on a phone once a message is open, so the reader
+              gets the whole screen. It used to be desktop-only entirely. */}
+          <Card
+            className={cn(
+              "overflow-y-auto p-0",
+              selected ? "hidden lg:block" : "block",
+            )}
+          >
             {inquiries.map((inquiry) => (
               <button
                 key={inquiry.id}
                 onClick={() => selectInquiry(inquiry)}
                 className={cn(
-                  "w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors",
-                  selected?.id === inquiry.id && "bg-primary/5",
-                  inquiry.status === "new" && "font-semibold",
+                  "w-full border-b border-admin-line-soft px-5 py-4 text-left transition-colors last:border-b-0 hover:bg-sage/50",
+                  selected?.id === inquiry.id && "bg-sage",
                 )}
               >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm truncate flex items-center gap-1.5">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="flex min-w-0 items-center gap-2">
                     {inquiry.status === "new" ? (
-                      <Mail size={14} className="text-blue-500 shrink-0" />
+                      <Mail size={15} className="shrink-0 text-gold-dark" />
                     ) : (
                       <MailOpen
-                        size={14}
-                        className="text-gray-400 shrink-0"
+                        size={15}
+                        className="shrink-0 text-admin-muted"
                       />
                     )}
-                    {inquiry.name}
+                    <span
+                      className={cn(
+                        "truncate text-[15px] text-admin-ink",
+                        inquiry.status === "new" ? "font-bold" : "font-medium",
+                      )}
+                    >
+                      {inquiry.name}
+                    </span>
                   </span>
-                  {statusBadge(inquiry.status)}
+                  {inquiry.status === "new" && (
+                    <span className="shrink-0 rounded-full bg-gold/20 px-2.5 py-1 text-[11.5px] font-bold text-gold-dark">
+                      Unread
+                    </span>
+                  )}
                 </div>
-                <p className="text-xs text-gray-500 truncate">
+                <p className="mt-1 truncate text-[13px] text-admin-muted">
                   {inquiry.email}
                 </p>
-                <p className="text-xs text-gray-400 mt-1 truncate">
+                <p className="mt-1 truncate text-[13px] text-admin-muted/80">
                   {inquiry.message}
                 </p>
               </button>
             ))}
-          </div>
+          </Card>
 
-          {/* Detail panel */}
-          <div className="hidden lg:flex flex-1 bg-white rounded-lg border border-gray-200">
+          <Card className={cn("p-0", selected ? "block" : "hidden lg:block")}>
             {selected ? (
-              <div className="flex flex-col w-full">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                  <div>
-                    <h2 className="font-semibold text-lg">{selected.name}</h2>
-                    <a
-                      href={`mailto:${selected.email}`}
-                      className="text-sm text-primary hover:underline"
-                    >
-                      {selected.email}
-                    </a>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {statusBadge(selected.status)}
-                    <button
-                      onClick={() => archiveInquiry(selected.id)}
-                      className="p-1.5 rounded hover:bg-gray-100 text-gray-500"
-                      title="Archive"
-                    >
-                      <Archive size={16} />
-                    </button>
-                    <button
-                      onClick={() => deleteInquiry(selected.id)}
-                      className="p-1.5 rounded hover:bg-red-50 text-gray-500 hover:text-red-600"
-                      title="Delete"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-                <div className="flex-1 px-6 py-4 overflow-y-auto">
-                  <p className="text-xs text-gray-400 mb-4">
-                    {formatDate(selected.created_at)}
-                  </p>
-                  <div className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">
-                    {selected.message}
-                  </div>
-                </div>
-              </div>
+              reader
             ) : (
-              <div className="flex items-center justify-center w-full text-gray-400 text-sm">
-                Select an inquiry to view details
+              <div className="flex h-full items-center justify-center p-10 text-center text-[15px] text-admin-muted">
+                Pick a message on the left to read it.
               </div>
             )}
-          </div>
+          </Card>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title={`Delete the message from ${pendingDelete?.name ?? ""}?`}
+        body="This removes it from your inbox for good. If you only want it out of the way, archive it instead."
+        confirmLabel="Yes, delete it"
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

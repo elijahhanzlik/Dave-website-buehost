@@ -3,6 +3,40 @@
 ## About
 Personal portfolio for David Schaldach — former certified arborist, now studio artist based in Boulder, CO. Tagline: "He was a certified arborist, now he's branching out."
 
+## Specialist agents — route work to them
+
+This repo has six subagents in `.claude/agents/`, each owning one lane of recurring work with
+explicit handoff boundaries. Their system prompts carry the real conventions, file paths, and
+verification commands for their area, so an agent working in its own lane starts with context this
+file does not repeat.
+
+| Agent | Owns |
+|---|---|
+| `public-site-ui` | Public markup, layout, Tailwind tokens, responsiveness, skeletons, the hero |
+| `admin-cms-ui` | Admin CMS screens, Editor.js, crop/position pickers, drag-reorder, sidebar |
+| `content-api` | `app/api` handlers, Zod schemas in `lib/validations.ts`, response shapes, Resend |
+| `supabase-schema` | Tables, columns, RLS, storage policies, migrations, live-DB drift |
+| `render-caching` | Cache tags, `unstable_cache`, static generation, `next/image`, prefetch |
+| `auth-and-middleware` | Admin gate, `requireAdmin`, session refresh, rate limiting, env wiring |
+
+**Decide case by case whether to delegate — this is a judgement call every time, not a rule.**
+
+Delegate when the request lands squarely inside one agent's lane and doing it well means reading
+several files first, when the work spans enough of a lane that the agent's embedded conventions
+would change the result, or when two independent lanes can run in parallel.
+
+Handle it inline when delegating would cost more than doing: a one-line fix, a question about how
+something works, a request that reads across every lane at once, or work where you already have the
+relevant files in context.
+
+When a change crosses lanes, sequence it and say so — a new content field is
+`supabase-schema` (column) → `content-api` (Zod + handler) → `admin-cms-ui` (form) →
+`public-site-ui` (display). Run them in order, not in parallel, and never let two agents edit the
+same file in one pass.
+
+`AUDIT.md` at the repo root has the full picture: stack, data layer, API surface, conventions,
+verified commands, and known drift.
+
 ## Stack
 - **Framework**: Next.js 14 (App Router)
 - **Database/Auth/Storage**: Supabase (Postgres + Auth + Storage)

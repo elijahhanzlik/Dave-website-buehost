@@ -1,10 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Edit2, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { formatDate } from "@/lib/formatters";
+import {
+  ActionButton,
+  Button,
+  Card,
+  ConfirmDialog,
+  EmptyState,
+  PageHeader,
+  Spinner,
+  StatusPill,
+} from "@/components/admin/ui";
+
+const ADMIN_BASE = "/dave-admin-website-wonderland";
 
 interface BlogPost {
   id: string;
@@ -19,6 +30,7 @@ export default function BlogListPage() {
   const router = useRouter();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pendingDelete, setPendingDelete] = useState<BlogPost | null>(null);
 
   useEffect(() => {
     fetch("/api/blog?all=true")
@@ -29,108 +41,95 @@ export default function BlogListPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const deletePost = async (id: string) => {
-    if (!confirm("Delete this post?")) return;
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const id = pendingDelete.id;
+    setPendingDelete(null);
     setPosts((prev) => prev.filter((p) => p.id !== id));
     await fetch(`/api/blog/${id}`, { method: "DELETE" });
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
-  }
+  if (loading) return <Spinner label="Getting your posts…" />;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-bold text-gray-900">Blogs</h1>
-        <Link
-          href="/dave-admin-website-wonderland/blog/new"
-          className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-primary-dark transition-colors"
-        >
-          <Plus size={16} /> New Post
-        </Link>
-      </div>
+    <div>
+      <PageHeader
+        eyebrow="Your writing"
+        title="Blog"
+        subtitle="Drafts stay private. Only published posts appear on your website."
+        action={
+          <ActionButton
+            href={`${ADMIN_BASE}/blog/new`}
+            label="Write a post"
+            hint="Starts a blank draft."
+            icon={<Plus size={20} />}
+            align="end"
+          />
+        }
+      />
 
       {posts.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">
-          <p>No blog posts yet.</p>
-        </div>
+        <EmptyState
+          title="Nothing written yet"
+          hint="Start a draft whenever you like — it stays private until you choose to publish it."
+          action={
+            <Button href={`${ADMIN_BASE}/blog/new`} size="lg">
+              <Plus size={20} /> Write a post
+            </Button>
+          }
+        />
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  Title
-                </th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600 hidden sm:table-cell">
-                  Slug
-                </th>
-                <th className="w-28 px-4 py-3 font-medium text-gray-600">
-                  Status
-                </th>
-                <th className="w-32 px-4 py-3 font-medium text-gray-600 hidden md:table-cell">
-                  Date
-                </th>
-                <th className="w-24 px-4 py-3 font-medium text-gray-600">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {posts.map((post) => (
-                <tr
-                  key={post.id}
-                  className="border-b border-gray-100 hover:bg-gray-50"
-                >
-                  <td className="px-4 py-3 font-medium">{post.title}</td>
-                  <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">
-                    {post.slug}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <span
-                      className={`inline-block text-xs px-2 py-0.5 rounded-full ${
-                        post.status === "published"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {post.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-500 text-xs hidden md:table-cell">
+        <div className="flex flex-col gap-3.5">
+          {posts.map((post) => (
+            <Card
+              key={post.id}
+              className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center"
+            >
+              <div className="min-w-0 flex-1">
+                <h2 className="font-display text-[19px] font-bold leading-tight text-admin-ink">
+                  {post.title}
+                </h2>
+                <div className="mt-2.5 flex flex-wrap items-center gap-2.5">
+                  <StatusPill status={post.status} />
+                  <span className="text-[13.5px] text-admin-muted">
                     {post.published_at
                       ? formatDate(post.published_at)
                       : formatDate(post.created_at)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1 justify-center">
-                      <button
-                        onClick={() =>
-                          router.push(`/dave-admin-website-wonderland/blog/${post.id}`)
-                        }
-                        className="p-1.5 rounded hover:bg-gray-100 text-gray-500"
-                      >
-                        <Edit2 size={14} />
-                      </button>
-                      <button
-                        onClick={() => deletePost(post.id)}
-                        className="p-1.5 rounded hover:bg-red-50 text-gray-500 hover:text-red-600"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </span>
+                </div>
+              </div>
+              <div className="flex shrink-0 gap-2.5">
+                <Button
+                  variant="secondary"
+                  onClick={() => router.push(`${ADMIN_BASE}/blog/${post.id}`)}
+                  className="flex-1 sm:flex-none"
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={() => setPendingDelete(post)}
+                >
+                  <Trash2 size={17} /> Delete
+                </Button>
+              </div>
+            </Card>
+          ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title={`Delete “${pendingDelete?.title ?? ""}”?`}
+        body={
+          pendingDelete?.status === "published"
+            ? "This post is on your website right now. Deleting it takes it down for good and it cannot be undone."
+            : "This draft has never been published. Deleting it cannot be undone."
+        }
+        confirmLabel="Yes, delete it"
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

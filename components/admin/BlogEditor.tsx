@@ -5,7 +5,13 @@ import type EditorJS from "@editorjs/editorjs";
 import type { OutputBlockData } from "@editorjs/editorjs";
 
 export interface BlogEditorHandle {
-  save: () => Promise<OutputBlockData[]>;
+  /**
+   * The post's blocks, or `null` when the editor has not finished loading.
+   * Callers must treat `null` as "cannot save yet" — returning [] here would
+   * let a save fired during the first half-second overwrite a real post with
+   * an empty body.
+   */
+  save: () => Promise<OutputBlockData[] | null>;
 }
 
 interface BlogEditorProps {
@@ -25,7 +31,7 @@ export default function BlogEditor({ initialBlocks, ref }: BlogEditorProps) {
     () => ({
       async save() {
         const e = editorRef.current;
-        if (!e) return [];
+        if (!e) return null;
         const out = await e.save();
         return out.blocks;
       },
