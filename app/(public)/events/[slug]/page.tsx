@@ -1,4 +1,5 @@
 import Link from "next/link";
+import InlineLinks from "@/components/InlineLinks";
 import { ArrowLeft } from "lucide-react";
 import { formatDateRange } from "@/lib/formatters";
 import type { Metadata } from "next";
@@ -97,7 +98,7 @@ export default async function EventPage({
         <div className="mt-10 border-t border-sage pt-10">
           {event.content ? (
             <div className="whitespace-pre-wrap break-words text-lg leading-relaxed text-text-secondary">
-              {event.content}
+              <InlineLinks text={event.content} />
             </div>
           ) : (
             <p className="text-text-muted">No content available.</p>

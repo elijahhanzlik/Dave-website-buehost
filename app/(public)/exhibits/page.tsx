@@ -94,7 +94,7 @@ export default async function ExhibitsPage() {
                 className="group block py-8 first:pt-0"
               >
                 {exhibit.cover_image && (
-                  <div className="relative mb-5 aspect-[4/3] overflow-hidden rounded-2xl">
+                  <div className="relative mb-8 aspect-[4/3] overflow-hidden rounded-2xl">
                     <Image
                       src={exhibit.cover_image}
                       alt={exhibit.title}
