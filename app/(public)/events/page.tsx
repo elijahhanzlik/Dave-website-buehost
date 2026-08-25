@@ -66,7 +66,7 @@ export default async function EventsPage() {
                 <div className="group py-8 first:pt-0">
                   <Link href={`/events/${event.slug}`} className="block">
                     {formatDateRange(event.start_date, event.end_date) && (
-                      <p className="text-xs font-medium uppercase tracking-[0.1em] text-text-muted">
+                      <p className="text-xs font-medium uppercase tracking-[0.1em] text-gold-dark">
                         {formatDateRange(event.start_date, event.end_date)}
                       </p>
                     )}

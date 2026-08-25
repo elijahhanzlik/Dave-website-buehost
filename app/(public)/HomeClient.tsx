@@ -384,13 +384,14 @@ export default function HomeClient({
         <div className="relative mx-auto max-w-6xl px-6">
           <div className="grid gap-8 md:grid-cols-2">
             {/* About David card */}
-            <div className="group relative overflow-hidden rounded-2xl">
-              {/* Card background */}
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/80 to-primary-dark/90" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(61,107,30,0.4),transparent_70%)]" />
+            <div className="group relative overflow-hidden rounded-3xl">
+              {/* Card surface — the lighter of the two greens */}
+              <div className="absolute inset-0 bg-gradient-to-br from-primary-light to-primary" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(61,107,30,0.45),transparent_70%)]" />
 
-              {/* Glass card content */}
-              <div className="glass-card relative m-6 p-8 sm:m-8 sm:p-10">
+              {/* Inset panel: deliberately DARKER than the card holding it, so
+                  the two surfaces read as stacked instead of washing together. */}
+              <div className="relative m-5 rounded-2xl border border-white/10 bg-primary-dark/45 p-7 sm:m-6 sm:p-9">
                 <h3 className="font-display text-2xl font-semibold text-white sm:text-3xl">
                   About David
                 </h3>
@@ -402,7 +403,7 @@ export default function HomeClient({
                 </p>
                 <Link
                   href="/about"
-                  className="mt-6 inline-flex items-center gap-2 rounded-full border border-gold/50 bg-gold/20 px-6 py-2.5 text-sm font-medium text-gold-light transition-all duration-300 hover:bg-gold/30 hover:border-gold"
+                  className="mt-6 inline-flex items-center gap-2 rounded-full border border-gold/60 bg-gold/10 px-6 py-2.5 text-sm font-medium text-gold-light transition-all duration-300 hover:bg-gold/25 hover:border-gold"
                 >
                   Read More
                   <ArrowRight
@@ -414,13 +415,13 @@ export default function HomeClient({
             </div>
 
             {/* Latest from the Blog card */}
-            <div className="group relative overflow-hidden rounded-2xl">
-              {/* Card background */}
-              <div className="absolute inset-0 bg-gradient-to-br from-primary-dark/70 to-primary/80" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_40%,rgba(61,107,30,0.3),transparent_70%)]" />
+            <div className="group relative overflow-hidden rounded-3xl">
+              {/* Card surface — matches the About card so the pair reads as one row */}
+              <div className="absolute inset-0 bg-gradient-to-br from-primary-light to-primary" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_40%,rgba(61,107,30,0.45),transparent_70%)]" />
 
-              {/* Glass card content */}
-              <div className="glass-card relative m-6 p-8 sm:m-8 sm:p-10">
+              {/* Inset panel: see the About card above. */}
+              <div className="relative m-5 rounded-2xl border border-white/10 bg-primary-dark/45 p-7 sm:m-6 sm:p-9">
                 <h3 className="font-display text-2xl font-semibold text-white sm:text-3xl">
                   Latest from the Blog
                 </h3>
@@ -430,7 +431,7 @@ export default function HomeClient({
                     <Link
                       key={post.id}
                       href={`/blog/${post.slug}`}
-                      className="block rounded-lg bg-white/5 p-4 transition-colors hover:bg-white/10"
+                      className="block rounded-xl border border-white/5 bg-primary-dark/55 p-4 transition-colors hover:bg-primary-dark/75"
                     >
                       <h4 className="font-display text-lg font-medium text-white">
                         {post.title}
@@ -444,7 +445,7 @@ export default function HomeClient({
 
                 <Link
                   href="/blog"
-                  className="mt-6 inline-flex items-center gap-2 rounded-full border border-gold/50 bg-gold/20 px-6 py-2.5 text-sm font-medium text-gold-light transition-all duration-300 hover:bg-gold/30 hover:border-gold"
+                  className="mt-6 inline-flex items-center gap-2 rounded-full border border-gold/60 bg-gold/10 px-6 py-2.5 text-sm font-medium text-gold-light transition-all duration-300 hover:bg-gold/25 hover:border-gold"
                 >
                   Read the Blog
                   <ArrowRight

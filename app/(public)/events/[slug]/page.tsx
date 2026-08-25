@@ -86,7 +86,7 @@ export default async function EventPage({
 
         <header className="mt-8">
           {formatDateRange(event.start_date, event.end_date) && (
-            <p className="text-sm font-medium uppercase tracking-[0.1em] text-text-muted">
+            <p className="text-sm font-medium uppercase tracking-[0.1em] text-gold-dark">
               {formatDateRange(event.start_date, event.end_date)}
             </p>
           )}
