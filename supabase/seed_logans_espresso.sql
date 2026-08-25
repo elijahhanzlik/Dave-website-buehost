@@ -13,24 +13,22 @@ alter table public.exhibits add column if not exists address     text;
 
 -- 2) Seed: the Logan's Espresso Cafe exhibit -------------------
 insert into public.exhibits
-  (title, slug, status, published_at, content,
+  (title, slug, status, content,
    event_dates, event_time, address, cover_image)
 values
   (
     'Logan''s Espresso Cafe',
     'logans-espresso-cafe',
     'published',
-    now(),
     null,
     'Aug 1 – 31, 2026',
-    '6–9:30 p.m.',
+    '7am – 9pm',
     '4790 Broadway, Unit 101 · Boulder, CO 80304',
     '/exhibits/logans-espresso-driftwood.png'
   )
 on conflict (slug) do update set
   title        = excluded.title,
   status       = excluded.status,
-  published_at = excluded.published_at,
   event_dates  = excluded.event_dates,
   event_time   = excluded.event_time,
   address      = excluded.address,
@@ -40,6 +38,6 @@ on conflict (slug) do update set
 insert into public.site_settings (key, value) values
   ('home_exhibit_title',   'Logan''s Espresso Cafe'),
   ('home_exhibit_dates',   'Aug 1 – 31, 2026'),
-  ('home_exhibit_time',    '6–9:30 p.m.'),
+  ('home_exhibit_time',    '7am – 9pm'),
   ('home_exhibit_address', '4790 Broadway, Unit 101 · Boulder, CO 80304')
 on conflict (key) do update set value = excluded.value, updated_at = now();

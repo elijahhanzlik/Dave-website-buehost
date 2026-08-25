@@ -51,7 +51,7 @@ export default function HomeClient({
 }) {
   const parallaxRef = useRef<HTMLDivElement>(null);
 
-  // Standalone "NEW EXHIBIT" badge — rendered in both the desktop green panel
+  // Standalone current-exhibit badge — rendered in both the desktop green panel
   // and the mobile hero. `dark` tunes the palette for the light green panel
   // vs. the photo-backed mobile hero.
   const renderBadge = (dark: boolean) =>
@@ -63,10 +63,7 @@ export default function HomeClient({
             : "border-white/20 bg-black/25"
         }`}
       >
-        <p className="text-[22px] font-semibold uppercase tracking-[0.2em] text-[#E07A2F]">
-          New Exhibit
-        </p>
-        <p className="mt-1.5 font-display text-xl font-bold text-white">
+        <p className="font-display text-xl font-bold text-white">
           {homeBadge.title}
         </p>
         {(homeBadge.dates || homeBadge.time) && (
@@ -117,7 +114,7 @@ export default function HomeClient({
               Studio Artist &middot; Boulder, CO
             </p>
 
-            {/* Standalone "NEW EXHIBIT" badge */}
+            {/* Standalone current-exhibit badge */}
             <div
               className="flex justify-center animate-fade-in-up"
               style={{ animationDelay: "0.25s", opacity: 0 }}

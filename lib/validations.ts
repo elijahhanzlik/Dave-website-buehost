@@ -69,6 +69,9 @@ export const exhibitSchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Invalid slug format"),
   content: z.string().optional(),
   status: z.enum(["draft", "published"]).default("draft"),
+  // Position on the public exhibits page, written by PUT /api/exhibits/reorder.
+  // Optional so the create/edit forms, which never send it, don't reset it.
+  sort_order: z.number().int().optional(),
   // Event details for the enriched exhibit-detail layout (all optional —
   // exhibits without them fall back to the plain title + text view).
   event_dates: z.string().optional().nullable(),

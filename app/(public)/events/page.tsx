@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import InlineLinks from "@/components/InlineLinks";
 import { formatDateRange } from "@/lib/formatters";
 import { getPublishedEvents } from "@/lib/supabase/public";
 
@@ -60,27 +61,31 @@ export default async function EventsPage() {
           <ul className="mt-12 divide-y divide-sage">
             {events.map((event) => (
               <li key={event.id}>
-                <Link
-                  href={`/events/${event.slug}`}
-                  className="group block py-8 first:pt-0"
-                >
-                  {formatDateRange(event.start_date, event.end_date) && (
-                    <p className="text-xs font-medium uppercase tracking-[0.1em] text-text-muted">
-                      {formatDateRange(event.start_date, event.end_date)}
-                    </p>
-                  )}
-                  <h2 className="mt-2 font-display text-2xl font-semibold text-primary-dark transition-colors group-hover:text-primary">
-                    {event.title}
-                  </h2>
+                {/* Deliberately not one big <Link>: the summary may carry its
+                    own inline link, and an anchor inside an anchor is invalid. */}
+                <div className="group py-8 first:pt-0">
+                  <Link href={`/events/${event.slug}`} className="block">
+                    {formatDateRange(event.start_date, event.end_date) && (
+                      <p className="text-xs font-medium uppercase tracking-[0.1em] text-text-muted">
+                        {formatDateRange(event.start_date, event.end_date)}
+                      </p>
+                    )}
+                    <h2 className="mt-2 font-display text-2xl font-semibold text-primary-dark transition-colors group-hover:text-primary">
+                      {event.title}
+                    </h2>
+                  </Link>
                   {event.content && (
-                    <p className="mt-3 line-clamp-3 break-words text-base leading-relaxed text-text-secondary">
-                      {event.content}
+                    <p className="mt-3 break-words text-base leading-relaxed text-text-secondary">
+                      <InlineLinks text={event.content} />
                     </p>
                   )}
-                  <span className="mt-4 inline-block text-sm font-medium text-gold-dark transition-colors group-hover:text-gold">
+                  <Link
+                    href={`/events/${event.slug}`}
+                    className="mt-4 inline-block text-sm font-medium text-gold-dark transition-colors group-hover:text-gold"
+                  >
                     View details &rarr;
-                  </span>
-                </Link>
+                  </Link>
+                </div>
               </li>
             ))}
           </ul>
