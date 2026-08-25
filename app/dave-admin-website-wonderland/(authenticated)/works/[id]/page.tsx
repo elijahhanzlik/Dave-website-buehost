@@ -3,6 +3,15 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import WorkForm from "@/components/admin/WorkForm";
+import RichTitle from "@/components/RichTitle";
+import {
+  Button,
+  EmptyState,
+  PageHeader,
+  Spinner,
+} from "@/components/admin/ui";
+
+const ADMIN_BASE = "/dave-admin-website-wonderland";
 
 export default function EditWorkPage() {
   const params = useParams();
@@ -29,27 +38,29 @@ export default function EditWorkPage() {
       .finally(() => setLoading(false));
   }, [params.id]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
-  }
+  if (loading) return <Spinner label="Getting this piece…" />;
 
   if (error || !work) {
     return (
-      <div className="text-center py-12 text-red-500">
-        Work not found
-      </div>
+      <EmptyState
+        title="That piece is not here"
+        hint="It may have been deleted. Everything still on your Gallery page is on the previous screen."
+        action={
+          <Button href={`${ADMIN_BASE}/works`} size="lg">
+            Back to my Gallery
+          </Button>
+        }
+      />
     );
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-display font-bold text-gray-900">
-        Edit Work
-      </h1>
+    <div>
+      <PageHeader
+        eyebrow="Editing a piece"
+        title={<RichTitle text={work.title} />}
+        subtitle="Everything here shows on your Gallery page the moment you save."
+      />
       <WorkForm initialData={work} />
     </div>
   );

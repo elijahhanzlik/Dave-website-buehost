@@ -4,6 +4,8 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-gray-50 text-gray-900">{children}</div>
+    <div className="flex min-h-screen bg-cream font-body text-admin-ink">
+      {children}
+    </div>
   );
 }

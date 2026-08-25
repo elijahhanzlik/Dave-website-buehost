@@ -21,6 +21,17 @@
   --color-text-secondary: #4A4A4A;
   --color-text-muted: #7A7A7A;
 
+  /* Admin CMS surfaces — the warm-card admin (variation C).
+     Kept separate from the public tokens above: the admin needs a card
+     surface that reads as raised against cream, which the public site
+     never asks for. */
+  --color-admin-surface: #FFFDF8;
+  --color-admin-line: #E2DACA;
+  --color-admin-line-soft: #EDE7DA;
+  --color-admin-ink: #241F16;
+  --color-admin-muted: #7C7261;
+  --color-admin-danger: #8E2A22;
+
   /* Surfaces */
   --background: var(--color-cream);
   --foreground: var(--color-text-primary);
@@ -45,6 +56,13 @@
   --color-text-primary: var(--color-text-primary);
   --color-text-secondary: var(--color-text-secondary);
   --color-text-muted: var(--color-text-muted);
+
+  --color-admin-surface: var(--color-admin-surface);
+  --color-admin-line: var(--color-admin-line);
+  --color-admin-line-soft: var(--color-admin-line-soft);
+  --color-admin-ink: var(--color-admin-ink);
+  --color-admin-muted: var(--color-admin-muted);
+  --color-admin-danger: var(--color-admin-danger);
 
   --font-display: "Playfair Display", "Georgia", serif;
   --font-body: "DM Sans", "Helvetica Neue", "Arial", sans-serif;
