@@ -73,7 +73,17 @@ export default function HomeClient({
           </p>
         )}
         {homeBadge.address && (
-          <p className="mt-0.5 text-xs text-white/50">{homeBadge.address}</p>
+          <p className="mt-0.5 text-xs leading-relaxed text-white/50">
+            {homeBadge.address
+              .split("·")
+              .map((part) => part.trim())
+              .filter(Boolean)
+              .map((part, i) => (
+                <span key={i} className="block">
+                  {part}
+                </span>
+              ))}
+          </p>
         )}
       </div>
     );

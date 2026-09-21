@@ -188,6 +188,8 @@ idempotent and were each written as a production hotfix.
 
 `supabase/seed_logans_espresso.sql` seeds the "Logan's Espresso Cafe" exhibit plus four
 `home_exhibit_*` settings rows; it hardcodes a project ref.
+`supabase/seed_boulder_open_studios.sql` (2026-10) overwrites those four `home_exhibit_*` rows with
+the Boulder Open Studios Tour card; data only, no schema.
 
 ---
 

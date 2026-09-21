@@ -316,7 +316,7 @@ export default function SettingsPage() {
               onChange={(e) =>
                 setHomeExhibit((p) => ({ ...p, title: e.target.value }))
               }
-              placeholder="Logan's Espresso Cafe"
+              placeholder="Boulder Open Studios Tour"
               className={inputClass}
             />
           </Field>
@@ -334,7 +334,7 @@ export default function SettingsPage() {
                 onChange={(e) =>
                   setHomeExhibit((p) => ({ ...p, dates: e.target.value }))
                 }
-                placeholder="Aug 1 – 31, 2026"
+                placeholder="Oct 3 – 4, 2026"
                 className={inputClass}
               />
             </Field>
@@ -350,7 +350,7 @@ export default function SettingsPage() {
                 onChange={(e) =>
                   setHomeExhibit((p) => ({ ...p, time: e.target.value }))
                 }
-                placeholder="7am – 9pm"
+                placeholder="Noon – 5pm"
                 className={inputClass}
               />
             </Field>
@@ -358,7 +358,7 @@ export default function SettingsPage() {
 
           <Field
             label="Address"
-            hint="Put a · between the street and the city so it splits onto two lines."
+            hint="Put a · between each part (studio, street, city) and each goes on its own line."
             htmlFor="badge-address"
           >
             <input
@@ -368,7 +368,7 @@ export default function SettingsPage() {
               onChange={(e) =>
                 setHomeExhibit((p) => ({ ...p, address: e.target.value }))
               }
-              placeholder="4790 Broadway, Unit 101 · Boulder, CO 80304"
+              placeholder="Studio #35 · 727 Quince Cir. · Boulder, CO 80304"
               className={inputClass}
             />
           </Field>
