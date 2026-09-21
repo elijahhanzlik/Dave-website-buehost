@@ -1,16 +1,11 @@
-// Gallery skeleton — mirrors the masonry columns layout of works/page.tsx.
+// Gallery skeleton — mirrors the column layout of components/WorksGallery.tsx
+// (2 flex columns below md, 3 from md up, pieces dealt round-robin).
 export default function WorksLoading() {
   // Varied heights so the masonry reads as intentional, not uniform boxes.
-  const heights = [
-    "h-72",
-    "h-56",
-    "h-80",
-    "h-64",
-    "h-52",
-    "h-72",
-    "h-60",
-    "h-80",
-    "h-56",
+  const columns = [
+    ["h-72", "h-64", "h-60"],
+    ["h-56", "h-52", "h-80"],
+    ["h-80", "h-72", "h-56"],
   ];
 
   return (
@@ -29,12 +24,18 @@ export default function WorksLoading() {
 
           {/* Masonry grid */}
           <div className="mt-12">
-            <div className="columns-2 gap-4 md:columns-3">
-              {heights.map((h, i) => (
-                <div key={i} className="mb-4 w-full break-inside-avoid">
-                  <div
-                    className={`w-full ${h} rounded-xl bg-gradient-to-br from-sage to-primary/10`}
-                  />
+            <div className="flex gap-4">
+              {columns.map((heights, c) => (
+                <div
+                  key={c}
+                  className={`min-w-0 flex-1 flex-col gap-4 ${c === 2 ? "hidden md:flex" : "flex"}`}
+                >
+                  {heights.map((h, i) => (
+                    <div
+                      key={i}
+                      className={`w-full ${h} rounded-xl bg-gradient-to-br from-sage to-primary/10`}
+                    />
+                  ))}
                 </div>
               ))}
             </div>
