@@ -15,10 +15,17 @@ const NAV_LINKS = [
   { href: "/contact", label: "Contact" },
 ];
 
-export default function Navigation() {
+export default function Navigation({
+  activeHref,
+}: {
+  /** Overrides which link reads as current. The admin's live gallery preview
+   *  passes "/works" so the bar matches the real Gallery page. */
+  activeHref?: string;
+} = {}) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const pathname = usePathname();
+  const realPathname = usePathname();
+  const pathname = activeHref ?? realPathname;
   const isHome = pathname === "/";
 
   useEffect(() => {

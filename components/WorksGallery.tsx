@@ -3,7 +3,7 @@
 import { useState } from "react";
 import ArtworkCard from "@/components/ArtworkCard";
 
-interface Artwork {
+export interface Artwork {
   id: string;
   title: string;
   description?: string | null;
@@ -16,9 +16,20 @@ interface Artwork {
 export default function WorksGallery({
   artworks,
   categories,
+  renderItem,
 }: {
   artworks: Artwork[];
   categories: string[];
+  /**
+   * Lets the admin's live gallery editor wrap each card (drag handle, badge)
+   * while this component stays the single definition of the masonry layout.
+   * Defaults to rendering the card as-is.
+   */
+  renderItem?: (
+    card: React.ReactNode,
+    artwork: Artwork,
+    index: number,
+  ) => React.ReactNode;
 }) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
@@ -64,7 +75,17 @@ export default function WorksGallery({
             <div key={artwork.id} className="mb-4 w-full break-inside-avoid">
               {/* Eager-load the first row (above the fold) so the gallery's
                   LCP image isn't lazy; the rest lazy-load. */}
-              <ArtworkCard artwork={artwork} priority={i < 4} />
+              {renderItem
+                ? renderItem(
+                    <ArtworkCard
+                      artwork={artwork}
+                      priority={i < 4}
+                      interactive={false}
+                    />,
+                    artwork,
+                    i,
+                  )
+                : <ArtworkCard artwork={artwork} priority={i < 4} />}
             </div>
           ))}
         </div>

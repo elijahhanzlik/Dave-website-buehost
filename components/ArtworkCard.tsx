@@ -10,21 +10,27 @@ interface Artwork {
   category?: string | null;
 }
 
+const CARD_CLASS = "group relative block overflow-hidden rounded-xl";
+
 export default function ArtworkCard({
   artwork,
   priority = false,
+  interactive = true,
 }: {
   artwork: Artwork;
   priority?: boolean;
+  /**
+   * `false` renders the identical card as a plain `<div>` instead of a link.
+   * The admin's live gallery editor uses this so dragging a piece does not
+   * navigate (InstantLink pushes the route on mousedown). Public pages never
+   * pass it, so the visitor-facing output is unchanged.
+   */
+  interactive?: boolean;
 }) {
   const hasImage = artwork.images.length > 0;
 
-  return (
-    <InstantLink
-      href={`/works/${artwork.id}`}
-      prefetchImage={hasImage ? artwork.images[0] : null}
-      className="group relative block overflow-hidden rounded-xl"
-    >
+  const body = (
+    <>
       {/* Image / Placeholder — natural aspect ratio, no crop */}
       <div className="relative w-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary-dark/30">
         {hasImage ? (
@@ -37,6 +43,7 @@ export default function ArtworkCard({
             width={0}
             height={0}
             priority={priority}
+            draggable={interactive ? undefined : false}
             sizes="(min-width: 768px) 400px, 50vw"
             className="block h-auto w-full object-contain transition-transform duration-500 group-hover:scale-105"
           />
@@ -80,6 +87,20 @@ export default function ArtworkCard({
           <p className="text-sm text-text-muted">{artwork.category}</p>
         )}
       </div>
+    </>
+  );
+
+  if (!interactive) {
+    return <div className={CARD_CLASS}>{body}</div>;
+  }
+
+  return (
+    <InstantLink
+      href={`/works/${artwork.id}`}
+      prefetchImage={hasImage ? artwork.images[0] : null}
+      className={CARD_CLASS}
+    >
+      {body}
     </InstantLink>
   );
 }
