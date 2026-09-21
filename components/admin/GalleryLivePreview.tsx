@@ -27,6 +27,9 @@ type SaveState =
   | { kind: "error"; message: string };
 
 const SWAP_COOLDOWN_MS = 120;
+// The pointer must travel this far after a move before another move can
+// fire, so a reflow under a stationary pointer never cascades.
+const SWAP_MIN_TRAVEL_PX = 14;
 const EDGE_SCROLL_PX = 60;
 const EDGE_SCROLL_STEP = 14;
 
@@ -62,6 +65,7 @@ export default function GalleryLivePreview() {
   const startOrderRef = useRef<string[]>([]);
   const lastTargetRef = useRef<string | null>(null);
   const lastSwapAtRef = useRef(0);
+  const lastSwapPointRef = useRef<{ x: number; y: number } | null>(null);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -166,6 +170,7 @@ export default function GalleryLivePreview() {
     startOrderRef.current = worksRef.current.map((w) => w.id);
     lastTargetRef.current = null;
     lastSwapAtRef.current = 0;
+    lastSwapPointRef.current = null;
     setDragId(id);
   };
 
@@ -180,6 +185,10 @@ export default function GalleryLivePreview() {
 
     const now = performance.now();
     if (now - lastSwapAtRef.current < SWAP_COOLDOWN_MS) return;
+    const last = lastSwapPointRef.current;
+    if (last && Math.hypot(e.clientX - last.x, e.clientY - last.y) < SWAP_MIN_TRAVEL_PX) {
+      return;
+    }
 
     const cell = document
       .elementFromPoint(e.clientX, e.clientY)
@@ -193,18 +202,10 @@ export default function GalleryLivePreview() {
     }
     if (targetId === lastTargetRef.current) return;
 
-    // Only commit once the pointer is past the target's midpoint, so brushing
-    // the edge of a neighbour while the columns reflow doesn't bounce pieces.
-    const rect = cell.getBoundingClientRect();
     const list = worksRef.current;
-    const fromIdx = list.findIndex((w) => w.id === id);
-    const toIdx = list.findIndex((w) => w.id === targetId);
-    const movingLater = toIdx > fromIdx;
-    const mid = rect.top + rect.height / 2;
-    if (movingLater ? e.clientY < mid : e.clientY > mid) return;
-
     lastTargetRef.current = targetId;
     lastSwapAtRef.current = now;
+    lastSwapPointRef.current = { x: e.clientX, y: e.clientY };
     const next = moveTo(list, id, targetId);
     worksRef.current = next;
     setWorks(next);
@@ -229,12 +230,18 @@ export default function GalleryLivePreview() {
             </h1>
 
             {loading ? (
-              <div className="mt-12 columns-2 gap-4 md:columns-3" aria-busy="true">
-                {["h-72", "h-56", "h-80", "h-64", "h-52", "h-72"].map((h, i) => (
-                  <div key={i} className="mb-4 w-full break-inside-avoid">
-                    <div
-                      className={`w-full ${h} rounded-xl bg-gradient-to-br from-sage to-primary/10 motion-safe:animate-pulse`}
-                    />
+              <div className="mt-12 flex gap-4" aria-busy="true">
+                {[["h-72", "h-64"], ["h-56", "h-80"], ["h-80", "h-56"]].map((col, c) => (
+                  <div
+                    key={c}
+                    className={`min-w-0 flex-1 flex-col gap-4 ${c === 2 ? "hidden md:flex" : "flex"}`}
+                  >
+                    {col.map((h, i) => (
+                      <div
+                        key={i}
+                        className={`w-full ${h} rounded-xl bg-gradient-to-br from-sage to-primary/10 motion-safe:animate-pulse`}
+                      />
+                    ))}
                   </div>
                 ))}
               </div>
