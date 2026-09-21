@@ -1,9 +1,16 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+  useRef,
+  useSyncExternalStore,
+} from "react";
 import { useRouter } from "next/navigation";
-import { GripVertical, Plus, Star, Trash2 } from "lucide-react";
+import { Eye, GripVertical, LayoutGrid, Plus, Star, Trash2 } from "lucide-react";
 import RichTitle, { stripRichTitle } from "@/components/RichTitle";
+import GalleryPreviewFrame from "@/components/admin/GalleryPreviewFrame";
 import {
   ActionButton,
   Button,
@@ -16,6 +23,40 @@ import {
 } from "@/components/admin/ui";
 
 const ADMIN_BASE = "/dave-admin-website-wonderland";
+const VIEW_STORAGE_KEY = "admin:gallery-view";
+
+type View = "cards" | "live";
+
+/* Remember which view he last used, across visits. localStorage can be
+   unavailable (private mode, blocked storage) — the default is fine then.
+   A tiny external store keeps this out of an effect and hydration-safe:
+   the server renders "cards", the client swaps to the saved view. */
+const viewListeners = new Set<() => void>();
+function subscribeView(cb: () => void) {
+  viewListeners.add(cb);
+  window.addEventListener("storage", cb);
+  return () => {
+    viewListeners.delete(cb);
+    window.removeEventListener("storage", cb);
+  };
+}
+function readStoredView(): View {
+  try {
+    return window.localStorage.getItem(VIEW_STORAGE_KEY) === "live"
+      ? "live"
+      : "cards";
+  } catch {
+    return "cards";
+  }
+}
+function writeStoredView(next: View) {
+  try {
+    window.localStorage.setItem(VIEW_STORAGE_KEY, next);
+  } catch {
+    /* ignore */
+  }
+  viewListeners.forEach((cb) => cb());
+}
 
 interface Artwork {
   id: string;
@@ -33,17 +74,42 @@ export default function WorksListPage() {
   const [works, setWorks] = useState<Artwork[]>([]);
   const [loading, setLoading] = useState(true);
   const [pendingDelete, setPendingDelete] = useState<Artwork | null>(null);
+  const view = useSyncExternalStore(
+    subscribeView,
+    readStoredView,
+    () => "cards" as View,
+  );
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
 
-  useEffect(() => {
-    fetch("/api/artworks")
+  const load = useCallback(() => {
+    return fetch("/api/artworks")
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) setWorks(data);
-      })
-      .finally(() => setLoading(false));
+      });
   }, []);
+
+  useEffect(() => {
+    load().finally(() => setLoading(false));
+  }, [load]);
+
+  const changeView = (next: View) => {
+    writeStoredView(next);
+    // Coming back from the live view: re-read so the cards show the order
+    // he just set inside the frame.
+    if (next === "cards") load();
+  };
+
+  // The live view saves its own reorders and tells us; keep the cards in step.
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type === "artworks:reordered") load();
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [load]);
 
   const handleDragStart = (index: number) => {
     dragItem.current = index;
@@ -77,13 +143,7 @@ export default function WorksListPage() {
 
     // The order above is optimistic. If the server refused it, re-read rather
     // than leave the grid showing an order the Gallery page does not have.
-    if (!res.ok) {
-      fetch("/api/artworks")
-        .then((r) => r.json())
-        .then((data) => {
-          if (Array.isArray(data)) setWorks(data);
-        });
-    }
+    if (!res.ok) load();
   };
 
   const toggleFeatured = async (work: Artwork) => {
@@ -117,22 +177,54 @@ export default function WorksListPage() {
         eyebrow="Your work"
         title="Gallery"
         subtitle={
-          works.length
-            ? `${works.length} piece${works.length === 1 ? "" : "s"}, in the order visitors see them. Drag a card by its handle to move a piece.`
-            : "The artwork on your Gallery page."
+          view === "live"
+            ? "Exactly what visitors see. Drag a piece to move it; the order saves when you let go. Pick a screen size to check phones and laptops."
+            : works.length
+              ? `${works.length} piece${works.length === 1 ? "" : "s"}, in the order visitors see them. Drag a card by its handle to move a piece.`
+              : "The artwork on your Gallery page."
         }
         action={
-          <ActionButton
-            href={`${ADMIN_BASE}/works/new`}
-            label="Add a piece"
-            hint="Photos, a title and a category."
-            icon={<Plus size={20} />}
-            align="end"
-          />
+          <div className="flex flex-col gap-4 sm:items-end">
+            <ActionButton
+              href={`${ADMIN_BASE}/works/new`}
+              label="Add a piece"
+              hint="Photos, a title and a category."
+              icon={<Plus size={20} />}
+              align="end"
+            />
+            <div
+              role="group"
+              aria-label="How to show the gallery"
+              className="inline-flex rounded-full border-[1.5px] border-admin-line bg-admin-surface p-1"
+            >
+              <Button
+                size="sm"
+                variant={view === "cards" ? "primary" : "ghost"}
+                onClick={() => changeView("cards")}
+                aria-pressed={view === "cards"}
+                title="Cards with Edit, Homepage and Delete"
+              >
+                <LayoutGrid size={16} />
+                Cards
+              </Button>
+              <Button
+                size="sm"
+                variant={view === "live" ? "primary" : "ghost"}
+                onClick={() => changeView("live")}
+                aria-pressed={view === "live"}
+                title="See it as visitors do and drag pieces there"
+              >
+                <Eye size={16} />
+                Live view
+              </Button>
+            </div>
+          </div>
         }
       />
 
-      {works.length === 0 ? (
+      {view === "live" ? (
+        <GalleryPreviewFrame />
+      ) : works.length === 0 ? (
         <EmptyState
           title="No artwork yet"
           hint="Add your first piece and it appears on your Gallery page straight away."
