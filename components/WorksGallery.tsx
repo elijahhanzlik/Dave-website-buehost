@@ -2,19 +2,25 @@
 
 import { useState, useSyncExternalStore } from "react";
 import ArtworkCard from "@/components/ArtworkCard";
+import {
+  GALLERY_COLUMN_COUNT,
+  WIDE_QUERY,
+  buildGalleryColumns,
+  dealColumns,
+  galleryReadingOrder,
+} from "@/lib/galleryLayout";
 
 /**
  * Column count follows the same breakpoint the old CSS-columns layout used:
  * 2 below `md`, 3 from `md` up. It is read through matchMedia rather than left
- * to CSS so that WHICH piece lands in WHICH column is decided here, by the
- * saved order, not by the browser's column-balancing algorithm. CSS
- * multi-column balances on rendered image heights, which differ by window
- * width, by when images finish loading, and between Chrome and Safari — so
- * two visitors with identical data could see different arrangements. With a
- * fixed rule everyone sees the same thing: pieces read left to right, then
- * down (1 2 3 / 4 5 6 / …), and the admin's live view is exactly the site.
+ * to CSS so that WHICH piece lands in WHICH column is decided here — by each
+ * piece's saved `gallery_column` (see lib/galleryLayout.ts) — not by the
+ * browser's column-balancing algorithm. CSS multi-column balances on rendered
+ * image heights, which differ by window width, by when images finish loading,
+ * and between Chrome and Safari, so two visitors with identical data could
+ * see different arrangements. With saved columns everyone sees the same
+ * thing, and the admin's live view is exactly the site.
  */
-const WIDE_QUERY = "(min-width: 768px)";
 
 function subscribeColumns(cb: () => void) {
   const mql = window.matchMedia(WIDE_QUERY);
@@ -37,6 +43,7 @@ export interface Artwork {
   category?: string | null;
   sort_order: number;
   is_featured: boolean;
+  gallery_column?: number | null;
 }
 
 export default function WorksGallery({
@@ -64,17 +71,21 @@ export default function WorksGallery({
     serverColumns,
   );
 
-  const filtered = activeCategory
-    ? artworks.filter((a) => a.category === activeCategory)
-    : artworks;
+  const wideColumns = buildGalleryColumns(artworks);
+  const reading = galleryReadingOrder(wideColumns);
+  // Position in reading order: drives the eager-load cutoff and the admin's
+  // numbered badges.
+  const position = new Map(reading.map((a, i) => [a.id, i]));
+  const matches = (a: Artwork) =>
+    activeCategory === null || a.category === activeCategory;
 
-  // Round-robin by position in the saved order, so reading order is the
-  // saved order at any column count.
-  const columns = Array.from({ length: columnCount }, (_, c) =>
-    filtered
-      .map((artwork, i) => ({ artwork, i }))
-      .filter(({ i }) => i % columnCount === c),
-  );
+  // Wide: the saved columns, filtered in place so pieces keep their column.
+  // Narrow: the wide arrangement's reading order dealt two across.
+  const columns =
+    columnCount === GALLERY_COLUMN_COUNT
+      ? wideColumns.map((column) => column.filter(matches))
+      : dealColumns(reading.filter(matches), columnCount);
+  const filteredCount = reading.filter(matches).length;
 
   const baseBtn =
     "rounded-full px-4 py-1.5 text-sm font-medium transition-colors cursor-pointer";
@@ -111,29 +122,36 @@ export default function WorksGallery({
       <div className="mt-12">
         <div className="flex gap-4">
           {columns.map((column, c) => (
-            <div key={c} className="flex min-w-0 flex-1 flex-col gap-4">
-              {column.map(({ artwork, i }) => (
-                <div key={artwork.id} className="w-full">
-                  {/* Eager-load the first row (above the fold) so the gallery's
-                      LCP image isn't lazy; the rest lazy-load. */}
-                  {renderItem
-                    ? renderItem(
-                        <ArtworkCard
-                          artwork={artwork}
-                          priority={i < 4}
-                          interactive={false}
-                        />,
-                        artwork,
-                        i,
-                      )
-                    : <ArtworkCard artwork={artwork} priority={i < 4} />}
-                </div>
-              ))}
+            <div
+              key={c}
+              data-column={c}
+              className="flex min-w-0 flex-1 flex-col gap-4"
+            >
+              {column.map((artwork) => {
+                const i = position.get(artwork.id) ?? 0;
+                return (
+                  <div key={artwork.id} className="w-full">
+                    {/* Eager-load the first row (above the fold) so the
+                        gallery's LCP image isn't lazy; the rest lazy-load. */}
+                    {renderItem
+                      ? renderItem(
+                          <ArtworkCard
+                            artwork={artwork}
+                            priority={i < 4}
+                            interactive={false}
+                          />,
+                          artwork,
+                          i,
+                        )
+                      : <ArtworkCard artwork={artwork} priority={i < 4} />}
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>
 
-        {filtered.length === 0 && (
+        {filteredCount === 0 && (
           <div className="py-20 text-center">
             <p className="text-text-muted">No artworks to display yet.</p>
           </div>

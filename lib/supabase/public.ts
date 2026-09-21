@@ -37,6 +37,8 @@ export interface PublicArtwork {
   category?: string | null;
   sort_order: number;
   is_featured: boolean;
+  /** 0–2 = column in the Gallery's wide layout; null = not placed yet. */
+  gallery_column?: number | null;
 }
 
 export interface PublicBlogPost {

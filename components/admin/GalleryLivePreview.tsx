@@ -5,20 +5,36 @@ import { GripVertical } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import WorksGallery, { type Artwork } from "@/components/WorksGallery";
+import {
+  WIDE_QUERY,
+  buildGalleryColumns,
+  galleryReadingOrder,
+} from "@/lib/galleryLayout";
 import { cn, formatApiError } from "@/lib/formatters";
 
 /**
- * The public Gallery, rendered with the public components, plus drag-to-reorder.
+ * The public Gallery, rendered with the public components, plus drag-to-place.
  *
  * This runs inside the admin's "Live view" iframe, so Tailwind breakpoints and
  * next/image sizes respond to the frame's own width — what David sees here at
  * 390px is what a phone shows. The nav and footer are real but `inert`, so
  * nothing inside the frame can navigate away.
  *
- * Dragging uses Pointer Events rather than HTML5 drag-and-drop: the masonry
- * reflows live under the pointer (no ghost image needed), the photo can't
- * hijack the drag, and touch works — the admin is used on a phone.
+ * Every piece belongs to one of the three wide-screen columns (see
+ * lib/galleryLayout.ts). Dragging lifts one piece and drops it at a precise
+ * spot — above or below a neighbour, or at the foot of a column — and nothing
+ * else moves. Dragging is only offered at wide sizes, because the two-column
+ * phone layout is derived from this one rather than arranged by hand.
+ *
+ * Pointer Events rather than HTML5 drag-and-drop: the layout updates live
+ * under the pointer (no ghost image needed), the photo can't hijack the drag,
+ * and touch works — the admin is used on a phone or tablet. Moves and the
+ * release are listened for on the window for the length of a drag, because
+ * a piece dropped into another column is re-created by React under its new
+ * column and any listener or pointer capture on the old node would be lost.
  */
+
+type Columns = Artwork[][];
 
 type SaveState =
   | { kind: "idle" }
@@ -26,10 +42,10 @@ type SaveState =
   | { kind: "saved" }
   | { kind: "error"; message: string };
 
-const SWAP_COOLDOWN_MS = 120;
+const MOVE_COOLDOWN_MS = 120;
 // The pointer must travel this far after a move before another move can
 // fire, so a reflow under a stationary pointer never cascades.
-const SWAP_MIN_TRAVEL_PX = 14;
+const MOVE_MIN_TRAVEL_PX = 14;
 const EDGE_SCROLL_PX = 60;
 const EDGE_SCROLL_STEP = 14;
 
@@ -40,43 +56,68 @@ function getCategories(artworks: Artwork[]): string[] {
   return Array.from(cats);
 }
 
-/** Lift `id` out and drop it at `targetId`'s slot — the card view's algorithm,
- *  keyed by id so it stays correct while the list is moving. Moving later
- *  lands just after the target; moving earlier lands just before it. */
-function moveTo(list: Artwork[], id: string, targetId: string): Artwork[] {
-  const from = list.findIndex((a) => a.id === id);
-  const to = list.findIndex((a) => a.id === targetId);
-  if (from === -1 || to === -1) return list;
-  const next = [...list];
-  const [item] = next.splice(from, 1);
-  next.splice(to, 0, item);
+/** Flat list WorksGallery rebuilds these exact columns from: each piece
+ *  stamped with its column, sort_order = reading order. */
+function columnsToWorks(columns: Columns): Artwork[] {
+  const stamped = columns.map((column, c) =>
+    column.map((a) => ({ ...a, gallery_column: c })),
+  );
+  return galleryReadingOrder(stamped).map((a, i) => ({ ...a, sort_order: i }));
+}
+
+function signature(columns: Columns): string {
+  return columns.map((c) => c.map((a) => a.id).join(",")).join("|");
+}
+
+/** Lift `id` out of wherever it is and put it at one precise spot. */
+function place(
+  columns: Columns,
+  id: string,
+  target: { column: number; beforeId?: string },
+): Columns {
+  let item: Artwork | undefined;
+  const next = columns.map((column) =>
+    column.filter((a) => {
+      if (a.id === id) {
+        item = a;
+        return false;
+      }
+      return true;
+    }),
+  );
+  const column = next[target.column];
+  if (!item || !column) return columns;
+  const at = target.beforeId
+    ? column.findIndex((a) => a.id === target.beforeId)
+    : -1;
+  column.splice(at === -1 ? column.length : at, 0, item);
   return next;
 }
 
 export default function GalleryLivePreview() {
-  const [works, setWorks] = useState<Artwork[]>([]);
+  const [columns, setColumns] = useState<Columns>([]);
   const [loading, setLoading] = useState(true);
   const [dragId, setDragId] = useState<string | null>(null);
   const [save, setSave] = useState<SaveState>({ kind: "idle" });
 
   // Drag bookkeeping lives in refs so pointermove never waits on a render.
-  const worksRef = useRef<Artwork[]>([]);
+  const columnsRef = useRef<Columns>([]);
   const dragIdRef = useRef<string | null>(null);
-  const startOrderRef = useRef<string[]>([]);
+  const startSignatureRef = useRef("");
   const lastTargetRef = useRef<string | null>(null);
-  const lastSwapAtRef = useRef(0);
-  const lastSwapPointRef = useRef<{ x: number; y: number } | null>(null);
+  const lastMoveAtRef = useRef(0);
+  const lastMovePointRef = useRef<{ x: number; y: number } | null>(null);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    worksRef.current = works;
-  }, [works]);
+    columnsRef.current = columns;
+  }, [columns]);
 
   const load = useCallback(async () => {
     try {
       const res = await fetch("/api/artworks");
       const data = await res.json();
-      if (Array.isArray(data)) setWorks(data);
+      if (Array.isArray(data)) setColumns(buildGalleryColumns(data));
     } finally {
       setLoading(false);
     }
@@ -94,10 +135,9 @@ export default function GalleryLivePreview() {
   );
 
   const persist = useCallback(
-    async (ordered: Artwork[]) => {
+    async (next: Columns) => {
       setSave({ kind: "saving" });
-      const updated = ordered.map((w, i) => ({ ...w, sort_order: i }));
-      setWorks(updated);
+      const works = columnsToWorks(next);
 
       let res: Response | null = null;
       let body: { error?: unknown } = {};
@@ -106,7 +146,11 @@ export default function GalleryLivePreview() {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            items: updated.map((w) => ({ id: w.id, sort_order: w.sort_order })),
+            items: works.map((w) => ({
+              id: w.id,
+              sort_order: w.sort_order,
+              gallery_column: w.gallery_column,
+            })),
           }),
         });
         body = await res.json().catch(() => ({}));
@@ -115,11 +159,11 @@ export default function GalleryLivePreview() {
       }
 
       if (!res || !res.ok) {
-        // Optimistic order was refused — re-read so the frame shows the order
-        // the Gallery page really has, same as the card view does.
+        // Optimistic arrangement was refused — re-read so the frame shows
+        // what the Gallery page really has.
         setSave({
           kind: "error",
-          message: formatApiError(body.error, "Couldn't save the new order"),
+          message: formatApiError(body.error, "Couldn't save the new arrangement"),
         });
         load();
         return;
@@ -142,39 +186,7 @@ export default function GalleryLivePreview() {
     [load],
   );
 
-  const endDrag = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      const id = dragIdRef.current;
-      if (!id) return;
-      dragIdRef.current = null;
-      lastTargetRef.current = null;
-      setDragId(null);
-      try {
-        e.currentTarget.releasePointerCapture(e.pointerId);
-      } catch {
-        /* capture may already be gone */
-      }
-
-      const current = worksRef.current;
-      const changed = current.some((w, i) => w.id !== startOrderRef.current[i]);
-      if (changed) persist(current);
-    },
-    [persist],
-  );
-
-  const onPointerDown = (id: string) => (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0 && e.pointerType === "mouse") return;
-    e.preventDefault();
-    e.currentTarget.setPointerCapture(e.pointerId);
-    dragIdRef.current = id;
-    startOrderRef.current = worksRef.current.map((w) => w.id);
-    lastTargetRef.current = null;
-    lastSwapAtRef.current = 0;
-    lastSwapPointRef.current = null;
-    setDragId(id);
-  };
-
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+  const onPointerMove = useCallback((e: PointerEvent) => {
     const id = dragIdRef.current;
     if (!id) return;
 
@@ -184,33 +196,81 @@ export default function GalleryLivePreview() {
     else if (e.clientY > vh - EDGE_SCROLL_PX) window.scrollBy(0, EDGE_SCROLL_STEP);
 
     const now = performance.now();
-    if (now - lastSwapAtRef.current < SWAP_COOLDOWN_MS) return;
-    const last = lastSwapPointRef.current;
-    if (last && Math.hypot(e.clientX - last.x, e.clientY - last.y) < SWAP_MIN_TRAVEL_PX) {
+    if (now - lastMoveAtRef.current < MOVE_COOLDOWN_MS) return;
+    const last = lastMovePointRef.current;
+    if (last && Math.hypot(e.clientX - last.x, e.clientY - last.y) < MOVE_MIN_TRAVEL_PX) {
       return;
     }
 
-    const cell = document
+    const columnEl = document
       .elementFromPoint(e.clientX, e.clientY)
-      ?.closest<HTMLElement>("[data-artwork-id]");
-    const targetId = cell?.dataset.artworkId;
-    if (!cell || !targetId || targetId === id) {
-      // Over the dragged piece itself (or nothing): forget the last target so
-      // dragging straight back over that neighbour can undo the move.
+      ?.closest<HTMLElement>("[data-column]");
+    if (!columnEl) {
       lastTargetRef.current = null;
       return;
     }
-    if (targetId === lastTargetRef.current) return;
+    const column = Number(columnEl.dataset.column);
 
-    const list = worksRef.current;
-    lastTargetRef.current = targetId;
-    lastSwapAtRef.current = now;
-    lastSwapPointRef.current = { x: e.clientX, y: e.clientY };
-    const next = moveTo(list, id, targetId);
-    worksRef.current = next;
-    setWorks(next);
+    // The drop spot is "above the first neighbour whose middle is below the
+    // pointer", or the foot of the column. Gaps between pieces count too, so
+    // hovering between two pieces slips the dragged one in between them.
+    let beforeId: string | undefined;
+    for (const cell of columnEl.querySelectorAll<HTMLElement>("[data-artwork-id]")) {
+      const cellId = cell.dataset.artworkId;
+      if (!cellId || cellId === id) continue;
+      const rect = cell.getBoundingClientRect();
+      if (e.clientY < rect.top + rect.height / 2) {
+        beforeId = cellId;
+        break;
+      }
+    }
+    const key = `${column}:${beforeId ?? "end"}`;
+    if (key === lastTargetRef.current) return;
+    lastTargetRef.current = key;
+
+    const next = place(columnsRef.current, id, { column, beforeId });
+    if (signature(next) === signature(columnsRef.current)) return;
+
+    lastMoveAtRef.current = now;
+    lastMovePointRef.current = { x: e.clientX, y: e.clientY };
+    columnsRef.current = next;
+    setColumns(next);
+  }, []);
+
+  const endDrag = useCallback(() => {
+    window.removeEventListener("pointermove", onPointerMove);
+    window.removeEventListener("pointerup", endDrag);
+    window.removeEventListener("pointercancel", endDrag);
+    const id = dragIdRef.current;
+    if (!id) return;
+    dragIdRef.current = null;
+    lastTargetRef.current = null;
+    setDragId(null);
+
+    const current = columnsRef.current;
+    if (signature(current) !== startSignatureRef.current) persist(current);
+  }, [onPointerMove, persist]);
+
+  // A drag in flight when the frame unmounts must not leave window listeners.
+  useEffect(() => endDrag, [endDrag]);
+
+  const onPointerDown = (id: string) => (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0 && e.pointerType === "mouse") return;
+    // Columns are only arranged in the wide layout; the phone layout follows.
+    if (!window.matchMedia(WIDE_QUERY).matches) return;
+    e.preventDefault();
+    dragIdRef.current = id;
+    startSignatureRef.current = signature(columnsRef.current);
+    lastTargetRef.current = null;
+    lastMoveAtRef.current = 0;
+    lastMovePointRef.current = null;
+    setDragId(id);
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", endDrag);
+    window.addEventListener("pointercancel", endDrag);
   };
 
+  const works = columnsToWorks(columns);
   const categories = getCategories(works);
 
   return (
@@ -228,6 +288,15 @@ export default function GalleryLivePreview() {
             <h1 className="font-display text-4xl font-bold text-primary-dark sm:text-5xl">
               Gallery
             </h1>
+
+            {/* Editor chrome — only at phone width, where columns can't be
+                arranged by hand. */}
+            {!loading && works.length > 0 && (
+              <p className="mt-4 rounded-xl bg-sage px-4 py-3 text-sm text-primary md:hidden">
+                Phones show your pieces two across, in the order you arranged
+                them. To move pieces, switch the preview to Laptop or Desktop.
+              </p>
+            )}
 
             {loading ? (
               <div className="mt-12 flex gap-4" aria-busy="true">
@@ -253,12 +322,9 @@ export default function GalleryLivePreview() {
                   <div
                     data-artwork-id={artwork.id}
                     onPointerDown={onPointerDown(artwork.id)}
-                    onPointerMove={onPointerMove}
-                    onPointerUp={endDrag}
-                    onPointerCancel={endDrag}
                     style={{ touchAction: "none" }}
                     className={cn(
-                      "relative select-none rounded-xl cursor-grab active:cursor-grabbing transition-opacity",
+                      "relative select-none rounded-xl transition-opacity md:cursor-grab md:active:cursor-grabbing",
                       dragId === artwork.id &&
                         "opacity-70 ring-2 ring-gold ring-offset-2 ring-offset-cream",
                     )}
@@ -302,9 +368,9 @@ export default function GalleryLivePreview() {
           )}
         >
           {save.kind === "saving" && "Saving…"}
-          {save.kind === "saved" && "Order saved"}
+          {save.kind === "saved" && "Arrangement saved"}
           {save.kind === "error" &&
-            `${save.message} — showing the order the site has`}
+            `${save.message} — showing what the site has`}
         </div>
       )}
     </>
