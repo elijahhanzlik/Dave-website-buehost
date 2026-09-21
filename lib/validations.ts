@@ -22,6 +22,7 @@ export const artworkSchema = z.object({
   category: z.string().optional(),
   sort_order: z.number().int().default(0),
   is_featured: z.boolean().default(false),
+  gallery_column: z.number().int().min(0).max(2).nullable().optional(),
 });
 
 export type ArtworkInput = z.infer<typeof artworkSchema>;

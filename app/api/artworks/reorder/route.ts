@@ -8,6 +8,9 @@ const reorderSchema = z.object({
     z.object({
       id: z.string().uuid(),
       sort_order: z.number().int(),
+      // Sent by the live gallery editor; the card view leaves it out so a
+      // reorder there keeps every piece in its chosen column.
+      gallery_column: z.number().int().min(0).max(2).nullable().optional(),
     }),
   ),
 });
@@ -30,7 +33,12 @@ export async function PUT(request: NextRequest) {
   const updates = parsed.data.items.map((item) =>
     auth.supabase
       .from("artworks")
-      .update({ sort_order: item.sort_order })
+      .update({
+        sort_order: item.sort_order,
+        ...(item.gallery_column !== undefined
+          ? { gallery_column: item.gallery_column }
+          : {}),
+      })
       .eq("id", item.id),
   );
 

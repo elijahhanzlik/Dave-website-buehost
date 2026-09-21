@@ -14,6 +14,8 @@ create table public.artworks (
   category    text,
   sort_order  integer not null default 0,
   is_featured boolean not null default false,
+  -- Gallery column (0 = left) chosen in the admin live editor; null = auto.
+  gallery_column smallint check (gallery_column is null or gallery_column between 0 and 2),
   created_at  timestamptz not null default now()
 );
 
