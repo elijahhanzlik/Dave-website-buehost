@@ -132,6 +132,7 @@ export default function HomeClient({
                 {[
                   { href: "/works", label: "Gallery" },
                   { href: "/exhibits", label: "Exhibits" },
+                  { href: "/events", label: "Events & Services" },
                   { href: "/about", label: "About" },
                   { href: "/blog", label: "Blog" },
                   { href: "/contact", label: "Contact" },
