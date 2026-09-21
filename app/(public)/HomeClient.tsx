@@ -58,10 +58,8 @@ export default function HomeClient({
   const renderBadge = (dark: boolean) =>
     homeBadge && (
       <div
-        className={`mt-8 w-full max-w-xs rounded-2xl border px-6 py-4 text-center backdrop-blur-sm ${
-          dark
-            ? "border-white/10 bg-black/20"
-            : "border-white/20 bg-black/25"
+        className={`mt-8 w-full max-w-xs rounded-2xl border px-6 py-4 text-center bg-[#8C3A12] ${
+          dark ? "border-white/10" : "border-white/20"
         }`}
       >
         <p className="font-display text-xl font-bold text-white">
