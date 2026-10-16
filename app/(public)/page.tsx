@@ -51,28 +51,6 @@ interface HeroSettings {
   crop: { x: number; y: number; zoom: number } | null;
 }
 
-interface HomeBadge {
-  title: string;
-  dates: string | null;
-  time: string | null;
-  address: string | null;
-}
-
-/**
- * The homepage "NEW EXHIBIT" badge, derived from site_settings keys.
- * Returns null (badge hidden) unless at least a title is set.
- */
-function readHomeBadge(settings: SiteSetting[]): HomeBadge | null {
-  const title = settingValue(settings, "home_exhibit_title")?.trim() || null;
-  if (!title) return null;
-  return {
-    title,
-    dates: settingValue(settings, "home_exhibit_dates")?.trim() || null,
-    time: settingValue(settings, "home_exhibit_time")?.trim() || null,
-    address: settingValue(settings, "home_exhibit_address")?.trim() || null,
-  };
-}
-
 function readHeroSettings(settings: SiteSetting[]): HeroSettings {
   const imageUrl = settingValue(settings, "hero_image");
   const cropRaw = settingValue(settings, "hero_crop");
@@ -119,7 +97,6 @@ export default async function HomePage() {
       : PLACEHOLDER_FEATURED;
 
   const hero = readHeroSettings(settings);
-  const homeBadge = readHomeBadge(settings);
 
   return (
     <HomeClient
@@ -127,7 +104,6 @@ export default async function HomePage() {
       heroImageUrl={hero.imageUrl}
       heroCrop={hero.crop}
       featuredArtworks={featuredArtworks}
-      homeBadge={homeBadge}
     />
   );
 }
