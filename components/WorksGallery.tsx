@@ -79,13 +79,14 @@ export default function WorksGallery({
   const matches = (a: Artwork) =>
     activeCategory === null || a.category === activeCategory;
 
-  // Wide: the saved columns, filtered in place so pieces keep their column.
-  // Narrow: the wide arrangement's reading order dealt two across.
-  const columns =
-    columnCount === GALLERY_COLUMN_COUNT
-      ? wideColumns.map((column) => column.filter(matches))
-      : dealColumns(reading.filter(matches), columnCount);
-  const filteredCount = reading.filter(matches).length;
+  // Unfiltered wide: the saved columns as arranged. Filtered (any width) or
+  // narrow: the reading order dealt left to right across the columns, so a
+  // filter packs its matches together instead of leaving gaps in place.
+  const filtered = reading.filter(matches);
+  const showSaved =
+    columnCount === GALLERY_COLUMN_COUNT && activeCategory === null;
+  const columns = showSaved ? wideColumns : dealColumns(filtered, columnCount);
+  const filteredCount = filtered.length;
 
   const baseBtn =
     "rounded-full px-4 py-1.5 text-sm font-medium transition-colors cursor-pointer";
@@ -124,7 +125,9 @@ export default function WorksGallery({
           {columns.map((column, c) => (
             <div
               key={c}
-              data-column={c}
+              // Only saved columns are drop targets for the admin's drag
+              // editor; dealt columns don't map to a piece's gallery_column.
+              data-column={showSaved ? c : undefined}
               className="flex min-w-0 flex-1 flex-col gap-4"
             >
               {column.map((artwork) => {
