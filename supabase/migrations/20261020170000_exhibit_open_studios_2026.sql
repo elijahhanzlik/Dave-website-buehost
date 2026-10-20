@@ -1,14 +1,8 @@
--- Adds "2026 Boulder County Open Studios" as a published exhibit (no dates yet).
--- Idempotent; run in the Supabase SQL editor of David's project.
+-- Retitles and publishes the existing Open Studios 2026 draft (from 004).
+-- Dates and address are left as they are. Run in David's Supabase SQL editor.
 
-insert into public.exhibits (title, slug, content, status)
-values (
-  '2026 Boulder County Open Studios',
-  '2026-boulder-county-open-studios',
-  'Juried Studio Tour Artist',
-  'published'
-)
-on conflict (slug) do update
-   set title   = excluded.title,
-       content = excluded.content,
-       status  = excluded.status;
+update public.exhibits
+   set title   = '2026 Boulder County Open Studios',
+       content = 'Juried Studio Tour Artist',
+       status  = 'published'
+ where slug = 'boulder-county-open-studios-tour-2026';
