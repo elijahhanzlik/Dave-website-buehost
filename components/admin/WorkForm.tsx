@@ -7,7 +7,7 @@ import ImageUploader from "@/components/ImageUploader";
 import ImageCropEditor, { DEFAULT_CROP } from "@/components/admin/ImageCropEditor";
 import type { CropSettings } from "@/components/admin/ImageCropEditor";
 import RichTitle, { stripRichTitle } from "@/components/RichTitle";
-import { formatApiError } from "@/lib/formatters";
+import { formatApiError, formatDateOnly, formatUsd } from "@/lib/formatters";
 import {
   ActionButton,
   Button,
@@ -18,6 +18,13 @@ import {
 } from "@/components/admin/ui";
 
 const ADMIN_BASE = "/dave-admin-website-wonderland";
+
+function parseSoldPrice(raw: string): number | null {
+  const cleaned = raw.replace(/[$,\s]/g, "");
+  if (cleaned === "") return null;
+  if (!/^\d+(\.\d{1,2})?$/.test(cleaned)) return NaN;
+  return Number(cleaned);
+}
 
 interface WorkFormProps {
   initialData?: {
@@ -62,6 +69,9 @@ export default function WorkForm({ initialData }: WorkFormProps) {
       : "",
   );
   const [soldAt, setSoldAt] = useState(initialData?.sold_at ?? "");
+  // Typed freely ("1200", "$1,200.50"); null = empty, NaN = not a price.
+  const parsedSoldPrice = parseSoldPrice(soldPrice);
+  const soldPriceInvalid = Number.isNaN(parsedSoldPrice);
   const [soldOnly, setSoldOnly] = useState(initialData?.sold_only ?? false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -130,6 +140,10 @@ export default function WorkForm({ initialData }: WorkFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSold && soldPriceInvalid) {
+      setError("The sale price should be a number, like 1200 or 1,200.50.");
+      return;
+    }
     setSaving(true);
     setError("");
 
@@ -141,7 +155,7 @@ export default function WorkForm({ initialData }: WorkFormProps) {
       category: category || undefined,
       is_featured: isFeatured,
       is_sold: isSold,
-      sold_price: isSold && soldPrice.trim() !== "" ? Number(soldPrice) : null,
+      sold_price: isSold ? parsedSoldPrice : null,
       sold_at: isSold && soldAt ? soldAt : null,
       sold_only: isSold ? soldOnly : false,
     };
@@ -376,8 +390,9 @@ export default function WorkForm({ initialData }: WorkFormProps) {
             {isSold && (
               <div className="mt-5 border-t border-admin-line pt-5">
                 <p className="mb-4 text-[13px] leading-snug text-admin-muted">
-                  The price and date are both optional. If you fill them in,
-                  visitors see them when they open the piece.
+                  The price and the date are separate and both optional — fill
+                  in either one, both, or neither. Whatever you fill in,
+                  visitors see when they open the piece.
                 </p>
                 <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
                   <Field
@@ -385,17 +400,31 @@ export default function WorkForm({ initialData }: WorkFormProps) {
                     hint="Leave empty to keep the price private."
                     htmlFor="work-sold-price"
                   >
-                    <input
-                      id="work-sold-price"
-                      type="number"
-                      inputMode="decimal"
-                      min={0}
-                      step="0.01"
-                      value={soldPrice}
-                      onChange={(e) => setSoldPrice(e.target.value)}
-                      placeholder="e.g. 1200"
-                      className={inputClass}
-                    />
+                    <div className="relative">
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute left-[18px] top-1/2 -translate-y-1/2 text-base text-admin-muted"
+                      >
+                        $
+                      </span>
+                      <input
+                        id="work-sold-price"
+                        type="text"
+                        inputMode="decimal"
+                        autoComplete="off"
+                        value={soldPrice}
+                        onChange={(e) => setSoldPrice(e.target.value)}
+                        placeholder="1,200"
+                        aria-invalid={soldPriceInvalid}
+                        style={{ paddingLeft: 36 }}
+                        className={`${inputClass} ${soldPriceInvalid ? "border-admin-danger" : ""}`}
+                      />
+                    </div>
+                    {soldPriceInvalid && (
+                      <p className="mt-1.5 text-[13px] text-admin-danger">
+                        Type just the number, like 1200 or 1,200.50.
+                      </p>
+                    )}
                   </Field>
                   <Field
                     label="Sale date"
@@ -467,12 +496,14 @@ export default function WorkForm({ initialData }: WorkFormProps) {
               {category && (
                 <p className="mt-1 text-sm text-admin-muted">{category}</p>
               )}
-              {isSold && soldPrice.trim() !== "" && (
+              {isSold && parsedSoldPrice != null && !soldPriceInvalid && (
                 <p className="mt-1 text-sm font-semibold text-admin-ink">
-                  Sold for $
-                  {Number(soldPrice).toLocaleString("en-US", {
-                    maximumFractionDigits: 2,
-                  })}
+                  Price: {formatUsd(parsedSoldPrice)}
+                </p>
+              )}
+              {isSold && soldAt && (
+                <p className="mt-1 text-sm font-semibold text-admin-ink">
+                  Date sold: {formatDateOnly(soldAt)}
                 </p>
               )}
               {description && (
