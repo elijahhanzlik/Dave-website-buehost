@@ -12,6 +12,10 @@ interface Artwork {
   category?: string | null;
   sort_order: number;
   is_featured: boolean;
+  is_sold?: boolean;
+  sold_price?: number | string | null;
+  sold_at?: string | null;
+  sold_only?: boolean;
 }
 
 const PLACEHOLDER_ARTWORKS: Artwork[] = [
@@ -41,6 +45,9 @@ const PLACEHOLDER_ARTWORKS: Artwork[] = [
     category: "Landscape",
     sort_order: 2,
     is_featured: false,
+    is_sold: true,
+    sold_price: 1200,
+    sold_at: "2026-09-14",
   },
   {
     id: "4",
@@ -68,6 +75,11 @@ const PLACEHOLDER_ARTWORKS: Artwork[] = [
     category: "Landscape",
     sort_order: 5,
     is_featured: false,
+    // Sold and shown under the "Sold" filter only — demos sold_only.
+    is_sold: true,
+    sold_price: "850.50",
+    sold_at: "2026-06-02",
+    sold_only: true,
   },
 ];
 

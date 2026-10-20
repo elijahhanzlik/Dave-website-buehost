@@ -309,6 +309,9 @@ export default function GalleryLivePreview() {
             ) : (
               <WorksGallery
                 artworks={works}
+                // Every piece stays visible and draggable here, sold_only
+                // ones included — they keep a saved column like any other.
+                includeSoldOnlyInAll
                 renderItem={(card, artwork, index) => (
                   <div
                     data-artwork-id={artwork.id}

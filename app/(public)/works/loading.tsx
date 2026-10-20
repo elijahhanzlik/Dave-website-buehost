@@ -15,8 +15,15 @@ export default function WorksLoading() {
           {/* "Gallery" heading */}
           <div className="h-10 w-56 rounded-lg bg-sage sm:h-12" />
 
+          {/* All works / Available / Sold pills */}
+          <div className="mt-6 flex flex-wrap gap-3">
+            {["w-24", "w-[5.5rem]", "w-14"].map((w, i) => (
+              <div key={i} className={`h-8 ${w} rounded-full bg-sage`} />
+            ))}
+          </div>
+
           {/* Masonry grid */}
-          <div className="mt-12">
+          <div className="mt-6">
             <div className="flex gap-4">
               {columns.map((heights, c) => (
                 <div

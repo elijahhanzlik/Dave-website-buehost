@@ -57,6 +57,24 @@ export function formatDateOnly(date: string): string {
 }
 
 /**
+ * Format an amount as US dollars — "$1,200" when whole, "$850.50" otherwise.
+ * Accepts a string because Postgres `numeric` can arrive from supabase-js as
+ * one. Returns "" for anything that isn't a finite number.
+ */
+export function formatUsd(amount: number | string): string {
+  const n = typeof amount === "number" ? amount : Number(amount);
+  if (typeof amount === "string" && amount.trim() === "") return "";
+  if (!Number.isFinite(n)) return "";
+  const whole = Number.isInteger(n);
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: whole ? 0 : 2,
+    maximumFractionDigits: whole ? 0 : 2,
+  }).format(n);
+}
+
+/**
  * Format a start/end date range, e.g. "January 30, 2025 – February 28, 2025".
  * Falls back gracefully when only one (or neither) date is present.
  */
