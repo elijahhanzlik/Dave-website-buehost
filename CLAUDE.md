@@ -99,6 +99,12 @@ The hero uses a full-bleed photo of David standing among mangrove/banyan tree ro
 - Image uploads use signed URLs (client uploads directly to Supabase Storage)
 - Middleware handles rate limiting + route protection for admin
 
+## Live Supabase project
+David's live Supabase project is in a different Supabase organization on another account, so the
+Supabase MCP connector cannot reach it (it only sees unrelated projects such as "Anna Website" and
+"Subblink" — never run SQL against those). Write migrations to `supabase/migrations/` and hand the
+SQL to the user to run in David's project.
+
 ## Commands
 ```bash
 npm run dev          # Start dev server
