@@ -289,7 +289,7 @@ export default function WorksListPage() {
 
               <div className="p-5">
                 <h2 className="font-display text-[19px] font-bold leading-tight text-admin-ink">
-                  <RichTitle text={work.title} />
+                  {work.title ? <RichTitle text={work.title} /> : <span className="italic text-admin-muted">Untitled draft</span>}
                 </h2>
                 <p className="mt-1.5 text-[11.5px] font-bold uppercase tracking-[0.14em] text-gold-dark">
                   {work.category || "No category"}
@@ -335,7 +335,7 @@ export default function WorksListPage() {
 
       <ConfirmDialog
         open={!!pendingDelete}
-        title={`Delete “${stripRichTitle(pendingDelete?.title ?? "")}”?`}
+        title={`Delete “${stripRichTitle(pendingDelete?.title || "Untitled draft")}”?`}
         body="This takes the piece off your Gallery page for good, along with its photos and description. It cannot be undone."
         confirmLabel="Yes, delete it"
         onConfirm={confirmDelete}

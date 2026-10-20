@@ -14,7 +14,9 @@ export const contentBlockSchema = z
 // default still fills an omitted key — which reset sort_order to 0 (moving the
 // piece in the Gallery) every time a work was edited and saved.
 const artworkFields = z.object({
-  title: z.string().min(1, "Title is required"),
+  // Blank is allowed so a draft can be just a photo; publishing needs a title
+  // (checked below). The column is NOT NULL, so a draft stores "".
+  title: z.string().optional(),
   description: z.string().optional(),
   images: z.array(z.string()).optional(),
   image_crops: z.record(z.string(), z.object({
@@ -44,14 +46,29 @@ const artworkFields = z.object({
 });
 
 /** Create: fills the defaults a new piece needs. */
-export const artworkSchema = artworkFields.extend({
-  images: z.array(z.string()).default([]),
-  sort_order: z.number().int().default(0),
-  is_featured: z.boolean().default(false),
-});
+const needsTitle = (d: { title?: string; status?: string }) =>
+  d.status === "draft" || !!d.title?.trim();
+const titleIssue = {
+  message: "Title is required to publish — save as a draft to skip it",
+  path: ["title"],
+};
+
+export const artworkSchema = artworkFields
+  .extend({
+    title: z.string().default(""),
+    images: z.array(z.string()).default([]),
+    sort_order: z.number().int().default(0),
+    is_featured: z.boolean().default(false),
+  })
+  .refine(needsTitle, titleIssue);
 
 /** Update: only the keys sent are written, so position is never reset. */
-export const artworkUpdateSchema = artworkFields.partial();
+export const artworkUpdateSchema = artworkFields
+  .partial()
+  .refine(
+    (d) => d.status !== "published" || d.title === undefined || !!d.title.trim(),
+    titleIssue,
+  );
 
 export type ArtworkInput = z.infer<typeof artworkSchema>;
 
