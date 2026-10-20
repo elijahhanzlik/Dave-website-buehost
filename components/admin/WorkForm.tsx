@@ -7,7 +7,7 @@ import ImageUploader from "@/components/ImageUploader";
 import ImageCropEditor, { DEFAULT_CROP } from "@/components/admin/ImageCropEditor";
 import type { CropSettings } from "@/components/admin/ImageCropEditor";
 import RichTitle, { stripRichTitle } from "@/components/RichTitle";
-import { formatApiError, formatDateOnly, formatUsd } from "@/lib/formatters";
+import { formatApiError, formatSoldDate, formatUsd } from "@/lib/formatters";
 import {
   ActionButton,
   Button,
@@ -18,6 +18,11 @@ import {
 } from "@/components/admin/ui";
 
 const ADMIN_BASE = "/dave-admin-website-wonderland";
+
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
 
 function parseSoldPrice(raw: string): number | null {
   const cleaned = raw.replace(/[$,\s]/g, "");
@@ -68,7 +73,17 @@ export default function WorkForm({ initialData }: WorkFormProps) {
       ? String(Number(initialData.sold_price))
       : "",
   );
+  // 'YYYY-MM-DD', or 'YYYY-MM' when "Month and year only" is picked.
   const [soldAt, setSoldAt] = useState(initialData?.sold_at ?? "");
+  const [soldMonthOnly, setSoldMonthOnly] = useState(
+    /^\d{4}-\d{2}$/.test(initialData?.sold_at ?? ""),
+  );
+  // Month/year boxes keep their own text so a half-typed year doesn't clear
+  // the month; soldAt is only set once both are complete.
+  const [soldMonth, setSoldMonth] = useState(soldAt.slice(5, 7));
+  const [soldYearText, setSoldYearText] = useState(soldAt.slice(0, 4));
+  const setSoldMonthYear = (month: string, year: string) =>
+    setSoldAt(month && /^\d{4}$/.test(year) ? `${year}-${month}` : "");
   // Typed freely ("1200", "$1,200.50"); null = empty, NaN = not a price.
   const parsedSoldPrice = parseSoldPrice(soldPrice);
   const soldPriceInvalid = Number.isNaN(parsedSoldPrice);
@@ -429,15 +444,74 @@ export default function WorkForm({ initialData }: WorkFormProps) {
                   <Field
                     label="Sale date"
                     hint="Leave empty if you would rather not say."
-                    htmlFor="work-sold-at"
+                    htmlFor={soldMonthOnly ? "work-sold-month" : "work-sold-at"}
                   >
-                    <input
-                      id="work-sold-at"
-                      type="date"
-                      value={soldAt}
-                      onChange={(e) => setSoldAt(e.target.value)}
-                      className={inputClass}
-                    />
+                    {soldMonthOnly ? (
+                      <div className="flex gap-2">
+                        <select
+                          id="work-sold-month"
+                          aria-label="Month sold"
+                          value={soldMonth}
+                          onChange={(e) => {
+                            setSoldMonth(e.target.value);
+                            setSoldMonthYear(e.target.value, soldYearText);
+                          }}
+                          className={inputClass}
+                        >
+                          <option value="">Month</option>
+                          {MONTHS.map((name, i) => (
+                            <option
+                              key={name}
+                              value={String(i + 1).padStart(2, "0")}
+                            >
+                              {name}
+                            </option>
+                          ))}
+                        </select>
+                        <input
+                          aria-label="Year sold"
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={4}
+                          placeholder="Year"
+                          value={soldYearText}
+                          onChange={(e) => {
+                            const year = e.target.value.replace(/\D/g, "");
+                            setSoldYearText(year);
+                            setSoldMonthYear(soldMonth, year);
+                          }}
+                          className={`${inputClass} max-w-[7.5rem]`}
+                        />
+                      </div>
+                    ) : (
+                      <input
+                        id="work-sold-at"
+                        type="date"
+                        value={soldAt}
+                        onChange={(e) => setSoldAt(e.target.value)}
+                        className={inputClass}
+                      />
+                    )}
+                    <label className="mt-2 flex cursor-pointer items-center gap-2 text-[13px] text-admin-muted">
+                      <input
+                        type="checkbox"
+                        checked={soldMonthOnly}
+                        onChange={(e) => {
+                          const monthOnly = e.target.checked;
+                          setSoldMonthOnly(monthOnly);
+                          // Keep what was picked: drop or add the day.
+                          if (monthOnly) {
+                            setSoldAt(soldAt.slice(0, 7));
+                            setSoldMonth(soldAt.slice(5, 7));
+                            setSoldYearText(soldAt.slice(0, 4));
+                          } else {
+                            setSoldAt(soldAt ? `${soldAt.slice(0, 7)}-01` : "");
+                          }
+                        }}
+                        className="h-4 w-4 accent-[#2D5016]"
+                      />
+                      I only know the month and year
+                    </label>
                   </Field>
                 </div>
 
@@ -503,7 +577,7 @@ export default function WorkForm({ initialData }: WorkFormProps) {
               )}
               {isSold && soldAt && (
                 <p className="mt-1 text-sm font-semibold text-admin-ink">
-                  Date sold: {formatDateOnly(soldAt)}
+                  Date sold: {formatSoldDate(soldAt)}
                 </p>
               )}
               {description && (

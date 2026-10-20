@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import { getArtworks } from "@/lib/supabase/public";
 import { ARTWORK_DETAIL_SIZES, BLUR_DATA_URL } from "@/lib/image";
 import RichTitle, { stripRichTitle } from "@/components/RichTitle";
-import { formatDateOnly, formatUsd } from "@/lib/formatters";
+import { formatSoldDate, formatUsd } from "@/lib/formatters";
 
 // Prerender each artwork detail page at build time + ISR (5 min).
 export const revalidate = 300;
@@ -170,7 +170,7 @@ export default async function ArtworkDetailPage({
       ? formatUsd(artwork.sold_price)
       : "";
   const soldDate =
-    artwork.is_sold && artwork.sold_at ? formatDateOnly(artwork.sold_at) : "";
+    artwork.is_sold && artwork.sold_at ? formatSoldDate(artwork.sold_at) : "";
 
   return (
     <div className="pt-24 pb-20">
@@ -251,15 +251,12 @@ export default async function ArtworkDetailPage({
           </h1>
           {artwork.is_sold && (
             <div className="mt-3 text-base text-primary">
-              <p className="inline-flex items-center gap-2 font-medium">
-                <span
-                  aria-hidden="true"
-                  className="h-2 w-2 rounded-full bg-primary"
-                />
+              {/* Same SOLD banner as the Gallery card. */}
+              <span className="inline-block rounded-sm border border-cream/80 bg-primary px-2.5 py-1 font-display text-xs font-semibold uppercase leading-none tracking-[0.2em] text-white shadow-sm">
                 Sold
-              </p>
+              </span>
               {(soldPrice || soldDate) && (
-                <dl className="mt-1 flex flex-wrap gap-x-6 gap-y-1 text-text-secondary">
+                <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-text-secondary">
                   {soldPrice && (
                     <div className="flex gap-1.5">
                       <dt>Price:</dt>

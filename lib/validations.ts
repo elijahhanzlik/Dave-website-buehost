@@ -10,30 +10,47 @@ export const contentBlockSchema = z
   .passthrough();
 
 // ----- Artworks -----
-export const artworkSchema = z.object({
+// No .default()s here: the PUT handler parses with .partial(), and in Zod 4 a
+// default still fills an omitted key — which reset sort_order to 0 (moving the
+// piece in the Gallery) every time a work was edited and saved.
+const artworkFields = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
-  images: z.array(z.string()).default([]),
+  images: z.array(z.string()).optional(),
   image_crops: z.record(z.string(), z.object({
     x: z.number(),
     y: z.number(),
     zoom: z.number(),
   })).optional(),
   category: z.string().optional(),
-  sort_order: z.number().int().default(0),
-  is_featured: z.boolean().default(false),
+  sort_order: z.number().int().optional(),
+  is_featured: z.boolean().optional(),
   gallery_column: z.number().int().min(0).max(2).nullable().optional(),
   // Sold details. Price/date are public on the detail page; sold_only hides
   // the piece from "All works" so it appears under the Sold filter only.
   is_sold: z.boolean().optional(),
   sold_price: z.number().nonnegative().max(99999999.99).nullable().optional(),
+  // 'YYYY-MM-DD', or 'YYYY-MM' when only the month and year are known.
   sold_at: z
     .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD")
+    .regex(
+      /^\d{4}-(0[1-9]|1[0-2])(-(0[1-9]|[12]\d|3[01]))?$/,
+      "Date must be YYYY-MM-DD or YYYY-MM",
+    )
     .nullable()
     .optional(),
   sold_only: z.boolean().optional(),
 });
+
+/** Create: fills the defaults a new piece needs. */
+export const artworkSchema = artworkFields.extend({
+  images: z.array(z.string()).default([]),
+  sort_order: z.number().int().default(0),
+  is_featured: z.boolean().default(false),
+});
+
+/** Update: only the keys sent are written, so position is never reset. */
+export const artworkUpdateSchema = artworkFields.partial();
 
 export type ArtworkInput = z.infer<typeof artworkSchema>;
 

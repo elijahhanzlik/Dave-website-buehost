@@ -57,6 +57,19 @@ export function formatDateOnly(date: string): string {
 }
 
 /**
+ * A sale date: "September 14, 2026" for 'YYYY-MM-DD', or "February 2025" for
+ * 'YYYY-MM' (month and year only). Returns "" for anything else.
+ */
+export function formatSoldDate(date: string): string {
+  const m = /^(\d{4})-(\d{2})$/.exec(date);
+  if (!m) return formatDateOnly(date);
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    year: "numeric",
+  }).format(new Date(Number(m[1]), Number(m[2]) - 1, 1));
+}
+
+/**
  * Format an amount as US dollars — "$1,200" when whole, "$850.50" otherwise.
  * Accepts a string because Postgres `numeric` can arrive from supabase-js as
  * one. Returns "" for anything that isn't a finite number.

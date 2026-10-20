@@ -19,7 +19,8 @@ create table public.artworks (
   -- Sold status (public). sold_only = shown under the Sold filter only.
   is_sold     boolean not null default false,
   sold_price  numeric(10, 2) check (sold_price is null or sold_price >= 0),
-  sold_at     date,
+  -- 'YYYY-MM-DD' or 'YYYY-MM' (month and year only).
+  sold_at     text check (sold_at is null or sold_at ~ '^\d{4}-(0[1-9]|1[0-2])(-(0[1-9]|[12]\d|3[01]))?$'),
   sold_only   boolean not null default false,
   created_at  timestamptz not null default now()
 );
