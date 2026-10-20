@@ -154,21 +154,23 @@ export default async function ArtworkDetailPage({
     );
   }
 
-  const prevArtwork = currentIndex > 0 ? artworks[currentIndex - 1] : null;
+  // Previous/Next skip Sold-page-only pieces (hidden from "All works"), but
+  // keep the current one in the list so its own neighbours still resolve.
+  const navList = artworks.filter((a) => !a.sold_only || a.id === artwork.id);
+  const navIndex = navList.findIndex((a) => a.id === artwork.id);
+  const prevArtwork = navIndex > 0 ? navList[navIndex - 1] : null;
   const nextArtwork =
-    currentIndex < artworks.length - 1 ? artworks[currentIndex + 1] : null;
+    navIndex < navList.length - 1 ? navList[navIndex + 1] : null;
 
   const hasImage = artwork.images.length > 0;
 
-  // Each part is optional: "Sold", "Sold for $1,200", "Sold on …", or both.
+  // Price and date are independent — each shows only when filled in.
   const soldPrice =
-    artwork.sold_price != null ? formatUsd(artwork.sold_price) : "";
-  const soldDate = artwork.sold_at ? formatDateOnly(artwork.sold_at) : "";
-  const soldLine = artwork.is_sold
-    ? ["Sold", soldPrice && `for ${soldPrice}`, soldDate && `on ${soldDate}`]
-        .filter(Boolean)
-        .join(" ")
-    : "";
+    artwork.is_sold && artwork.sold_price != null
+      ? formatUsd(artwork.sold_price)
+      : "";
+  const soldDate =
+    artwork.is_sold && artwork.sold_at ? formatDateOnly(artwork.sold_at) : "";
 
   return (
     <div className="pt-24 pb-20">
@@ -247,14 +249,32 @@ export default async function ArtworkDetailPage({
           <h1 className="mt-2 font-display text-3xl font-bold text-primary-dark sm:text-4xl">
             <RichTitle text={artwork.title} />
           </h1>
-          {soldLine && (
-            <p className="mt-3 inline-flex items-center gap-2 text-base font-medium text-primary">
-              <span
-                aria-hidden="true"
-                className="h-2 w-2 rounded-full bg-primary"
-              />
-              {soldLine}
-            </p>
+          {artwork.is_sold && (
+            <div className="mt-3 text-base text-primary">
+              <p className="inline-flex items-center gap-2 font-medium">
+                <span
+                  aria-hidden="true"
+                  className="h-2 w-2 rounded-full bg-primary"
+                />
+                Sold
+              </p>
+              {(soldPrice || soldDate) && (
+                <dl className="mt-1 flex flex-wrap gap-x-6 gap-y-1 text-text-secondary">
+                  {soldPrice && (
+                    <div className="flex gap-1.5">
+                      <dt>Price:</dt>
+                      <dd className="font-medium text-primary">{soldPrice}</dd>
+                    </div>
+                  )}
+                  {soldDate && (
+                    <div className="flex gap-1.5">
+                      <dt>Date sold:</dt>
+                      <dd className="font-medium text-primary">{soldDate}</dd>
+                    </div>
+                  )}
+                </dl>
+              )}
+            </div>
           )}
           {artwork.description && (
             <p className="mt-4 max-w-2xl whitespace-pre-line text-lg leading-relaxed text-text-secondary">
