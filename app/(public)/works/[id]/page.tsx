@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import { getArtworks } from "@/lib/supabase/public";
-import { BLUR_DATA_URL } from "@/lib/image";
+import { ARTWORK_DETAIL_SIZES, BLUR_DATA_URL } from "@/lib/image";
 import RichTitle, { stripRichTitle } from "@/components/RichTitle";
 
 // Prerender each artwork detail page at build time + ISR (5 min).
@@ -170,7 +170,7 @@ export default async function ArtworkDetailPage({
               width={0}
               height={0}
               priority
-              sizes="(min-width: 1024px) 1024px, 100vw"
+              sizes={ARTWORK_DETAIL_SIZES}
               className="w-full object-contain max-h-[70vh]"
             />
           ) : (

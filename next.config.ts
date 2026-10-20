@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
+    // Uploads get a random UUID path (app/api/upload), so an optimized file
+    // never goes stale — keep it cached long instead of re-transforming.
+    minimumCacheTTL: 2678400, // 31 days
     remotePatterns: [
       {
         protocol: "https",
