@@ -63,7 +63,7 @@ export default function EditWorkPage() {
     <div>
       <PageHeader
         eyebrow="Editing a piece"
-        title={<RichTitle text={work.title} />}
+        title={work.title ? <RichTitle text={work.title} /> : "Untitled draft"}
         subtitle="Everything here shows on your Gallery page the moment you save."
       />
       <WorkForm initialData={work} />

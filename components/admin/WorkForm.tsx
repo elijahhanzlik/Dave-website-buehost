@@ -292,7 +292,7 @@ export default function WorkForm({ initialData }: WorkFormProps) {
         <Card className="p-7">
           <Field
             label="Title"
-            hint="The name shown under the picture. Highlight a word and press Italic to slant it."
+            hint="The name shown under the picture. Highlight a word and press Italic to slant it. Not needed for a draft."
             htmlFor="work-title"
           >
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
@@ -308,7 +308,7 @@ export default function WorkForm({ initialData }: WorkFormProps) {
                 onSelect={trackSelection}
                 onKeyUp={trackSelection}
                 onClick={trackSelection}
-                required
+                required={status === "published"}
                 className={inputClass}
               />
               <Button
