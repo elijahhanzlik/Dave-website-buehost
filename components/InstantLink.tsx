@@ -24,7 +24,8 @@ export default function InstantLink({
   children,
 }: {
   href: string;
-  prefetchImage?: string | null;
+  /** Optimized src/srcSet/sizes of the target's hero (from getImageProps). */
+  prefetchImage?: { src: string; srcSet?: string; sizes?: string } | null;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -37,8 +38,12 @@ export default function InstantLink({
     warmed.current = true;
     router.prefetch(href);
     if (prefetchImage) {
+      // Set sizes/srcset before src so the browser picks the same candidate
+      // the detail page's <img> will, and the navigation hits a warm cache.
       const img = new window.Image();
-      img.src = prefetchImage;
+      if (prefetchImage.sizes) img.sizes = prefetchImage.sizes;
+      if (prefetchImage.srcSet) img.srcset = prefetchImage.srcSet;
+      img.src = prefetchImage.src;
     }
   }, [href, prefetchImage, router]);
 

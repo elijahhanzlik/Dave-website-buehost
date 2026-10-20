@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import InstantLink from "@/components/InstantLink";
-import { BLUR_DATA_URL } from "@/lib/image";
+import { artworkDetailPrefetch, BLUR_DATA_URL } from "@/lib/image";
 import RichTitle, { stripRichTitle } from "@/components/RichTitle";
 
 interface BlogPost {
@@ -265,7 +265,7 @@ export default function HomeClient({
                 <InstantLink
                   key={artwork.id}
                   href={`/works/${artwork.id}`}
-                  prefetchImage={hasImage ? artwork.images[0] : null}
+                  prefetchImage={artworkDetailPrefetch(artwork.images[0])}
                   className="group relative block overflow-hidden rounded-xl"
                 >
                   <div className="relative aspect-[4/5] w-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary-dark/30">

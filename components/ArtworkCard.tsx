@@ -1,6 +1,7 @@
 import Image from "next/image";
 import InstantLink from "@/components/InstantLink";
 import RichTitle, { stripRichTitle } from "@/components/RichTitle";
+import { artworkDetailPrefetch } from "@/lib/image";
 
 interface Artwork {
   id: string;
@@ -97,7 +98,7 @@ export default function ArtworkCard({
   return (
     <InstantLink
       href={`/works/${artwork.id}`}
-      prefetchImage={hasImage ? artwork.images[0] : null}
+      prefetchImage={artworkDetailPrefetch(artwork.images[0])}
       className={CARD_CLASS}
     >
       {body}
