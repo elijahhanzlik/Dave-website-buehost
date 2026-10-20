@@ -71,15 +71,9 @@ const PLACEHOLDER_ARTWORKS: Artwork[] = [
   },
 ];
 
-function getCategories(artworks: Artwork[]): string[] {
-  const cats = new Set(artworks.map((a) => a.category).filter(Boolean) as string[]);
-  return Array.from(cats);
-}
-
 export default async function WorksPage() {
   const rows = await getArtworks();
   const artworks = rows.length > 0 ? rows : PLACEHOLDER_ARTWORKS;
-  const categories = getCategories(artworks);
 
   return (
     <div className="pt-24 pb-20">
@@ -88,7 +82,7 @@ export default async function WorksPage() {
           Gallery
         </h1>
 
-        <WorksGallery artworks={artworks} categories={categories} />
+        <WorksGallery artworks={artworks} />
       </div>
     </div>
   );

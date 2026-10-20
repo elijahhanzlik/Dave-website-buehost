@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import ArtworkCard from "@/components/ArtworkCard";
 import {
   GALLERY_COLUMN_COUNT,
@@ -48,11 +48,9 @@ export interface Artwork {
 
 export default function WorksGallery({
   artworks,
-  categories,
   renderItem,
 }: {
   artworks: Artwork[];
-  categories: string[];
   /**
    * Lets the admin's live gallery editor wrap each card (drag handle, badge)
    * while this component stays the single definition of the masonry layout.
@@ -64,7 +62,6 @@ export default function WorksGallery({
     index: number,
   ) => React.ReactNode;
 }) {
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const columnCount = useSyncExternalStore(
     subscribeColumns,
     readColumns,
@@ -76,90 +73,54 @@ export default function WorksGallery({
   // Position in reading order: drives the eager-load cutoff and the admin's
   // numbered badges.
   const position = new Map(reading.map((a, i) => [a.id, i]));
-  const matches = (a: Artwork) =>
-    activeCategory === null || a.category === activeCategory;
 
-  // Unfiltered wide: the saved columns as arranged. Filtered (any width) or
-  // narrow: the reading order dealt left to right across the columns, so a
-  // filter packs its matches together instead of leaving gaps in place.
-  const filtered = reading.filter(matches);
-  const showSaved =
-    columnCount === GALLERY_COLUMN_COUNT && activeCategory === null;
-  const columns = showSaved ? wideColumns : dealColumns(filtered, columnCount);
-  const filteredCount = filtered.length;
-
-  const baseBtn =
-    "rounded-full px-4 py-1.5 text-sm font-medium transition-colors cursor-pointer";
-  const activeBtn = "bg-primary text-white";
-  const inactiveBtn =
-    "border border-primary/20 text-primary hover:bg-primary hover:text-white";
+  // Wide: the saved columns as arranged. Narrow: the reading order dealt left
+  // to right across the columns.
+  const showSaved = columnCount === GALLERY_COLUMN_COUNT;
+  const columns = showSaved ? wideColumns : dealColumns(reading, columnCount);
 
   return (
-    <>
-      {categories.length > 0 && (
-        <div className="mt-8 flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={() => setActiveCategory(null)}
-            className={`${baseBtn} ${activeCategory === null ? activeBtn : inactiveBtn}`}
-            aria-pressed={activeCategory === null}
+    <div className="mt-12">
+      <div className="flex gap-4">
+        {columns.map((column, c) => (
+          <div
+            key={c}
+            // Only saved columns are drop targets for the admin's drag
+            // editor; dealt columns don't map to a piece's gallery_column.
+            data-column={showSaved ? c : undefined}
+            className="flex min-w-0 flex-1 flex-col gap-4"
           >
-            All
-          </button>
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setActiveCategory(cat)}
-              className={`${baseBtn} ${activeCategory === cat ? activeBtn : inactiveBtn}`}
-              aria-pressed={activeCategory === cat}
-            >
-              {cat}
-            </button>
-          ))}
+            {column.map((artwork) => {
+              const i = position.get(artwork.id) ?? 0;
+              return (
+                <div key={artwork.id} className="w-full">
+                  {/* Eager-load the first row (above the fold) so the
+                        gallery's LCP image isn't lazy; the rest lazy-load. */}
+                  {renderItem ? (
+                    renderItem(
+                      <ArtworkCard
+                        artwork={artwork}
+                        priority={i < 4}
+                        interactive={false}
+                      />,
+                      artwork,
+                      i,
+                    )
+                  ) : (
+                    <ArtworkCard artwork={artwork} priority={i < 4} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+
+      {artworks.length === 0 && (
+        <div className="py-20 text-center">
+          <p className="text-text-muted">No artworks to display yet.</p>
         </div>
       )}
-
-      <div className="mt-12">
-        <div className="flex gap-4">
-          {columns.map((column, c) => (
-            <div
-              key={c}
-              // Only saved columns are drop targets for the admin's drag
-              // editor; dealt columns don't map to a piece's gallery_column.
-              data-column={showSaved ? c : undefined}
-              className="flex min-w-0 flex-1 flex-col gap-4"
-            >
-              {column.map((artwork) => {
-                const i = position.get(artwork.id) ?? 0;
-                return (
-                  <div key={artwork.id} className="w-full">
-                    {/* Eager-load the first row (above the fold) so the
-                        gallery's LCP image isn't lazy; the rest lazy-load. */}
-                    {renderItem
-                      ? renderItem(
-                          <ArtworkCard
-                            artwork={artwork}
-                            priority={i < 4}
-                            interactive={false}
-                          />,
-                          artwork,
-                          i,
-                        )
-                      : <ArtworkCard artwork={artwork} priority={i < 4} />}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-
-        {filteredCount === 0 && (
-          <div className="py-20 text-center">
-            <p className="text-text-muted">No artworks to display yet.</p>
-          </div>
-        )}
-      </div>
-    </>
+    </div>
   );
 }

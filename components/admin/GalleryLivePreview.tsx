@@ -49,13 +49,6 @@ const MOVE_MIN_TRAVEL_PX = 14;
 const EDGE_SCROLL_PX = 60;
 const EDGE_SCROLL_STEP = 14;
 
-function getCategories(artworks: Artwork[]): string[] {
-  const cats = new Set(
-    artworks.map((a) => a.category).filter(Boolean) as string[],
-  );
-  return Array.from(cats);
-}
-
 /** Flat list WorksGallery rebuilds these exact columns from: each piece
  *  stamped with its column, sort_order = reading order. */
 function columnsToWorks(columns: Columns): Artwork[] {
@@ -271,7 +264,6 @@ export default function GalleryLivePreview() {
   };
 
   const works = columnsToWorks(columns);
-  const categories = getCategories(works);
 
   return (
     <>
@@ -317,7 +309,6 @@ export default function GalleryLivePreview() {
             ) : (
               <WorksGallery
                 artworks={works}
-                categories={categories}
                 renderItem={(card, artwork, index) => (
                   <div
                     data-artwork-id={artwork.id}
