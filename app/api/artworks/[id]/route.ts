@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateArtworks } from "@/lib/revalidate";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/supabase/admin";
-import { artworkSchema } from "@/lib/validations";
+import { artworkUpdateSchema } from "@/lib/validations";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -32,7 +32,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
   }
 
   const body = await request.json();
-  const parsed = artworkSchema.partial().safeParse(body);
+  const parsed = artworkUpdateSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: parsed.error.flatten() },
