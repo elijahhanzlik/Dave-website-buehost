@@ -44,15 +44,42 @@ export interface Artwork {
   sort_order: number;
   is_featured: boolean;
   gallery_column?: number | null;
+  is_sold?: boolean;
+  sold_only?: boolean;
+}
+
+type SaleFilter = "all" | "available" | "sold";
+
+const FILTERS: { value: SaleFilter; label: string }[] = [
+  { value: "all", label: "All works" },
+  { value: "available", label: "Available" },
+  { value: "sold", label: "Sold" },
+];
+
+/** Rows from before the sold migration lack the fields — treat as false. */
+function matchesFilter(
+  a: Artwork,
+  filter: SaleFilter,
+  includeSoldOnly: boolean,
+): boolean {
+  if (filter === "available") return !a.is_sold;
+  if (filter === "sold") return !!a.is_sold;
+  // "All works" hides sold_only pieces (they appear under Sold only).
+  return includeSoldOnly || !a.sold_only;
 }
 
 export default function WorksGallery({
   artworks,
-  categories,
   renderItem,
+  includeSoldOnlyInAll = false,
 }: {
   artworks: Artwork[];
-  categories: string[];
+  /**
+   * The admin's live editor sets this so "All works" shows every piece,
+   * sold_only ones included, and every piece stays draggable. Public pages
+   * leave it off, so sold_only pieces appear under "Sold" only.
+   */
+  includeSoldOnlyInAll?: boolean;
   /**
    * Lets the admin's live gallery editor wrap each card (drag handle, badge)
    * while this component stays the single definition of the masonry layout.
@@ -64,63 +91,55 @@ export default function WorksGallery({
     index: number,
   ) => React.ReactNode;
 }) {
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [filter, setFilter] = useState<SaleFilter>("all");
   const columnCount = useSyncExternalStore(
     subscribeColumns,
     readColumns,
     serverColumns,
   );
 
-  const wideColumns = buildGalleryColumns(artworks);
+  // Columns are built from the pieces the active filter keeps. For "All
+  // works" that is what the saved arrangement is drawn from (sold_only pieces
+  // drop out without disturbing anyone else's column); for the other filters
+  // only its reading order is used.
+  const visible = artworks.filter((a) =>
+    matchesFilter(a, filter, includeSoldOnlyInAll),
+  );
+  const wideColumns = buildGalleryColumns(visible);
   const reading = galleryReadingOrder(wideColumns);
   // Position in reading order: drives the eager-load cutoff and the admin's
   // numbered badges.
   const position = new Map(reading.map((a, i) => [a.id, i]));
-  const matches = (a: Artwork) =>
-    activeCategory === null || a.category === activeCategory;
 
-  // Unfiltered wide: the saved columns as arranged. Filtered (any width) or
-  // narrow: the reading order dealt left to right across the columns, so a
-  // filter packs its matches together instead of leaving gaps in place.
-  const filtered = reading.filter(matches);
-  const showSaved =
-    columnCount === GALLERY_COLUMN_COUNT && activeCategory === null;
-  const columns = showSaved ? wideColumns : dealColumns(filtered, columnCount);
-  const filteredCount = filtered.length;
+  // "All works" at wide width: the saved columns as arranged. Any other
+  // filter, or narrow width: the reading order dealt left to right across the
+  // columns, so a filter packs its matches together instead of leaving gaps.
+  const showSaved = columnCount === GALLERY_COLUMN_COUNT && filter === "all";
+  const columns = showSaved ? wideColumns : dealColumns(reading, columnCount);
 
   const baseBtn =
-    "rounded-full px-4 py-1.5 text-sm font-medium transition-colors cursor-pointer";
-  const activeBtn = "bg-primary text-white";
+    "cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-colors";
+  const activeBtn = "border border-primary bg-primary text-white";
   const inactiveBtn =
-    "border border-primary/20 text-primary hover:bg-primary hover:text-white";
+    "border border-primary/15 bg-cream text-primary hover:border-primary/40";
 
   return (
     <>
-      {categories.length > 0 && (
-        <div className="mt-8 flex flex-wrap gap-3">
+      <div className="mt-6 flex flex-wrap gap-3">
+        {FILTERS.map((f) => (
           <button
+            key={f.value}
             type="button"
-            onClick={() => setActiveCategory(null)}
-            className={`${baseBtn} ${activeCategory === null ? activeBtn : inactiveBtn}`}
-            aria-pressed={activeCategory === null}
+            onClick={() => setFilter(f.value)}
+            className={`${baseBtn} ${filter === f.value ? activeBtn : inactiveBtn}`}
+            aria-pressed={filter === f.value}
           >
-            All
+            {f.label}
           </button>
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setActiveCategory(cat)}
-              className={`${baseBtn} ${activeCategory === cat ? activeBtn : inactiveBtn}`}
-              aria-pressed={activeCategory === cat}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      )}
+        ))}
+      </div>
 
-      <div className="mt-12">
+      <div className="mt-6">
         <div className="flex gap-4">
           {columns.map((column, c) => (
             <div
@@ -136,17 +155,19 @@ export default function WorksGallery({
                   <div key={artwork.id} className="w-full">
                     {/* Eager-load the first row (above the fold) so the
                         gallery's LCP image isn't lazy; the rest lazy-load. */}
-                    {renderItem
-                      ? renderItem(
-                          <ArtworkCard
-                            artwork={artwork}
-                            priority={i < 4}
-                            interactive={false}
-                          />,
-                          artwork,
-                          i,
-                        )
-                      : <ArtworkCard artwork={artwork} priority={i < 4} />}
+                    {renderItem ? (
+                      renderItem(
+                        <ArtworkCard
+                          artwork={artwork}
+                          priority={i < 4}
+                          interactive={false}
+                        />,
+                        artwork,
+                        i,
+                      )
+                    ) : (
+                      <ArtworkCard artwork={artwork} priority={i < 4} />
+                    )}
                   </div>
                 );
               })}
@@ -154,7 +175,7 @@ export default function WorksGallery({
           ))}
         </div>
 
-        {filteredCount === 0 && (
+        {visible.length === 0 && (
           <div className="py-20 text-center">
             <p className="text-text-muted">No artworks to display yet.</p>
           </div>

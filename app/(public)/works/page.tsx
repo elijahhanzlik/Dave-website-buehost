@@ -12,6 +12,10 @@ interface Artwork {
   category?: string | null;
   sort_order: number;
   is_featured: boolean;
+  is_sold?: boolean;
+  sold_price?: number | string | null;
+  sold_at?: string | null;
+  sold_only?: boolean;
 }
 
 const PLACEHOLDER_ARTWORKS: Artwork[] = [
@@ -41,6 +45,9 @@ const PLACEHOLDER_ARTWORKS: Artwork[] = [
     category: "Landscape",
     sort_order: 2,
     is_featured: false,
+    is_sold: true,
+    sold_price: 1200,
+    sold_at: "2026-09-14",
   },
   {
     id: "4",
@@ -68,18 +75,17 @@ const PLACEHOLDER_ARTWORKS: Artwork[] = [
     category: "Landscape",
     sort_order: 5,
     is_featured: false,
+    // Sold and shown under the "Sold" filter only — demos sold_only.
+    is_sold: true,
+    sold_price: "850.50",
+    sold_at: "2026-06-02",
+    sold_only: true,
   },
 ];
-
-function getCategories(artworks: Artwork[]): string[] {
-  const cats = new Set(artworks.map((a) => a.category).filter(Boolean) as string[]);
-  return Array.from(cats);
-}
 
 export default async function WorksPage() {
   const rows = await getArtworks();
   const artworks = rows.length > 0 ? rows : PLACEHOLDER_ARTWORKS;
-  const categories = getCategories(artworks);
 
   return (
     <div className="pt-24 pb-20">
@@ -88,7 +94,7 @@ export default async function WorksPage() {
           Gallery
         </h1>
 
-        <WorksGallery artworks={artworks} categories={categories} />
+        <WorksGallery artworks={artworks} />
       </div>
     </div>
   );

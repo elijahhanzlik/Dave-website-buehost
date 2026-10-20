@@ -2,11 +2,12 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Italic, Loader2, Star } from "lucide-react";
+import { Italic, Loader2, Star, Tag } from "lucide-react";
 import ImageUploader from "@/components/ImageUploader";
 import ImageCropEditor, { DEFAULT_CROP } from "@/components/admin/ImageCropEditor";
 import type { CropSettings } from "@/components/admin/ImageCropEditor";
 import RichTitle, { stripRichTitle } from "@/components/RichTitle";
+import { formatApiError } from "@/lib/formatters";
 import {
   ActionButton,
   Button,
@@ -28,6 +29,12 @@ interface WorkFormProps {
     category: string | null;
     is_featured: boolean;
     sort_order: number;
+    // Optional: rows saved before the sold columns existed do not have them.
+    is_sold?: boolean;
+    // Supabase can hand numeric columns back as strings.
+    sold_price?: number | string | null;
+    sold_at?: string | null;
+    sold_only?: boolean;
   };
 }
 
@@ -47,6 +54,15 @@ export default function WorkForm({ initialData }: WorkFormProps) {
   const [isFeatured, setIsFeatured] = useState(
     initialData?.is_featured ?? false,
   );
+  const [isSold, setIsSold] = useState(initialData?.is_sold ?? false);
+  // Kept as the typed text so an empty box means "no price".
+  const [soldPrice, setSoldPrice] = useState(
+    initialData?.sold_price != null && initialData.sold_price !== ""
+      ? String(Number(initialData.sold_price))
+      : "",
+  );
+  const [soldAt, setSoldAt] = useState(initialData?.sold_at ?? "");
+  const [soldOnly, setSoldOnly] = useState(initialData?.sold_only ?? false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [editingCropIndex, setEditingCropIndex] = useState<number | null>(null);
@@ -124,6 +140,10 @@ export default function WorkForm({ initialData }: WorkFormProps) {
       image_crops: imageCrops,
       category: category || undefined,
       is_featured: isFeatured,
+      is_sold: isSold,
+      sold_price: isSold && soldPrice.trim() !== "" ? Number(soldPrice) : null,
+      sold_at: isSold && soldAt ? soldAt : null,
+      sold_only: isSold ? soldOnly : false,
     };
 
     try {
@@ -140,7 +160,7 @@ export default function WorkForm({ initialData }: WorkFormProps) {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error?.toString() ?? "Failed to save");
+        throw new Error(formatApiError(data.error, "Failed to save"));
       }
 
       router.push(`${ADMIN_BASE}/works`);
@@ -295,7 +315,7 @@ export default function WorkForm({ initialData }: WorkFormProps) {
 
           <Field
             label="Category"
-            hint="Becomes a filter button at the top of the Gallery page — for example Assemblage or Mosaic."
+            hint="Shown under the title on the piece's page — for example Assemblage or Mosaic."
             htmlFor="work-category"
           >
             <input
@@ -330,6 +350,94 @@ export default function WorkForm({ initialData }: WorkFormProps) {
             />
           </label>
 
+          <div className="mt-4 rounded-[16px] bg-sage p-5">
+            <label
+              htmlFor="sold"
+              className="flex cursor-pointer items-center gap-3.5"
+            >
+              <Tag size={22} className="shrink-0 text-gold-dark" />
+              <span className="flex-1">
+                <span className="block text-[15.5px] font-bold text-admin-ink">
+                  This piece has sold
+                </span>
+                <span className="mt-0.5 block text-[13px] leading-snug text-admin-muted">
+                  It gets a Sold tag on your Gallery page.
+                </span>
+              </span>
+              <input
+                id="sold"
+                type="checkbox"
+                checked={isSold}
+                onChange={(e) => setIsSold(e.target.checked)}
+                className="h-6 w-6 shrink-0 accent-[#2D5016]"
+              />
+            </label>
+
+            {isSold && (
+              <div className="mt-5 border-t border-admin-line pt-5">
+                <p className="mb-4 text-[13px] leading-snug text-admin-muted">
+                  The price and date are both optional. If you fill them in,
+                  visitors see them when they open the piece.
+                </p>
+                <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
+                  <Field
+                    label="Sale price (dollars)"
+                    hint="Leave empty to keep the price private."
+                    htmlFor="work-sold-price"
+                  >
+                    <input
+                      id="work-sold-price"
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      step="0.01"
+                      value={soldPrice}
+                      onChange={(e) => setSoldPrice(e.target.value)}
+                      placeholder="e.g. 1200"
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field
+                    label="Sale date"
+                    hint="Leave empty if you would rather not say."
+                    htmlFor="work-sold-at"
+                  >
+                    <input
+                      id="work-sold-at"
+                      type="date"
+                      value={soldAt}
+                      onChange={(e) => setSoldAt(e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                </div>
+
+                <label
+                  htmlFor="sold-only"
+                  className="flex cursor-pointer items-center gap-3.5 rounded-[14px] bg-white/70 p-4"
+                >
+                  <span className="flex-1">
+                    <span className="block text-[15px] font-semibold text-admin-ink">
+                      Only show this on the Sold page
+                    </span>
+                    <span className="mt-0.5 block text-[13px] leading-snug text-admin-muted">
+                      It disappears from &ldquo;All works&rdquo; on your
+                      Gallery page, but still shows up when visitors pick
+                      the Sold button.
+                    </span>
+                  </span>
+                  <input
+                    id="sold-only"
+                    type="checkbox"
+                    checked={soldOnly}
+                    onChange={(e) => setSoldOnly(e.target.checked)}
+                    className="h-6 w-6 shrink-0 accent-[#2D5016]"
+                  />
+                </label>
+              </div>
+            )}
+          </div>
+
           {(title || images.length > 0) && (
             <div className="mt-6 rounded-[16px] border border-admin-line bg-cream p-5">
               <p className="text-[11.5px] font-bold uppercase tracking-[0.14em] text-gold-dark">
@@ -348,11 +456,24 @@ export default function WorkForm({ initialData }: WorkFormProps) {
                   }}
                 />
               )}
+              {isSold && (
+                <span className="mt-3 inline-flex items-center rounded-full bg-admin-ink px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-cream">
+                  Sold
+                </span>
+              )}
               <h3 className="mt-3 font-display text-[20px] font-bold text-admin-ink">
                 <RichTitle text={title} />
               </h3>
               {category && (
                 <p className="mt-1 text-sm text-admin-muted">{category}</p>
+              )}
+              {isSold && soldPrice.trim() !== "" && (
+                <p className="mt-1 text-sm font-semibold text-admin-ink">
+                  Sold for $
+                  {Number(soldPrice).toLocaleString("en-US", {
+                    maximumFractionDigits: 2,
+                  })}
+                </p>
               )}
               {description && (
                 <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-admin-muted">

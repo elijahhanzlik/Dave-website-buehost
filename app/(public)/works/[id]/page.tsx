@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { getArtworks } from "@/lib/supabase/public";
 import { ARTWORK_DETAIL_SIZES, BLUR_DATA_URL } from "@/lib/image";
 import RichTitle, { stripRichTitle } from "@/components/RichTitle";
+import { formatDateOnly, formatUsd } from "@/lib/formatters";
 
 // Prerender each artwork detail page at build time + ISR (5 min).
 export const revalidate = 300;
@@ -17,6 +18,10 @@ interface Artwork {
   category?: string | null;
   sort_order: number;
   is_featured: boolean;
+  is_sold?: boolean;
+  sold_price?: number | string | null;
+  sold_at?: string | null;
+  sold_only?: boolean;
 }
 
 const PLACEHOLDER_ARTWORKS: Artwork[] = [
@@ -49,6 +54,9 @@ const PLACEHOLDER_ARTWORKS: Artwork[] = [
     category: "Landscape",
     sort_order: 2,
     is_featured: false,
+    is_sold: true,
+    sold_price: 1200,
+    sold_at: "2026-09-14",
   },
   {
     id: "4",
@@ -79,6 +87,11 @@ const PLACEHOLDER_ARTWORKS: Artwork[] = [
     category: "Landscape",
     sort_order: 5,
     is_featured: false,
+    // Sold and shown under the "Sold" filter only — demos sold_only.
+    is_sold: true,
+    sold_price: "850.50",
+    sold_at: "2026-06-02",
+    sold_only: true,
   },
 ];
 
@@ -146,6 +159,16 @@ export default async function ArtworkDetailPage({
     currentIndex < artworks.length - 1 ? artworks[currentIndex + 1] : null;
 
   const hasImage = artwork.images.length > 0;
+
+  // Each part is optional: "Sold", "Sold for $1,200", "Sold on …", or both.
+  const soldPrice =
+    artwork.sold_price != null ? formatUsd(artwork.sold_price) : "";
+  const soldDate = artwork.sold_at ? formatDateOnly(artwork.sold_at) : "";
+  const soldLine = artwork.is_sold
+    ? ["Sold", soldPrice && `for ${soldPrice}`, soldDate && `on ${soldDate}`]
+        .filter(Boolean)
+        .join(" ")
+    : "";
 
   return (
     <div className="pt-24 pb-20">
@@ -224,6 +247,15 @@ export default async function ArtworkDetailPage({
           <h1 className="mt-2 font-display text-3xl font-bold text-primary-dark sm:text-4xl">
             <RichTitle text={artwork.title} />
           </h1>
+          {soldLine && (
+            <p className="mt-3 inline-flex items-center gap-2 text-base font-medium text-primary">
+              <span
+                aria-hidden="true"
+                className="h-2 w-2 rounded-full bg-primary"
+              />
+              {soldLine}
+            </p>
+          )}
           {artwork.description && (
             <p className="mt-4 max-w-2xl whitespace-pre-line text-lg leading-relaxed text-text-secondary">
               {artwork.description}

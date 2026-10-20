@@ -9,6 +9,7 @@ interface Artwork {
   description?: string | null;
   images: string[];
   category?: string | null;
+  is_sold?: boolean;
 }
 
 const CARD_CLASS = "group relative block overflow-hidden rounded-xl";
@@ -68,7 +69,8 @@ export default function ArtworkCard({
 
         {/* Hover overlay — covers the image only */}
         <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          <div className="w-full p-5">
+          {/* Extra right padding keeps a long title clear of the SOLD badge. */}
+          <div className={`w-full p-5 ${artwork.is_sold ? "pr-24" : ""}`}>
             <h3 className="font-display text-lg font-semibold text-white">
               <RichTitle text={artwork.title} />
             </h3>
@@ -77,6 +79,14 @@ export default function ArtworkCard({
             )}
           </div>
         </div>
+
+        {/* SOLD badge — sits above the hover overlay, outside the image's
+            hover scale so it stays pinned to the corner. */}
+        {artwork.is_sold && (
+          <span className="pointer-events-none absolute right-2.5 bottom-2.5 rounded-sm border border-cream/80 bg-primary px-2.5 py-1 font-display text-xs font-semibold uppercase leading-none tracking-[0.2em] text-white shadow-sm sm:right-3 sm:bottom-3">
+            Sold
+          </span>
+        )}
       </div>
 
       {/* Always-visible title on mobile */}
