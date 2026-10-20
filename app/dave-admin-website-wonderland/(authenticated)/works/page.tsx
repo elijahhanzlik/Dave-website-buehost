@@ -69,6 +69,7 @@ interface Artwork {
   // Optional: rows saved before the sold columns existed do not have them.
   is_sold?: boolean;
   sold_only?: boolean;
+    status?: "draft" | "published";
   created_at: string;
 }
 
@@ -263,8 +264,11 @@ export default function WorksListPage() {
                   </div>
                 )}
 
-                {(work.is_featured || work.is_sold) && (
+                {(work.is_featured || work.is_sold || work.status === "draft") && (
                   <div className="absolute left-3.5 top-3.5 flex flex-col items-start gap-1.5">
+                    {work.status === "draft" && (
+                      <Pill tone="draft">Draft — only you</Pill>
+                    )}
                     {work.is_featured && <Pill tone="new">On the homepage</Pill>}
                     {work.is_sold && (
                       <Pill tone="published">

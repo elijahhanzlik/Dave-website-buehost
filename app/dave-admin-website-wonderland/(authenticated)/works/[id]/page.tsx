@@ -27,6 +27,7 @@ export default function EditWorkPage() {
     sold_price?: number | string | null;
     sold_at?: string | null;
     sold_only?: boolean;
+    status?: "draft" | "published";
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

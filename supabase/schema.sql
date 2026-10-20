@@ -22,14 +22,16 @@ create table public.artworks (
   -- 'YYYY-MM-DD' or 'YYYY-MM' (month and year only).
   sold_at     text check (sold_at is null or sold_at ~ '^\d{4}-(0[1-9]|1[0-2])(-(0[1-9]|[12]\d|3[01]))?$'),
   sold_only   boolean not null default false,
+  -- Drafts are visible only to the signed-in admin.
+  status      text not null default 'published' check (status in ('draft', 'published')),
   created_at  timestamptz not null default now()
 );
 
 alter table public.artworks enable row level security;
 
-create policy "Public read access on artworks"
+create policy "Public read published artworks"
   on public.artworks for select
-  using (true);
+  using (status = 'published' or auth.role() = 'authenticated');
 
 create policy "Authenticated admin insert on artworks"
   on public.artworks for insert

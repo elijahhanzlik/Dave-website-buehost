@@ -7,6 +7,7 @@ import ImageUploader from "@/components/ImageUploader";
 import ImageCropEditor, { DEFAULT_CROP } from "@/components/admin/ImageCropEditor";
 import type { CropSettings } from "@/components/admin/ImageCropEditor";
 import RichTitle, { stripRichTitle } from "@/components/RichTitle";
+import StatusChoice from "@/components/admin/StatusChoice";
 import { formatApiError, formatSoldDate, formatUsd } from "@/lib/formatters";
 import {
   ActionButton,
@@ -47,6 +48,7 @@ interface WorkFormProps {
     sold_price?: number | string | null;
     sold_at?: string | null;
     sold_only?: boolean;
+    status?: "draft" | "published";
   };
 }
 
@@ -88,6 +90,9 @@ export default function WorkForm({ initialData }: WorkFormProps) {
   const parsedSoldPrice = parseSoldPrice(soldPrice);
   const soldPriceInvalid = Number.isNaN(parsedSoldPrice);
   const [soldOnly, setSoldOnly] = useState(initialData?.sold_only ?? false);
+  const [status, setStatus] = useState<"draft" | "published">(
+    initialData?.status ?? "published",
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [editingCropIndex, setEditingCropIndex] = useState<number | null>(null);
@@ -173,6 +178,7 @@ export default function WorkForm({ initialData }: WorkFormProps) {
       sold_price: isSold ? parsedSoldPrice : null,
       sold_at: isSold && soldAt ? soldAt : null,
       sold_only: isSold ? soldOnly : false,
+      status,
     };
 
     try {
@@ -356,6 +362,15 @@ export default function WorkForm({ initialData }: WorkFormProps) {
               className={inputClass}
             />
           </Field>
+
+          <div className="mb-5">
+            <StatusChoice
+              value={status}
+              onChange={setStatus}
+              publishedHint="It appears on your Gallery page for everyone."
+              draftHint="Only you can see it. Save now, finish and publish later."
+            />
+          </div>
 
           <label
             htmlFor="featured"
@@ -597,14 +612,18 @@ export default function WorkForm({ initialData }: WorkFormProps) {
           label={
             saving
               ? "Saving…"
-              : isEditing
-                ? "Save this piece"
-                : "Add it to my Gallery"
+              : status === "draft"
+                ? "Save as a draft"
+                : isEditing
+                  ? "Save this piece"
+                  : "Add it to my Gallery"
           }
           hint={
-            isEditing
-              ? "Your changes go live on the Gallery page straight away."
-              : "It appears on your Gallery page straight away."
+            status === "draft"
+              ? "Only you can see it. Come back any time to finish and publish."
+              : isEditing
+                ? "Your changes go live on the Gallery page straight away."
+                : "It appears on your Gallery page straight away."
           }
           icon={saving ? <Loader2 size={18} className="animate-spin" /> : undefined}
         />
