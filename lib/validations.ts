@@ -40,6 +40,7 @@ const artworkFields = z.object({
     .nullable()
     .optional(),
   sold_only: z.boolean().optional(),
+  status: z.enum(["draft", "published"]).optional(),
 });
 
 /** Create: fills the defaults a new piece needs. */

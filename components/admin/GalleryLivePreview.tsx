@@ -110,7 +110,13 @@ export default function GalleryLivePreview() {
     try {
       const res = await fetch("/api/artworks");
       const data = await res.json();
-      if (Array.isArray(data)) setColumns(buildGalleryColumns(data));
+      // Mirror the public site: drafts aren't on it, so they aren't here.
+      if (Array.isArray(data))
+        setColumns(
+          buildGalleryColumns(
+            data.filter((a: { status?: string }) => a.status !== "draft"),
+          ),
+        );
     } finally {
       setLoading(false);
     }

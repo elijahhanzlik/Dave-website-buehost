@@ -46,6 +46,8 @@ export interface PublicArtwork {
   sold_at?: string | null;
   /** Sold piece shown under the Sold filter only, not in All works. */
   sold_only?: boolean;
+  /** Drafts are hidden from the public site (RLS + getArtworks). */
+  status?: "draft" | "published";
 }
 
 export interface PublicBlogPost {
@@ -109,7 +111,9 @@ export const getArtworks = unstable_cache(
         .from("artworks")
         .select("*")
         .order("sort_order", { ascending: true });
-      return data ?? [];
+      // RLS already hides drafts from the anon client; filtering here too keeps
+      // them off the site even if that policy drifts.
+      return (data ?? []).filter((a) => a.status !== "draft");
     } catch {
       return [];
     }
