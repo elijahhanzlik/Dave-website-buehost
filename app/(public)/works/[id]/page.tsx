@@ -154,9 +154,13 @@ export default async function ArtworkDetailPage({
     );
   }
 
-  const prevArtwork = currentIndex > 0 ? artworks[currentIndex - 1] : null;
+  // Previous/Next skip Sold-page-only pieces (hidden from "All works"), but
+  // keep the current one in the list so its own neighbours still resolve.
+  const navList = artworks.filter((a) => !a.sold_only || a.id === artwork.id);
+  const navIndex = navList.findIndex((a) => a.id === artwork.id);
+  const prevArtwork = navIndex > 0 ? navList[navIndex - 1] : null;
   const nextArtwork =
-    currentIndex < artworks.length - 1 ? artworks[currentIndex + 1] : null;
+    navIndex < navList.length - 1 ? navList[navIndex + 1] : null;
 
   const hasImage = artwork.images.length > 0;
 
