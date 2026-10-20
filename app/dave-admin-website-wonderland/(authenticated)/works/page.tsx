@@ -66,6 +66,9 @@ interface Artwork {
   category: string | null;
   sort_order: number;
   is_featured: boolean;
+  // Optional: rows saved before the sold columns existed do not have them.
+  is_sold?: boolean;
+  sold_only?: boolean;
   created_at: string;
 }
 
@@ -260,10 +263,15 @@ export default function WorksListPage() {
                   </div>
                 )}
 
-                {work.is_featured && (
-                  <Pill tone="new" className="absolute left-3.5 top-3.5">
-                    On the homepage
-                  </Pill>
+                {(work.is_featured || work.is_sold) && (
+                  <div className="absolute left-3.5 top-3.5 flex flex-col items-start gap-1.5">
+                    {work.is_featured && <Pill tone="new">On the homepage</Pill>}
+                    {work.is_sold && (
+                      <Pill tone="published">
+                        {work.sold_only ? "Sold · Sold page only" : "Sold"}
+                      </Pill>
+                    )}
+                  </div>
                 )}
 
                 <span

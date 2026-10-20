@@ -23,6 +23,10 @@ export default function EditWorkPage() {
     category: string | null;
     is_featured: boolean;
     sort_order: number;
+    is_sold?: boolean;
+    sold_price?: number | string | null;
+    sold_at?: string | null;
+    sold_only?: boolean;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
