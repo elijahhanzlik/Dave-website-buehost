@@ -23,6 +23,16 @@ export const artworkSchema = z.object({
   sort_order: z.number().int().default(0),
   is_featured: z.boolean().default(false),
   gallery_column: z.number().int().min(0).max(2).nullable().optional(),
+  // Sold details. Price/date are public on the detail page; sold_only hides
+  // the piece from "All works" so it appears under the Sold filter only.
+  is_sold: z.boolean().optional(),
+  sold_price: z.number().nonnegative().max(99999999.99).nullable().optional(),
+  sold_at: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD")
+    .nullable()
+    .optional(),
+  sold_only: z.boolean().optional(),
 });
 
 export type ArtworkInput = z.infer<typeof artworkSchema>;

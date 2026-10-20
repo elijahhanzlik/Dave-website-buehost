@@ -39,6 +39,13 @@ export interface PublicArtwork {
   is_featured: boolean;
   /** 0–2 = column in the Gallery's wide layout; null = not placed yet. */
   gallery_column?: number | null;
+  /** Optional until the 20261020120000_artworks_sold migration is applied. */
+  is_sold?: boolean;
+  /** Postgres numeric — supabase-js may return it as a string. */
+  sold_price?: number | string | null;
+  sold_at?: string | null;
+  /** Sold piece shown under the Sold filter only, not in All works. */
+  sold_only?: boolean;
 }
 
 export interface PublicBlogPost {
